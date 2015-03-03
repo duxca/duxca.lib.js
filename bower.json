@@ -1,0 +1,25 @@
+{
+  "name": "typescript-test",
+  "version": "0.0.0",
+  "homepage": "https://github.com/legokichi/typescript-test",
+  "authors": [
+    "Legokichi Duckscallion <legokichi@duxca.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "qunit": "~1.17.1",
+    "power-assert": "~0.10.2",
+    "empower": "~0.10.0",
+    "power-assert-formatter": "~0.10.2"
+  }
+}
