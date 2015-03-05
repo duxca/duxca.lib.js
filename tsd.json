@@ -5,5 +5,8 @@
   "path": "typings",
   "bundle": "typings/tsd.d.ts",
   "installed": {
+    "qunit/qunit.d.ts": {
+      "commit": "fe39944e4d9a9aaa9b4eba7d85d2135d7535bd4e"
+    }
   }
 }

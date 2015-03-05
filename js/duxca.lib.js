@@ -1,10 +1,10 @@
+/// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../thirdparty/dsp/dsp.d.ts" />
 var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
         function calcCorr(signal, input, sampleRate) {
-            if (sampleRate === void 0) { sampleRate = 44100; }
             var fft = new FFT(input.length, sampleRate);
             fft.forward(signal);
             var sig_spectrum = new Float32Array(fft.spectrum);

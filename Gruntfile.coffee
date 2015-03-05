@@ -21,24 +21,25 @@ module.exports = (grunt) ->
       ts:
         src: ['ts/**/*.ts']
         dest: 'js'
-        options:
-          basePath: 'ts'
-          noImplicitAny: false
-          module:        'commonjs'
-          target:        'es5'
-          comments:      true
-
-    coffee:
       test:
-        files:
-          './tests/sandbox/tests.js': ['./tests/*_test.coffee']
+        src: ['ts/**/*.ts', './tests/*_test.ts']
+        dest: 'tests/sandbox/tests.js'
+      options:
+        basePath: 'ts'
+        noImplicitAny: false
+        module:        'commonjs'
+        target:        'es5'
+        comments:      true
 
     concat:
       options:
         separator: ';'
       test:
+        src: ['thirdparty/**/*.js', 'tests/sandbox/tests.js'],
+        dest: 'tests/sandbox/tests.js'
+      release:
         src: ['thirdparty/**/*.js', 'js/**/*.js'],
-        dest: './tests/sandbox/bundle.js'
+        dest: 'release/duxca.lib.js'
 
     espower:
       options :{
@@ -67,10 +68,10 @@ module.exports = (grunt) ->
     watch:
       ts:
         files: ["ts/**/*.ts"]
-        tasks: ["typescript:ts", "concat:test"]
+        tasks: ["typescript:ts", "concat:build"]
       test:
-        files: ["tests/**/*_test.coffee"]
-        tasks: ["coffee:test", "espower:test"]
+        files: ["tests/**/*_test.ts"]
+        tasks: ["typescript:test", "espower:test"]
 
     connect:
       server:
@@ -80,5 +81,5 @@ module.exports = (grunt) ->
           base: './'
 
   grunt.registerTask("run", ["connect", "make", "watch"])
-  grunt.registerTask("make", ["typescript:ts", "coffee:test", "concat:test", "espower:test"])
+  grunt.registerTask("make", ["typescript:ts", "typescript:test", "concat:test", "concat:release", "espower:test"])
   grunt.registerTask("default", ["make"])

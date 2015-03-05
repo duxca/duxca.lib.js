@@ -1,10 +1,12 @@
+/// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../thirdparty/dsp/dsp.d.ts" />
+
 module duxca.lib {
   type Integer = number;
   type Float = number;
+  type FloatArray = Float[]|Float32Array|Float64Array;
 
-
-  export function calcCorr(signal:Float32Array, input:Float32Array, sampleRate=44100):Float32Array {
+  export function calcCorr(signal:FloatArray, input:FloatArray, sampleRate?:Integer):Float32Array {
     var fft = new FFT(input.length, sampleRate);
     fft.forward(signal);
     var sig_spectrum = new Float32Array(fft.spectrum);
