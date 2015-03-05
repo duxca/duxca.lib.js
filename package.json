@@ -1,6 +1,6 @@
 {
-  "name": "typescript-test",
-  "version": "1.0.0",
+  "name": "duxca.lib.js",
+  "version": "0.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/legokichi/typescript-test.git"
+    "url": "https://github.com/legokichi/duxca.lib.js.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/legokichi/typescript-test/issues"
+    "url": "https://github.com/legokichi/duxca.lib.js/issues"
   },
-  "homepage": "https://github.com/legokichi/typescript-test",
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-tsd": "^0.1.0",

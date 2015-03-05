@@ -37,7 +37,7 @@ module.exports = (grunt) ->
       options:
         separator: ';'
       test:
-        src: ['js/**/*.js'],
+        src: ['thirdparty/**/*.js', 'js/**/*.js'],
         dest: './tests/sandbox/bundle.js'
 
     espower:
