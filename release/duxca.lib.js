@@ -2299,206 +2299,515 @@ Reverb.prototype.process = function (interleavedSamples){
 
   return outputSamples;
 };
+;;/*
+class FPS
+  constructor: (@period)->
+    @lastTime = performance.now()
+    @fps = 0
+    @counter = 0
+    @onrefresh = ->
+  step: ->
+    currentTime = performance.now()
+    @counter += 1
+    if currentTime - @lastTime > @period
+      @fps = 1000*@counter/(currentTime - @lastTime)
+      @counter = 0
+      @onrefresh(@fps)
+      @lastTime = currentTime
+  valueOf: ->
+    Math.round(@fps*1000)/1000
+*/
+;/*
+class Metronome
+  constructor: (@actx, @tempo=120)->
+    @delay = 8/@tempo
+    @interval = 1/(@tempo/60)
+    @lastTime = @actx.currentTime
+    @nextTime = @interval + @actx.currentTime
+    @destination = @actx.destination
+    @nextTick = ->
+  step: ->
+    if @actx.currentTime - @nextTime >= 0
+      @lastTime = @nextTime
+      @nextTime += @interval
+      @nextTick(@nextTime)
+    return
+*/
+;/*
+class OSC
+  constructor: (@actx)->
+  tone: (freq, startTime, duration)->
+    osc = @actx.createOscillator()
+    osc.start(startTime)
+    osc.stop(startTime + duration)
+    gain = @actx.createGain()
+    gain.gain.value = 0
+    gain.gain.setValueAtTime(0, startTime)
+    gain.gain.linearRampToValueAtTime(1, startTime + 0.01)
+    gain.gain.setValueAtTime(1, startTime + duration - 0.01)
+    gain.gain.linearRampToValueAtTime(0, startTime + duration)
+    osc.connect(gain)
+    gain
+  chirp: (startFreq, stopFreq, startTime, duration)->
+    osc = @actx.createOscillator()
+    osc.frequency.value = startFreq
+    osc.frequency.setValueAtTime(startFreq, startTime)
+    osc.frequency.exponentialRampToValueAtTime(stopFreq, startTime + duration)
+    osc.start(startTime)
+    osc.stop(startTime + duration)
+    gain = @actx.createGain()
+    gain.gain.value = 0
+    gain.gain.setValueAtTime(0, startTime)
+    gain.gain.linearRampToValueAtTime(1, (startTime + duration)/2)
+    gain.gain.linearRampToValueAtTime(0, startTime + duration)
+    osc.connect(gain)
+    gain
+*/
+;/*
+class RecordBuffer
+  constructor: (@bufferSize, @channel, @maximamRecordSize=Infinity)-> # 2ch, バッファ保持数
+    @chsBuffers = [1..@channel].map -> []
+    @lastTime = 0
+    @count = 0
+  clear: ->
+    @chsBuffers = [1..@channel].map -> []
+    @count = 0
+    return
+  add: (buffers, @lastTime=0)->
+    @count++
+    for buffer, i in buffers
+      @chsBuffers[i].push(buffer)
+    if @chsBuffers[0].length >= @maximamRecordSize
+      for chBuffers in @chsBuffers
+        chBuffers.shift()
+    return
+  toPCM: ->
+    toInt16Array(
+      interleave(
+        (mergeBuffers(chBuffers) for chBuffers in @chsBuffers)))
+  merge: (ch=0)->
+    mergeBuffers(@chsBuffers[ch])
+  getChannelData: (n)->
+    mergeBuffers(@chsBuffers[n])
+  mergeBuffers = (chBuffer)->
+    bufferSize = chBuffer[0].length
+    f32ary = new Float32Array(chBuffer.length * bufferSize)
+    for v, i in chBuffer
+      f32ary.set(v, i * bufferSize)
+    f32ary
+  interleave = (chs)->
+    length = chs.length * chs[0].length
+    f32Ary = new Float32Array(length)
+    inputIndex = 0
+    index = 0
+    while index < length
+      for ch, i in chs
+        f32Ary[index++] = ch[inputIndex]
+      inputIndex++
+    f32Ary
+  toInt16Array = (f32ary)->
+    int16ary = new Int16Array(f32ary.length)
+    for v, i in f32ary
+      int16ary[i] = v * 0x7FFF * 0.8 # 32bit -> 16bit
+    int16ary
+*/
+;/*
+class SGSmooth
+  constructor: (@nth_degree_polynomial, @radius)->
+    @currentWorker = 0
+    @workers = [1..1].map (i)->
+      new ServerWorker(workerScript, [@nth_degree_polynomial, @radius])
+  process: (f32arr)->
+    worker = @workers[@currentWorker++]
+    if @workers.length is @currentWorker then @currentWorker = 0
+    new Promise (resolve, reject)->
+      worker.request("calc", f32arr, resolve)
+  workerScript = (p, m)->
+    importScripts("https://cdnjs.cloudflare.com/ajax/libs/mathjs/1.1.1/math.min.js") # math.js
+    self.on "calc", (f32arr, reply)->
+      y = f32arr
+      # http://nekonomics-blog.tumblr.com/post/68363574423/savitzky-golay
+      # http://www.asahi-net.or.jp/~wr9k-oohs/Pages/Infolv/SGMethod/sgvi.html
+      #m = 8 # 平滑化のための前後データ点数
+      #p = 3 # p次の多項式で近似
+      point = 0 # 現在のたたみ込み位置
+      derivatives = [0..p].map -> # p次の微分値
+        new Float32Array(y.length)
+      while y.length > point+2*m+1
+        X = [0..p].map (_, ik)->
+          [-m..m].map (im)->
+            Math.pow(im, ik)
+        Y = Array.prototype.slice.call(y, point, point + 2*m+1)
+        C = math.inv(math.multiply(X, math.transpose(X)))
+        B = math.multiply(C, X)
+        A = math.multiply(B, Y)
+        for k in [0..p]
+          derivatives[k][point+m+1] = math.factorial(k)*A[k]
+        point += 1
+      reply(derivatives, derivatives.map ({buffer})-> buffer)
+*/
+;/*
+class ServerWorker
+  constructor: (fn, args, imports=[])->
+    @url = URL.createObjectURL(
+      new Blob([
+        imports.map((src)-> "importScripts('#{src}');\n").join("") + "\n"
+        "(#{ServerWorker.Server})();\n"
+        "(#{fn})(#{args.map(JSON.stringify).join(",")});"
+      ], {type:"text/javascript"}))
+    @worker = new Worker(@url)
+    @worker.addEventListener "error", (ev)->
+      console.error("#{ev.message}\n  at #{ev.filename}:#{ev.lineno}:#{ev.colno}")
+      return
+    @worker.addEventListener "message", ({data: [id, args]})=>
+      cb = @callbacks[id]
+      delete @callbacks[id]
+      cb(args)
+      return
+    @requestId = 0
+    @callbacks = {}
+  request: (event, [data, transferable]..., callback)->
+    id = @requestId++
+    @callbacks[id] = callback
+    @worker.postMessage([id, event, data], transferable)
+    return
+  terminate: ->
+    @worker.terminate()
+    URL.revokeObjectURL(@url)
+    return
+  @Server = ->
+    handlers = {}
+    self.addEventListener "message", ({data: [id, event, data]})->
+      reply = (args, transferable)->
+        self.postMessage([id, args], transferable)
+        return
+      handlers[event](data, reply)
+      return
+    self.on = (event, callback)->
+      handlers[event] = callback
+      return
+    return
+*/
 ;/// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../thirdparty/dsp/dsp.d.ts" />
+/// <reference path="./duxca.lib.ts" />
 var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        function calcCorr(signal, input, sampleRate) {
-            var fft = new FFT(input.length, sampleRate);
-            fft.forward(signal);
-            var sig_spectrum = new Float32Array(fft.spectrum);
-            var sig_real = new Float32Array(fft.real);
-            var sig_imag = new Float32Array(fft.imag);
-            fft.forward(input);
-            var spectrum = new Float32Array(fft.spectrum);
-            var real = new Float32Array(fft.real);
-            var imag = new Float32Array(fft.imag);
-            var cross_real = Array.prototype.map.call(real, function (_, i) { return sig_real[i] * real[i] / real.length; });
-            var cross_imag = Array.prototype.map.call(imag, function (_, i) { return -sig_real[i] * imag[i] / imag.length; });
-            var inv_real = fft.inverse(cross_real, cross_imag);
-            return inv_real;
-        }
-        lib.calcCorr = calcCorr;
-        function hue2rgb(p, q, t) {
-            if (t < 0) {
-                t += 1;
+        var Signal;
+        (function (Signal) {
+            function indexToFreq(index, sampleRate, fftSize) {
+                return (index * sampleRate) / fftSize;
             }
-            if (t > 1) {
-                t -= 1;
+            Signal.indexToFreq = indexToFreq;
+            function freqToIndex(freq, sampleRate, fftSize) {
+                return (freq * fftSize) / sampleRate | 0;
             }
-            if (t < 1 / 6) {
-                return p + (q - p) * 6 * t;
+            Signal.freqToIndex = freqToIndex;
+            function timeToIndex(sampleRate, time) {
+                return sampleRate * time | 0;
             }
-            if (t < 1 / 2) {
-                return q;
+            Signal.timeToIndex = timeToIndex;
+            function indexToTime(sampleRate, currentIndex) {
+                return currentIndex / sampleRate;
             }
-            if (t < 2 / 3) {
-                return p + (q - p) * (2 / 3 - t) * 6;
+            Signal.indexToTime = indexToTime;
+            function calcCorr(signal, input, sampleRate) {
+                var fft = new FFT(input.length, sampleRate);
+                fft.forward(signal);
+                var sig_spectrum = new Float32Array(fft.spectrum);
+                var sig_real = new Float32Array(fft.real);
+                var sig_imag = new Float32Array(fft.imag);
+                fft.forward(input);
+                var spectrum = new Float32Array(fft.spectrum);
+                var real = new Float32Array(fft.real);
+                var imag = new Float32Array(fft.imag);
+                var cross_real = Array.prototype.map.call(real, function (_, i) { return sig_real[i] * real[i] / real.length; });
+                var cross_imag = Array.prototype.map.call(imag, function (_, i) { return -sig_real[i] * imag[i] / imag.length; });
+                var inv_real = fft.inverse(cross_real, cross_imag);
+                return inv_real;
             }
-            return p;
-        }
-        lib.hue2rgb = hue2rgb;
-        function hslToRgb(h, s, l) {
-            // h, s, l: 0~1
-            var b, g, p, q, r;
-            h *= 5 / 6;
-            if (h < 0) {
-                h = 0;
-            }
-            if (5 / 6 < h) {
-                h = 5 / 6;
-            }
-            if (s === 0) {
-                r = g = b = l;
-            }
-            else {
-                q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1 / 3);
-                g = hue2rgb(p, q, h);
-                b = hue2rgb(p, q, h - 1 / 3);
-            }
-            return [r * 255, g * 255, b * 255];
-        }
-        lib.hslToRgb = hslToRgb;
-        function indexToFreq(index, sampleRate, fftSize) {
-            return (index * sampleRate) / fftSize;
-        }
-        lib.indexToFreq = indexToFreq;
-        function freqToIndex(freq, sampleRate, fftSize) {
-            return (freq * fftSize) / sampleRate | 0;
-        }
-        lib.freqToIndex = freqToIndex;
-        function timeToIndex(sampleRate, time) {
-            return sampleRate * time | 0;
-        }
-        lib.timeToIndex = timeToIndex;
-        function indexToTime(sampleRate, currentIndex) {
-            return currentIndex / sampleRate;
-        }
-        lib.indexToTime = indexToTime;
-        function summation(ary) {
-            var j, len, sum, v;
-            sum = 0;
-            for (j = 0, len = ary.length; j < len; j++) {
-                v = ary[j];
-                sum += v;
-            }
-            return sum;
-        }
-        lib.summation = summation;
-        function average(ary) {
-            return summation(ary) / ary.length;
-        }
-        lib.average = average;
-        function variance(ary) {
-            var ave, j, len, sum, v;
-            ave = average(ary);
-            sum = 0;
-            for (j = 0, len = ary.length; j < len; j++) {
-                v = ary[j];
-                sum += Math.pow(v - ave, 2);
-            }
-            return sum / (ary.length - 1);
-        }
-        lib.variance = variance;
-        function stdev(ary) {
-            return Math.sqrt(variance(ary));
-        }
-        lib.stdev = stdev;
-        function derivative(ary) {
-            var i;
-            return [0].concat((function () {
-                var j, ref, results;
-                results = [];
-                for (i = j = 1, ref = ary.length - 1; 1 <= ref ? j <= ref : j >= ref; i = 1 <= ref ? ++j : --j) {
-                    results.push(ary[i] - ary[i - 1]);
-                }
-                return results;
-            })());
-        }
-        lib.derivative = derivative;
-        function median(ary) {
-            return Array.prototype.slice.call(ary, 0).sort()[ary.length / 2 | 0];
-        }
-        lib.median = median;
-        function KDE(ary, h) {
-            var f, j, kernel, len, results, x;
-            if (h == null) {
-                h = 1.06 * stdev(ary) * Math.pow(ary.length, -1 / 5) + 0.0000000001;
-            }
-            kernel = function (x) {
-                return Math.pow(Math.E, -Math.pow(x, 2) / 2) / Math.sqrt(2 * Math.PI);
-            };
-            f = function (x) {
-                var i, j, len, s, v;
-                s = 0;
-                for (i = j = 0, len = ary.length; j < len; i = ++j) {
-                    v = ary[i];
-                    s += kernel((x - v) / h);
-                }
-                return s / (h * ary.length);
-            };
-            results = [];
-            for (j = 0, len = ary.length; j < len; j++) {
-                x = ary[j];
-                results.push(f(x));
-            }
-            return results;
-        }
-        lib.KDE = KDE;
-        function mode(ary) {
-            return ary[findMax(KDE(ary, 0))[1]];
-        }
-        lib.mode = mode;
-        function gaussian(x) {
-            return 1 / Math.sqrt(2 * Math.PI) * Math.exp(-Math.pow(x, 2) / 2);
-        }
-        lib.gaussian = gaussian;
-        function findMax(ary, min, max) {
-            var i, index, j, ref, ref1, result;
-            if (min == null) {
-                min = 0;
-            }
-            if (max == null) {
-                max = ary.length - 1;
-            }
-            result = -Infinity;
-            index = -1;
-            for (i = j = ref = min, ref1 = max; ref <= ref1 ? j <= ref1 : j >= ref1; i = ref <= ref1 ? ++j : --j) {
-                if (!(ary[i] > result)) {
-                    continue;
-                }
-                result = ary[i];
-                index = i;
-            }
-            return [result, index];
-        }
-        lib.findMax = findMax;
-        function findMin(ary, min, max) {
-            var i, index, j, ref, ref1, result;
-            if (min == null) {
-                min = 0;
-            }
-            if (max == null) {
-                max = ary.length - 1;
-            }
-            result = Infinity;
-            index = -1;
-            for (i = j = ref = min, ref1 = max; ref <= ref1 ? j <= ref1 : j >= ref1; i = ref <= ref1 ? ++j : --j) {
-                if (!(ary[i] < result)) {
-                    continue;
-                }
-                result = ary[i];
-                index = i;
-            }
-            return [result, index];
-        }
-        lib.findMin = findMin;
+            Signal.calcCorr = calcCorr;
+        })(Signal = lib.Signal || (lib.Signal = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));
+;var duxca;
+(function (duxca) {
+    var lib;
+    (function (lib) {
+        var Wave = (function () {
+            function Wave(channel, sampleRate, int16ary) {
+                //int16ary is 16bit nCh PCM
+                var bitsPerSample, i, int16, j, len, offset, size, view;
+                size = int16ary.length * 2;
+                channel = channel;
+                bitsPerSample = 16;
+                offset = 44;
+                this.view = new DataView(new ArrayBuffer(offset + size));
+                this.writeUTFBytes(0, "RIFF");
+                this.view.setUint32(4, offset + size - 8, true);
+                this.writeUTFBytes(8, "WAVE");
+                this.writeUTFBytes(12, "fmt ");
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, channel, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * (bitsPerSample >>> 3) * channel, true);
+                view.setUint16(32, (bitsPerSample >>> 3) * channel, true);
+                view.setUint16(34, bitsPerSample, true);
+                this.writeUTFBytes(36, 'data');
+                view.setUint32(40, size, true);
+                for (i = j = 0, len = int16ary.length; j < len; i = ++j) {
+                    int16 = int16ary[i];
+                    view.setInt16(offset + i * 2, int16, true);
+                }
+            }
+            Wave.prototype.toBlob = function () {
+                return new Blob([this.view], {
+                    type: "audio/wav"
+                });
+            };
+            Wave.prototype.toURL = function () {
+                return URL.createObjectURL(this.toBlob());
+            };
+            Wave.prototype.toAudio = function () {
+                var audio;
+                audio = document.createElement("audio");
+                audio.src = this.toURL();
+                audio.controls = true;
+                return audio;
+            };
+            Wave.prototype.writeUTFBytes = function (offset, str) {
+                var i, j, ref;
+                for (i = j = 0, ref = str.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                    this.view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            };
+            return Wave;
+        })();
+        lib.Wave = Wave;
+    })(lib = duxca.lib || (duxca.lib = {}));
+})(duxca || (duxca = {}));
+/*
+
+
+
+class Wave
+  constructor: (channel, sampleRate, int16ary)->#int16ary is 16bit nCh PCM
+    size = int16ary.length * 2 # データサイズ (byte) # 8bit*2 = 16bit
+    channel = channel # チャンネル数 (1:モノラル or 2:ステレオ)
+    bitsPerSample = 16 # サンプルあたりのビット数 (8 or 16) # 16bit PCM
+    offset = 44 # ヘッダ部分のサイズ
+    view = new DataView(new ArrayBuffer(offset + size)) # バイト配列を作成
+    writeUTFBytes(view, 0, "RIFF")         # Chunk ID # RIFF ヘッダ
+    view.setUint32(4, offset + size - 8, true) # Chunk Size # ファイルサイズ - 8
+    writeUTFBytes(view, 8, "WAVE")         # Format # WAVE ヘッダ
+    writeUTFBytes(view, 12, "fmt ")        # Subchunk 1 ID # fmt チャンク
+    view.setUint32(16, 16, true)           # Subchunk 1 Size # fmt チャンクのバイト数
+    view.setUint16(20, 1, true)            # Audio Format # フォーマットID
+    view.setUint16(22, channel, true)            # Num Channels # チャンネル数
+    view.setUint32(24, sampleRate, true)   # Sample Rate (Hz) # サンプリングレート
+    view.setUint32(28, sampleRate * (bitsPerSample >>> 3) * channel, true) # Byte Rate (サンプリング周波数 * ブロックサイズ) # データ速度
+    view.setUint16(32, (bitsPerSample >>> 3) * channel, true)              # Block Align (チャンネル数 * 1サンプルあたりのビット数 / 8) # ブロックサイズ
+    view.setUint16(34, bitsPerSample, true)# Bits Per Sample # サンプルあたりのビット数
+    writeUTFBytes(view, 36, 'data')        # Subchunk 2 ID
+    view.setUint32(40, size, true)         # Subchunk 2 Size # 波形データのバイト数
+    for int16, i in int16ary
+      view.setInt16(offset + i*2, int16, true)
+    @value = view
+  toBlob: ->
+    new Blob([@value], {type: "audio/wav"})
+  toURL: ->
+    URL.createObjectURL(@toBlob())
+  toAudio: ->
+    audio = document.createElement("audio")
+    audio.src = @toURL()
+    audio.controls = true
+    audio
+  writeUTFBytes = (view, offset, str)->
+    for i in [0...str.length]
+      view.setUint8(offset + i, str.charCodeAt(i), true)
+    return
+*/
+;/// <reference path="../typings/tsd.d.ts" />
+/// <reference path="./duxca.lib.ts" />
+var duxca;
+(function (duxca) {
+    var lib;
+    (function (lib) {
+        var Canvas;
+        (function (Canvas) {
+            function hue2rgb(p, q, t) {
+                if (t < 0) {
+                    t += 1;
+                }
+                if (t > 1) {
+                    t -= 1;
+                }
+                if (t < 1 / 6) {
+                    return p + (q - p) * 6 * t;
+                }
+                if (t < 1 / 2) {
+                    return q;
+                }
+                if (t < 2 / 3) {
+                    return p + (q - p) * (2 / 3 - t) * 6;
+                }
+                return p;
+            }
+            Canvas.hue2rgb = hue2rgb;
+            function hslToRgb(h, s, l) {
+                // h, s, l: 0~1
+                var b, g, p, q, r;
+                h *= 5 / 6;
+                if (h < 0) {
+                    h = 0;
+                }
+                if (5 / 6 < h) {
+                    h = 5 / 6;
+                }
+                if (s === 0) {
+                    r = g = b = l;
+                }
+                else {
+                    q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1 / 3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1 / 3);
+                }
+                return [r * 255, g * 255, b * 255];
+            }
+            Canvas.hslToRgb = hslToRgb;
+        })(Canvas = lib.Canvas || (lib.Canvas = {}));
+    })(lib = duxca.lib || (duxca.lib = {}));
+})(duxca || (duxca = {}));
+/*
+
+initCanvas = (width, height)->
+  cnv = document.createElement("canvas")
+  cnv.width = width
+  cnv.height = height
+  ctx = cnv.getContext("2d")
+  [cnv, ctx]
+
+strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
+  zoomX = if !flagX then 1 else cnv.width/ary.length
+  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
+  ctx.beginPath()
+  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
+  for i in [1...ary.length]
+    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
+  ctx.stroke()
+  return
+
+colLine = (cnv, ctx, x)->
+  ctx.beginPath()
+  ctx.moveTo(x, 0)
+  ctx.lineTo(x, cnv.height)
+  ctx.stroke()
+
+rowLine = (cnv, ctx, y)->
+  ctx.beginPath()
+  ctx.moveTo(0, y)
+  ctx.lineTo(cnv.width, y)
+  ctx.stroke()
+initCanvas = (width, height)->
+  cnv = document.createElement("canvas")
+  cnv.width = width
+  cnv.height = height
+  ctx = cnv.getContext("2d")
+  [cnv, ctx]
+
+
+
+
+getMediaStream = ->
+  new Promise (resolve, reject)->
+    navigator.getUserMedia({video: false, audio: true}, resolve, reject)
+
+strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
+  zoomX = if !flagX then 1 else cnv.width/ary.length
+  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
+  ctx.beginPath()
+  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
+  for i in [1...ary.length]
+    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
+  ctx.stroke()
+  return
+
+
+drawSpectrogramToImageData = (cnv, ctx, spectrogram, max=255)->
+  imgdata = ctx.createImageData(spectrogram.length or 1, spectrogram[0]?.length or 1)
+  for spectrum, i in spectrogram
+    for _, j in spectrum
+      [r, g, b] = hslToRgb(spectrum[j]/max, 0.5, 0.5)
+      [x, y] = [i, imgdata.height - 1 - j]
+      index = x + y*imgdata.width
+      imgdata.data[index*4+0] = b|0
+      imgdata.data[index*4+1] = g|0
+      imgdata.data[index*4+2] = r|0
+      imgdata.data[index*4+3] = 255
+  imgdata
+
+
+
+
+*/
+;/// <reference path="../typings/tsd.d.ts" />
+/*
+
+separate = (arr, length, slidewidth)->
+  results = []
+  point = 0
+  while arr.length > point + length
+    results.push arr.subarray(point, point + length)
+    point += slidewidth
+  results
+
+  getSocket = (url)->
+    new Promise (resolve, reject)->
+      transmitter = io(url)
+      transmitter.on "connect", ->
+        resolve(transmitter)
+      transmitter.on "error", (err)->
+        reject(err)
+        
+get = (url)->
+  new Promise (resolve, reject)->
+    xhr = new XMLHttpRequest()
+    xhr.addEventListener "load", ()->
+      if 200 <= xhr["status"] && xhr["status"] < 300
+        if !xhr["response"]["error"]?
+        then resolve(xhr["response"])
+        else reject(new Error(xhr["response"]["error"]["message"]));
+      else reject(new Error(xhr["status"]));
+    xhr["open"]("GET", url);
+    xhr["responseType"] = "arraybuffer"
+    xhr["send"]()
+
+
+    getPCM = (actx, osc, stopTime=1)->
+      new Promise (resolve, reject)->
+        processor = actx.createScriptProcessor(16384/16, 1, 1)
+        recbuf = new RecordBuffer(processor.bufferSize, 1)
+        stopSample = stopTime * actx.sampleRate
+        #Opera 27.0.1689.33
+        #Chrome 41.0.2259.0 canary (64-bit)
+        console.log processor.onaudioprocess = (ev)->
+          recbuf.add([ev.inputBuffer.getChannelData(0)])
+          currentSample = recbuf.count * recbuf.bufferSize
+          if currentSample - stopSample < 0 then return
+          processor.disconnect(0)
+          processor.onaudioprocess = null
+          data = recbuf.getChannelData(0)
+          recbuf.clear()
+          resolve(data)
+        osc.connect(processor)
+        processor.connect(actx.destination)
+
+*/
 ;/// <reference path="../typings/tsd.d.ts" />
 function hoge(x) {
     return x + x;

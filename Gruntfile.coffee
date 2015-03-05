@@ -68,10 +68,10 @@ module.exports = (grunt) ->
     watch:
       ts:
         files: ["ts/**/*.ts"]
-        tasks: ["typescript:ts", "concat:build"]
+        tasks: ["typescript:ts", "concat:test", "concat:release", "espower:test"]
       test:
         files: ["tests/**/*_test.ts"]
-        tasks: ["typescript:test", "espower:test"]
+        tasks: ["typescript:test", "concat:test", "espower:test"]
 
     connect:
       server:

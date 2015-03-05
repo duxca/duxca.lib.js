@@ -5,6 +5,6 @@
 QUnit.module("duxca.lib");
 
 QUnit.test("calcCorr", function(assert) {
-  var rslt = duxca.lib.calcCorr([1, 0, 0, 0], [1, 1, 1, 1]);
+  var rslt = duxca.lib.Signal.calcCorr([1, 0, 0, 0], [1, 1, 1, 1]);
   return assert.ok(rslt[0] == 0.25);
 });
