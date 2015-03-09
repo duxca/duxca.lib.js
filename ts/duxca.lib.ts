@@ -9,10 +9,6 @@ window.AudioContext = (window.AudioContext or
                        window.webkitAudioContext or
                        window.mozAudioContext)
 */
-type Integer = number;
-type Float = number;
-type FloatArray = Float[]|Float32Array|Float64Array;
-
 /*
 
 separate = (arr, length, slidewidth)->
@@ -30,7 +26,7 @@ separate = (arr, length, slidewidth)->
         resolve(transmitter)
       transmitter.on "error", (err)->
         reject(err)
-        
+
 get = (url)->
   new Promise (resolve, reject)->
     xhr = new XMLHttpRequest()
@@ -45,23 +41,6 @@ get = (url)->
     xhr["send"]()
 
 
-    getPCM = (actx, osc, stopTime=1)->
-      new Promise (resolve, reject)->
-        processor = actx.createScriptProcessor(16384/16, 1, 1)
-        recbuf = new RecordBuffer(processor.bufferSize, 1)
-        stopSample = stopTime * actx.sampleRate
-        #Opera 27.0.1689.33
-        #Chrome 41.0.2259.0 canary (64-bit)
-        console.log processor.onaudioprocess = (ev)->
-          recbuf.add([ev.inputBuffer.getChannelData(0)])
-          currentSample = recbuf.count * recbuf.bufferSize
-          if currentSample - stopSample < 0 then return
-          processor.disconnect(0)
-          processor.onaudioprocess = null
-          data = recbuf.getChannelData(0)
-          recbuf.clear()
-          resolve(data)
-        osc.connect(processor)
-        processor.connect(actx.destination)
+
 
 */

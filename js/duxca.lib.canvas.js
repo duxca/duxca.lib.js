@@ -1,5 +1,4 @@
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="./duxca.lib.ts" />
 var duxca;
 (function (duxca) {
     var lib;
@@ -48,78 +47,66 @@ var duxca;
                 return [r * 255, g * 255, b * 255];
             }
             Canvas.hslToRgb = hslToRgb;
+            function initCanvas(width, height) {
+                var cnv, ctx;
+                cnv = document.createElement("canvas");
+                cnv.width = width;
+                cnv.height = height;
+                ctx = cnv.getContext("2d");
+                return [cnv, ctx];
+            }
+            Canvas.initCanvas = initCanvas;
+            function strokeArray(cnv, ctx, ary, flagX, flagY) {
+                if (flagX === void 0) { flagX = false; }
+                if (flagY === void 0) { flagY = false; }
+                var i, j, ref, zoomX, zoomY;
+                zoomX = !flagX ? 1 : cnv.width / ary.length;
+                zoomY = !flagY ? 1 : cnv.height / Math.max.apply(null, ary);
+                ctx.beginPath();
+                ctx.moveTo(0, cnv.height - ary[0] * zoomY);
+                for (i = j = 1, ref = ary.length; 1 <= ref ? j < ref : j > ref; i = 1 <= ref ? ++j : --j) {
+                    ctx.lineTo(zoomX * i, cnv.height - ary[i] * zoomY);
+                }
+                ctx.stroke();
+            }
+            Canvas.strokeArray = strokeArray;
+            function colLine(cnv, ctx, x) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cnv.height);
+                return ctx.stroke();
+            }
+            Canvas.colLine = colLine;
+            function rowLine(cnv, ctx, y) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(cnv.width, y);
+                return ctx.stroke();
+            }
+            Canvas.rowLine = rowLine;
+            function drawSpectrogramToImageData(cnv, ctx, spectrogram, max) {
+                if (max === void 0) { max = 255; }
+                var _, b, g, i, imgdata, index, j, k, l, len, len1, r, ref, ref1, ref2, spectrum, x, y;
+                if (max == null) {
+                    max = 255;
+                }
+                imgdata = ctx.createImageData(spectrogram.length || 1, ((ref = spectrogram[0]) != null ? ref.length : void 0) || 1);
+                for (i = k = 0, len = spectrogram.length; k < len; i = ++k) {
+                    spectrum = spectrogram[i];
+                    for (j = l = 0, len1 = spectrum.length; l < len1; j = ++l) {
+                        _ = spectrum[j];
+                        ref1 = hslToRgb(spectrum[j] / max, 0.5, 0.5), r = ref1[0], g = ref1[1], b = ref1[2];
+                        ref2 = [i, imgdata.height - 1 - j], x = ref2[0], y = ref2[1];
+                        index = x + y * imgdata.width;
+                        imgdata.data[index * 4 + 0] = b | 0;
+                        imgdata.data[index * 4 + 1] = g | 0;
+                        imgdata.data[index * 4 + 2] = r | 0;
+                        imgdata.data[index * 4 + 3] = 255;
+                    }
+                }
+                return imgdata;
+            }
+            Canvas.drawSpectrogramToImageData = drawSpectrogramToImageData;
         })(Canvas = lib.Canvas || (lib.Canvas = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));
-/*
-
-initCanvas = (width, height)->
-  cnv = document.createElement("canvas")
-  cnv.width = width
-  cnv.height = height
-  ctx = cnv.getContext("2d")
-  [cnv, ctx]
-
-strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
-  zoomX = if !flagX then 1 else cnv.width/ary.length
-  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
-  ctx.beginPath()
-  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
-  for i in [1...ary.length]
-    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
-  ctx.stroke()
-  return
-
-colLine = (cnv, ctx, x)->
-  ctx.beginPath()
-  ctx.moveTo(x, 0)
-  ctx.lineTo(x, cnv.height)
-  ctx.stroke()
-
-rowLine = (cnv, ctx, y)->
-  ctx.beginPath()
-  ctx.moveTo(0, y)
-  ctx.lineTo(cnv.width, y)
-  ctx.stroke()
-initCanvas = (width, height)->
-  cnv = document.createElement("canvas")
-  cnv.width = width
-  cnv.height = height
-  ctx = cnv.getContext("2d")
-  [cnv, ctx]
-
-
-
-
-getMediaStream = ->
-  new Promise (resolve, reject)->
-    navigator.getUserMedia({video: false, audio: true}, resolve, reject)
-
-strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
-  zoomX = if !flagX then 1 else cnv.width/ary.length
-  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
-  ctx.beginPath()
-  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
-  for i in [1...ary.length]
-    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
-  ctx.stroke()
-  return
-
-
-drawSpectrogramToImageData = (cnv, ctx, spectrogram, max=255)->
-  imgdata = ctx.createImageData(spectrogram.length or 1, spectrogram[0]?.length or 1)
-  for spectrum, i in spectrogram
-    for _, j in spectrum
-      [r, g, b] = hslToRgb(spectrum[j]/max, 0.5, 0.5)
-      [x, y] = [i, imgdata.height - 1 - j]
-      index = x + y*imgdata.width
-      imgdata.data[index*4+0] = b|0
-      imgdata.data[index*4+1] = g|0
-      imgdata.data[index*4+2] = r|0
-      imgdata.data[index*4+3] = 255
-  imgdata
-
-
-
-
-*/

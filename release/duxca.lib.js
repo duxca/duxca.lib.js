@@ -2363,54 +2363,117 @@ class OSC
     osc.connect(gain)
     gain
 */
-;/*
-class RecordBuffer
-  constructor: (@bufferSize, @channel, @maximamRecordSize=Infinity)-> # 2ch, バッファ保持数
-    @chsBuffers = [1..@channel].map -> []
-    @lastTime = 0
-    @count = 0
-  clear: ->
-    @chsBuffers = [1..@channel].map -> []
-    @count = 0
-    return
-  add: (buffers, @lastTime=0)->
-    @count++
-    for buffer, i in buffers
-      @chsBuffers[i].push(buffer)
-    if @chsBuffers[0].length >= @maximamRecordSize
-      for chBuffers in @chsBuffers
-        chBuffers.shift()
-    return
-  toPCM: ->
-    toInt16Array(
-      interleave(
-        (mergeBuffers(chBuffers) for chBuffers in @chsBuffers)))
-  merge: (ch=0)->
-    mergeBuffers(@chsBuffers[ch])
-  getChannelData: (n)->
-    mergeBuffers(@chsBuffers[n])
-  mergeBuffers = (chBuffer)->
-    bufferSize = chBuffer[0].length
-    f32ary = new Float32Array(chBuffer.length * bufferSize)
-    for v, i in chBuffer
-      f32ary.set(v, i * bufferSize)
-    f32ary
-  interleave = (chs)->
-    length = chs.length * chs[0].length
-    f32Ary = new Float32Array(length)
-    inputIndex = 0
-    index = 0
-    while index < length
-      for ch, i in chs
-        f32Ary[index++] = ch[inputIndex]
-      inputIndex++
-    f32Ary
-  toInt16Array = (f32ary)->
-    int16ary = new Int16Array(f32ary.length)
-    for v, i in f32ary
-      int16ary[i] = v * 0x7FFF * 0.8 # 32bit -> 16bit
-    int16ary
-*/
+;var duxca;
+(function (duxca) {
+    var lib;
+    (function (lib) {
+        var RecordBuffer = (function () {
+            function RecordBuffer(bufferSize, channel, maximamRecordSize) {
+                if (maximamRecordSize === void 0) { maximamRecordSize = Infinity; }
+                var j, ref, results;
+                this.bufferSize = bufferSize;
+                this.channel = channel;
+                this.maximamRecordSize = maximamRecordSize != null ? maximamRecordSize : Infinity;
+                this.chsBuffers = (function () {
+                    results = [];
+                    for (var j = 1, ref = this.channel; 1 <= ref ? j <= ref : j >= ref; 1 <= ref ? j++ : j--) {
+                        results.push(j);
+                    }
+                    return results;
+                }).apply(this).map(function () {
+                    return [];
+                });
+                this.lastTime = 0;
+                this.count = 0;
+            }
+            RecordBuffer.prototype.clear = function () {
+                var j, ref, results;
+                this.chsBuffers = (function () {
+                    results = [];
+                    for (var j = 1, ref = this.channel; 1 <= ref ? j <= ref : j >= ref; 1 <= ref ? j++ : j--) {
+                        results.push(j);
+                    }
+                    return results;
+                }).apply(this).map(function () {
+                    return [];
+                });
+                this.count = 0;
+            };
+            RecordBuffer.prototype.add = function (buffers, lastTime) {
+                var buffer, chBuffers, i, j, k, len, len1, ref;
+                this.lastTime = lastTime != null ? lastTime : 0;
+                this.count++;
+                for (i = j = 0, len = buffers.length; j < len; i = ++j) {
+                    buffer = buffers[i];
+                    this.chsBuffers[i].push(buffer);
+                }
+                if (this.chsBuffers[0].length >= this.maximamRecordSize) {
+                    ref = this.chsBuffers;
+                    for (k = 0, len1 = ref.length; k < len1; k++) {
+                        chBuffers = ref[k];
+                        chBuffers.shift();
+                    }
+                }
+            };
+            RecordBuffer.prototype.toPCM = function () {
+                var chBuffers;
+                return toInt16Array(interleave((function () {
+                    var j, len, ref, results;
+                    ref = this.chsBuffers;
+                    results = [];
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        chBuffers = ref[j];
+                        results.push(mergeBuffers(chBuffers));
+                    }
+                    return results;
+                }).call(this)));
+            };
+            RecordBuffer.prototype.merge = function (ch) {
+                if (ch === void 0) { ch = 0; }
+                return mergeBuffers(this.chsBuffers[ch]);
+            };
+            RecordBuffer.prototype.getChannelData = function (n) {
+                return mergeBuffers(this.chsBuffers[n]);
+            };
+            return RecordBuffer;
+        })();
+        lib.RecordBuffer = RecordBuffer;
+        function mergeBuffers(chBuffer) {
+            var bufferSize, f32ary, i, j, len, v;
+            bufferSize = chBuffer[0].length;
+            f32ary = new Float32Array(chBuffer.length * bufferSize);
+            for (i = j = 0, len = chBuffer.length; j < len; i = ++j) {
+                v = chBuffer[i];
+                f32ary.set(v, i * bufferSize);
+            }
+            return f32ary;
+        }
+        function interleave(chs) {
+            var ch, f32Ary, i, index, inputIndex, j, len, length;
+            length = chs.length * chs[0].length;
+            f32Ary = new Float32Array(length);
+            inputIndex = 0;
+            index = 0;
+            while (index < length) {
+                for (i = j = 0, len = chs.length; j < len; i = ++j) {
+                    ch = chs[i];
+                    f32Ary[index++] = ch[inputIndex];
+                }
+                inputIndex++;
+            }
+            return f32Ary;
+        }
+        function toInt16Array(f32ary) {
+            var i, int16ary, j, len, v;
+            int16ary = new Int16Array(f32ary.length);
+            for (i = j = 0, len = f32ary.length; j < len; i = ++j) {
+                v = f32ary[i];
+                int16ary[i] = v * 0x7FFF * 0.8; // 32bit -> 16bit
+            }
+            return int16ary;
+        }
+    })(lib = duxca.lib || (duxca.lib = {}));
+})(duxca || (duxca = {}));
 ;/*
 class SGSmooth
   constructor: (@nth_degree_polynomial, @radius)->
@@ -2490,7 +2553,6 @@ class ServerWorker
 */
 ;/// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../thirdparty/dsp/dsp.d.ts" />
-/// <reference path="./duxca.lib.ts" />
 var duxca;
 (function (duxca) {
     var lib;
@@ -2540,24 +2602,24 @@ var duxca;
             function Wave(channel, sampleRate, int16ary) {
                 //int16ary is 16bit nCh PCM
                 var bitsPerSample, i, int16, j, len, offset, size, view;
-                size = int16ary.length * 2;
-                channel = channel;
-                bitsPerSample = 16;
-                offset = 44;
-                this.view = new DataView(new ArrayBuffer(offset + size));
-                this.writeUTFBytes(0, "RIFF");
-                this.view.setUint32(4, offset + size - 8, true);
-                this.writeUTFBytes(8, "WAVE");
-                this.writeUTFBytes(12, "fmt ");
-                view.setUint32(16, 16, true);
-                view.setUint16(20, 1, true);
-                view.setUint16(22, channel, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, sampleRate * (bitsPerSample >>> 3) * channel, true);
-                view.setUint16(32, (bitsPerSample >>> 3) * channel, true);
-                view.setUint16(34, bitsPerSample, true);
-                this.writeUTFBytes(36, 'data');
-                view.setUint32(40, size, true);
+                size = int16ary.length * 2; // データサイズ (byte) # 8bit*2 = 16bit
+                channel = channel; // チャンネル数 (1:モノラル or 2:ステレオ)
+                bitsPerSample = 16; // サンプルあたりのビット数 (8 or 16) # 16bit PCM
+                offset = 44; // ヘッダ部分のサイズ
+                this.view = new DataView(new ArrayBuffer(offset + size)); // バイト配列を作成
+                writeUTFBytes(this.view, 0, "RIFF"); // Chunk ID # RIFF ヘッダ
+                this.view.setUint32(4, offset + size - 8, true); // Chunk Size # ファイルサイズ - 8
+                writeUTFBytes(this.view, 8, "WAVE"); // Format # WAVE ヘッダ
+                writeUTFBytes(this.view, 12, "fmt "); // Subchunk 1 ID # fmt チャンク
+                view.setUint32(16, 16, true); // Subchunk 1 Size # fmt チャンクのバイト数
+                view.setUint16(20, 1, true); // Audio Format # フォーマットID
+                view.setUint16(22, channel, true); // Num Channels # チャンネル数
+                view.setUint32(24, sampleRate, true); // Sample Rate (Hz) # サンプリングレート
+                view.setUint32(28, sampleRate * (bitsPerSample >>> 3) * channel, true); // Byte Rate (サンプリング周波数 * ブロックサイズ) # データ速度
+                view.setUint16(32, (bitsPerSample >>> 3) * channel, true); // Block Align (チャンネル数 * 1サンプルあたりのビット数 / 8) # ブロックサイズ
+                view.setUint16(34, bitsPerSample, true); // Bits Per Sample # サンプルあたりのビット数
+                writeUTFBytes(this.view, 36, 'data'); // Subchunk 2 ID
+                view.setUint32(40, size, true); // Subchunk 2 Size # 波形データのバイト数
                 for (i = j = 0, len = int16ary.length; j < len; i = ++j) {
                     int16 = int16ary[i];
                     view.setInt16(offset + i * 2, int16, true);
@@ -2578,60 +2640,18 @@ var duxca;
                 audio.controls = true;
                 return audio;
             };
-            Wave.prototype.writeUTFBytes = function (offset, str) {
-                var i, j, ref;
-                for (i = j = 0, ref = str.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-                    this.view.setUint8(offset + i, str.charCodeAt(i));
-                }
-            };
             return Wave;
         })();
         lib.Wave = Wave;
+        function writeUTFBytes(view, offset, str) {
+            var i, j, ref;
+            for (i = j = 0, ref = str.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                view.setUint8(offset + i, str.charCodeAt(i));
+            }
+        }
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));
-/*
-
-
-
-class Wave
-  constructor: (channel, sampleRate, int16ary)->#int16ary is 16bit nCh PCM
-    size = int16ary.length * 2 # データサイズ (byte) # 8bit*2 = 16bit
-    channel = channel # チャンネル数 (1:モノラル or 2:ステレオ)
-    bitsPerSample = 16 # サンプルあたりのビット数 (8 or 16) # 16bit PCM
-    offset = 44 # ヘッダ部分のサイズ
-    view = new DataView(new ArrayBuffer(offset + size)) # バイト配列を作成
-    writeUTFBytes(view, 0, "RIFF")         # Chunk ID # RIFF ヘッダ
-    view.setUint32(4, offset + size - 8, true) # Chunk Size # ファイルサイズ - 8
-    writeUTFBytes(view, 8, "WAVE")         # Format # WAVE ヘッダ
-    writeUTFBytes(view, 12, "fmt ")        # Subchunk 1 ID # fmt チャンク
-    view.setUint32(16, 16, true)           # Subchunk 1 Size # fmt チャンクのバイト数
-    view.setUint16(20, 1, true)            # Audio Format # フォーマットID
-    view.setUint16(22, channel, true)            # Num Channels # チャンネル数
-    view.setUint32(24, sampleRate, true)   # Sample Rate (Hz) # サンプリングレート
-    view.setUint32(28, sampleRate * (bitsPerSample >>> 3) * channel, true) # Byte Rate (サンプリング周波数 * ブロックサイズ) # データ速度
-    view.setUint16(32, (bitsPerSample >>> 3) * channel, true)              # Block Align (チャンネル数 * 1サンプルあたりのビット数 / 8) # ブロックサイズ
-    view.setUint16(34, bitsPerSample, true)# Bits Per Sample # サンプルあたりのビット数
-    writeUTFBytes(view, 36, 'data')        # Subchunk 2 ID
-    view.setUint32(40, size, true)         # Subchunk 2 Size # 波形データのバイト数
-    for int16, i in int16ary
-      view.setInt16(offset + i*2, int16, true)
-    @value = view
-  toBlob: ->
-    new Blob([@value], {type: "audio/wav"})
-  toURL: ->
-    URL.createObjectURL(@toBlob())
-  toAudio: ->
-    audio = document.createElement("audio")
-    audio.src = @toURL()
-    audio.controls = true
-    audio
-  writeUTFBytes = (view, offset, str)->
-    for i in [0...str.length]
-      view.setUint8(offset + i, str.charCodeAt(i), true)
-    return
-*/
 ;/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="./duxca.lib.ts" />
 var duxca;
 (function (duxca) {
     var lib;
@@ -2680,81 +2700,69 @@ var duxca;
                 return [r * 255, g * 255, b * 255];
             }
             Canvas.hslToRgb = hslToRgb;
+            function initCanvas(width, height) {
+                var cnv, ctx;
+                cnv = document.createElement("canvas");
+                cnv.width = width;
+                cnv.height = height;
+                ctx = cnv.getContext("2d");
+                return [cnv, ctx];
+            }
+            Canvas.initCanvas = initCanvas;
+            function strokeArray(cnv, ctx, ary, flagX, flagY) {
+                if (flagX === void 0) { flagX = false; }
+                if (flagY === void 0) { flagY = false; }
+                var i, j, ref, zoomX, zoomY;
+                zoomX = !flagX ? 1 : cnv.width / ary.length;
+                zoomY = !flagY ? 1 : cnv.height / Math.max.apply(null, ary);
+                ctx.beginPath();
+                ctx.moveTo(0, cnv.height - ary[0] * zoomY);
+                for (i = j = 1, ref = ary.length; 1 <= ref ? j < ref : j > ref; i = 1 <= ref ? ++j : --j) {
+                    ctx.lineTo(zoomX * i, cnv.height - ary[i] * zoomY);
+                }
+                ctx.stroke();
+            }
+            Canvas.strokeArray = strokeArray;
+            function colLine(cnv, ctx, x) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cnv.height);
+                return ctx.stroke();
+            }
+            Canvas.colLine = colLine;
+            function rowLine(cnv, ctx, y) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(cnv.width, y);
+                return ctx.stroke();
+            }
+            Canvas.rowLine = rowLine;
+            function drawSpectrogramToImageData(cnv, ctx, spectrogram, max) {
+                if (max === void 0) { max = 255; }
+                var _, b, g, i, imgdata, index, j, k, l, len, len1, r, ref, ref1, ref2, spectrum, x, y;
+                if (max == null) {
+                    max = 255;
+                }
+                imgdata = ctx.createImageData(spectrogram.length || 1, ((ref = spectrogram[0]) != null ? ref.length : void 0) || 1);
+                for (i = k = 0, len = spectrogram.length; k < len; i = ++k) {
+                    spectrum = spectrogram[i];
+                    for (j = l = 0, len1 = spectrum.length; l < len1; j = ++l) {
+                        _ = spectrum[j];
+                        ref1 = hslToRgb(spectrum[j] / max, 0.5, 0.5), r = ref1[0], g = ref1[1], b = ref1[2];
+                        ref2 = [i, imgdata.height - 1 - j], x = ref2[0], y = ref2[1];
+                        index = x + y * imgdata.width;
+                        imgdata.data[index * 4 + 0] = b | 0;
+                        imgdata.data[index * 4 + 1] = g | 0;
+                        imgdata.data[index * 4 + 2] = r | 0;
+                        imgdata.data[index * 4 + 3] = 255;
+                    }
+                }
+                return imgdata;
+            }
+            Canvas.drawSpectrogramToImageData = drawSpectrogramToImageData;
         })(Canvas = lib.Canvas || (lib.Canvas = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));
-/*
-
-initCanvas = (width, height)->
-  cnv = document.createElement("canvas")
-  cnv.width = width
-  cnv.height = height
-  ctx = cnv.getContext("2d")
-  [cnv, ctx]
-
-strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
-  zoomX = if !flagX then 1 else cnv.width/ary.length
-  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
-  ctx.beginPath()
-  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
-  for i in [1...ary.length]
-    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
-  ctx.stroke()
-  return
-
-colLine = (cnv, ctx, x)->
-  ctx.beginPath()
-  ctx.moveTo(x, 0)
-  ctx.lineTo(x, cnv.height)
-  ctx.stroke()
-
-rowLine = (cnv, ctx, y)->
-  ctx.beginPath()
-  ctx.moveTo(0, y)
-  ctx.lineTo(cnv.width, y)
-  ctx.stroke()
-initCanvas = (width, height)->
-  cnv = document.createElement("canvas")
-  cnv.width = width
-  cnv.height = height
-  ctx = cnv.getContext("2d")
-  [cnv, ctx]
-
-
-
-
-getMediaStream = ->
-  new Promise (resolve, reject)->
-    navigator.getUserMedia({video: false, audio: true}, resolve, reject)
-
-strokeArray = (cnv, ctx, ary, flagX=false, flagY=false)->
-  zoomX = if !flagX then 1 else cnv.width/ary.length
-  zoomY = if !flagY then 1 else cnv.height/Math.max.apply(null, ary)
-  ctx.beginPath()
-  ctx.moveTo(0, cnv.height - ary[0]*zoomY)
-  for i in [1...ary.length]
-    ctx.lineTo(zoomX*i, cnv.height - ary[i]*zoomY)
-  ctx.stroke()
-  return
-
-
-drawSpectrogramToImageData = (cnv, ctx, spectrogram, max=255)->
-  imgdata = ctx.createImageData(spectrogram.length or 1, spectrogram[0]?.length or 1)
-  for spectrum, i in spectrogram
-    for _, j in spectrum
-      [r, g, b] = hslToRgb(spectrum[j]/max, 0.5, 0.5)
-      [x, y] = [i, imgdata.height - 1 - j]
-      index = x + y*imgdata.width
-      imgdata.data[index*4+0] = b|0
-      imgdata.data[index*4+1] = g|0
-      imgdata.data[index*4+2] = r|0
-      imgdata.data[index*4+3] = 255
-  imgdata
-
-
-
-
-*/
 ;/// <reference path="../typings/tsd.d.ts" />
 /*
 

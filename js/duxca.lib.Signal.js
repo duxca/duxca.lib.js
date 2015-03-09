@@ -1,6 +1,5 @@
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../thirdparty/dsp/dsp.d.ts" />
-/// <reference path="./duxca.lib.ts" />
 var duxca;
 (function (duxca) {
     var lib;
