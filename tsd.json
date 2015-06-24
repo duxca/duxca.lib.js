@@ -6,16 +6,16 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "qunit/qunit.d.ts": {
-      "commit": "fe39944e4d9a9aaa9b4eba7d85d2135d7535bd4e"
+      "commit": "3e117d8c9ddf6443d7ed71a74f6bc8b6bcd36077"
     },
     "es6-promise/es6-promise.d.ts": {
-      "commit": "6b01db5703d2fc7fa1d12a13bf188f9dd6b3c471"
+      "commit": "3e117d8c9ddf6443d7ed71a74f6bc8b6bcd36077"
     },
     "webaudioapi/waa.d.ts": {
-      "commit": "6b01db5703d2fc7fa1d12a13bf188f9dd6b3c471"
+      "commit": "3e117d8c9ddf6443d7ed71a74f6bc8b6bcd36077"
     },
     "webrtc/MediaStream.d.ts": {
-      "commit": "6b01db5703d2fc7fa1d12a13bf188f9dd6b3c471"
+      "commit": "3e117d8c9ddf6443d7ed71a74f6bc8b6bcd36077"
     }
   }
 }

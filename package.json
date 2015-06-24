@@ -4,8 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "grunt run",
-    "init": "npm update; bower update; tsd update; grunt run"
+    "init": "npm run update; npm run build",
+    "update": "npm update; bower update; tsd update --save --overwrite",
+    "build": "npm run build-rm; npm run build-coffee; npm run build-ts",
+    "build-rm": "rm -rf output/*; rm -rf lib/*",
+    "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
+    "build-ts": "node node_modules/typescript/bin/tsc --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration src/ts/*.ts;",
+    "report": "open http://localhost:8000/report/",
+    "demo": "open http://localhost:8000/demo/",
+    "start": "Python -m SimpleHTTPServer 8000 &",
+    "stop": "killall -- Python -m SimpleHTTPServer 8000; exit 0"
   },
   "repository": {
     "type": "git",
@@ -18,39 +26,10 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-tsd": "^0.1.0",
-    "grunt-typescript": "^0.6.1",
-    "grunt-espower": "",
-    "grunt-contrib": "^0.11.0",
-    "grunt-contrib-clean": "^0.5.0",
-    "grunt-contrib-coffee": "^0.10.1",
-    "grunt-contrib-compass": "^0.7.2",
-    "grunt-contrib-compress": "^0.8.0",
-    "grunt-contrib-concat": "^0.4.0",
-    "grunt-contrib-connect": "^0.7.1",
-    "grunt-contrib-copy": "^0.5.0",
-    "grunt-contrib-csslint": "^0.2.0",
-    "grunt-contrib-cssmin": "^0.9.0",
-    "grunt-contrib-handlebars": "^0.8.0",
-    "grunt-contrib-htmlmin": "^0.2.0",
-    "grunt-contrib-imagemin": "^0.7.2",
-    "grunt-contrib-jade": "^0.11.0",
-    "grunt-contrib-jasmine": "^0.6.5",
-    "grunt-contrib-jshint": "^0.10.0",
-    "grunt-contrib-jst": "^0.6.0",
-    "grunt-contrib-less": "^0.11.4",
-    "grunt-contrib-nodeunit": "^0.3.3",
-    "grunt-contrib-qunit": "^0.4.0",
-    "grunt-contrib-requirejs": "^0.4.4",
-    "grunt-contrib-sass": "^0.7.4",
-    "grunt-contrib-stylus": "^0.15.1",
-    "grunt-contrib-symlink": "^0.3.0",
-    "grunt-contrib-uglify": "^0.4.1",
-    "grunt-contrib-watch": "^0.6.1",
-    "grunt-contrib-yuidoc": "^0.5.2",
-    "typescript": "^1.4.1"
+    "coffee-script": "^1.9.3",
+    "espower-cli": "^0.2.0",
+    "plato": "^1.5.0",
+    "typescript": "^1.5.0-beta"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
