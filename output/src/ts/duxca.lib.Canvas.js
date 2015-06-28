@@ -1,4 +1,3 @@
-/// <reference path="../../typings/tsd.d.ts" />
 var duxca;
 (function (duxca) {
     var lib;
@@ -26,7 +25,6 @@ var duxca;
             Canvas.hue2rgb = hue2rgb;
             function hslToRgb(h, s, l) {
                 // h, s, l: 0~1
-                var r, g, b;
                 h *= 5 / 6;
                 if (h < 0) {
                     h = 0;
@@ -34,6 +32,7 @@ var duxca;
                 if (5 / 6 < h) {
                     h = 5 / 6;
                 }
+                var r, g, b;
                 if (s === 0) {
                     r = g = b = l;
                 }
@@ -55,15 +54,15 @@ var duxca;
                 return [cnv, ctx];
             }
             Canvas.initCanvas = initCanvas;
-            function strokeArray(cnv, ctx, arr, flagX, flagY) {
+            function strokeArray(cnv, ctx, ary, flagX, flagY) {
                 if (flagX === void 0) { flagX = false; }
                 if (flagY === void 0) { flagY = false; }
-                var zoomX = !flagX ? 1 : cnv.width / arr.length;
-                var zoomY = !flagY ? 1 : cnv.height / Math.max.apply(null, arr);
+                var zoomX = !flagX ? 1 : cnv.width / ary.length;
+                var zoomY = !flagY ? 1 : cnv.height / Math.max.apply(null, ary);
                 ctx.beginPath();
-                ctx.moveTo(0, cnv.height - arr[0] * zoomY);
-                for (var i = 1; 1 < arr.length; i++) {
-                    ctx.lineTo(zoomX * i, cnv.height - arr[i] * zoomY);
+                ctx.moveTo(0, cnv.height - ary[0] * zoomY);
+                for (var i = 1; i < ary.length; i++) {
+                    ctx.lineTo(zoomX * i, cnv.height - ary[i] * zoomY);
                 }
                 ctx.stroke();
             }
@@ -84,12 +83,10 @@ var duxca;
             Canvas.rowLine = rowLine;
             function drawSpectrogramToImageData(cnv, ctx, spectrogram, max) {
                 if (max === void 0) { max = 255; }
-                var x, y;
                 var imgdata = ctx.createImageData(spectrogram.length, spectrogram[0].length);
                 for (var i = 0; i < spectrogram.length; i++) {
-                    var spectrum = spectrogram[i];
-                    for (var j = 0; j < spectrum.length; j++) {
-                        var _a = hslToRgb(spectrum[j] / max, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
+                    for (var j = 0; j < spectrogram[i].length; j++) {
+                        var _a = hslToRgb(spectrogram[i][j] / max, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
                         var _b = [i, imgdata.height - 1 - j], x = _b[0], y = _b[1];
                         var index = x + y * imgdata.width;
                         imgdata.data[index * 4 + 0] = b | 0;

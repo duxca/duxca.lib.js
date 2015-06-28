@@ -10,8 +10,8 @@
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
-        "outDir": "../output",
-        "rootDir": "../"
+        "outDir": "../../output",
+        "rootDir": "../../"
     },
     "filesGlob": [
         "./**/*.ts",
