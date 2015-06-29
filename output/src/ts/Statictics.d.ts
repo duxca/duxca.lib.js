@@ -10,5 +10,6 @@ declare module duxca.lib.Statictics {
     function gaussian(x: number): number;
     function findMax(arr: number[] | Float32Array): [number, number];
     function findMin(arr: number[] | Float32Array): [number, number];
+    function LWMA(arr: Float32Array): number;
     function log(arr: number[] | Float32Array): void;
 }

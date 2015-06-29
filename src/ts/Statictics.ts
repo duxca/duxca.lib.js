@@ -94,6 +94,21 @@ module duxca.lib.Statictics {
     return [result, index];
   }
 
+  export function LWMA(arr: Float32Array): number {
+    // liner weighted moving average
+    var a = 0;
+    var b = 0;
+    var i = 0;
+    var j = arr.length - 1;
+    while(i < arr.length){
+      a += arr[i] * j;
+      b += j;
+      i++;
+      j--;
+    }
+    return a / b
+  }
+
   export function log(arr:number[]|Float32Array): void{
     console.log(
       "len", arr.length, "\n",

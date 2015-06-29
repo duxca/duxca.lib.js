@@ -30,6 +30,13 @@ var duxca;
                 return inv_real;
             }
             Signal.correlation = correlation;
+            function fft(signal, sampleRate) {
+                if (sampleRate === void 0) { sampleRate = 44100; }
+                var fft = new FFT(signal.length, sampleRate);
+                fft.forward(signal);
+                return [fft.real, fft.imag, fft.spectrum];
+            }
+            Signal.fft = fft;
             function createChirpSignal(pulse_length) {
                 var pulse_real = new Float32Array(pulse_length);
                 var pulse_imag = new Float32Array(pulse_length);

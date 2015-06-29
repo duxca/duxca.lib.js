@@ -26,6 +26,12 @@ module duxca.lib.Signal {
     return inv_real;
   }
 
+  export function fft(signal: Float32Array, sampleRate=44100): [Float32Array, Float32Array, Float32Array]{
+    var fft = new FFT(signal.length, sampleRate);
+    fft.forward(signal);
+    return [fft.real, fft.imag, fft.spectrum];
+  }
+
   export function createChirpSignal(pulse_length: number): Float32Array{
     var pulse_real = new Float32Array(pulse_length);
     var pulse_imag = new Float32Array(pulse_length);
@@ -41,4 +47,6 @@ module duxca.lib.Signal {
     var inv_real = fft.inverse(pulse_real, pulse_imag);
     return inv_real;
   }
+
+
 }

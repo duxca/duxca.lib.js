@@ -15,7 +15,8 @@
     "tests"
   ],
   "dependencies": {
-    "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master"
+    "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
+    "console.snapshot": "git://github.com/adriancooney/console.snapshot.git"
   },
   "devDependencies": {
     "qunit": "~1.17.1",

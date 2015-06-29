@@ -98,6 +98,21 @@ var duxca;
                 return [result, index];
             }
             Statictics.findMin = findMin;
+            function LWMA(arr) {
+                // liner weighted moving average
+                var a = 0;
+                var b = 0;
+                var i = 0;
+                var j = arr.length - 1;
+                while (i < arr.length) {
+                    a += arr[i] * j;
+                    b += j;
+                    i++;
+                    j--;
+                }
+                return a / b;
+            }
+            Statictics.LWMA = LWMA;
             function log(arr) {
                 console.log("len", arr.length, "\n", "min", findMin(arr), "\n", "max", findMax(arr), "\n", "ave", average(arr), "\n", "med", median(arr), "\n", "mode", mode(arr), "\n", "var", variance(arr), "\n", "stdev", stdev(arr));
             }

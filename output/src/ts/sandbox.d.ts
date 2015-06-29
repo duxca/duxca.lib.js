@@ -1,6 +1,8 @@
-declare class OSC {
-    actx: AudioContext;
-    constructor(actx: AudioContext);
-    createAudioBufferFromArrayBuffer(arr: Float32Array, sampleRate: number): AudioBuffer;
-    createAudioNodeFromAudioBuffer(abuf: AudioBuffer): AudioBufferSourceNode;
+/// <reference path="../../../tsd/console.snapshot/console.snapshot.d.ts" />
+/// <reference path="../../../tsd/navigator.getUserMedia/navigator.getUserMedia.d.ts" />
+declare module duxca.lib.Sandbox {
+    function testScriptProcessor(): void;
+    function testSpectrum(): void;
+    function testOSC(): void;
+    function testChirp(): void;
 }

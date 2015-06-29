@@ -19,8 +19,9 @@
     ],
     "files": [
         "./CanvasRender.ts",
+        "./OSC.ts",
+        "./Sandbox.ts",
         "./Signal.ts",
-        "./Statictics.ts",
-        "./sandbox.ts"
+        "./Statictics.ts"
     ]
 }
