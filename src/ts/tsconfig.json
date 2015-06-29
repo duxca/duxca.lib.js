@@ -18,17 +18,9 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "./duxca.lib.Ajax.ts",
-        "./duxca.lib.Canvas.ts",
-        "./duxca.lib.FPS.ts",
-        "./duxca.lib.Math.ts",
-        "./duxca.lib.Metronome.ts",
-        "./duxca.lib.OSC.ts",
-        "./duxca.lib.RecordBuffer.ts",
-        "./duxca.lib.SGSmooth.ts",
-        "./duxca.lib.ServerWorker.ts",
-        "./duxca.lib.Signal.ts",
-        "./duxca.lib.Wave.ts",
-        "./duxca.lib.ts"
+        "./CanvasRender.ts",
+        "./Signal.ts",
+        "./Statictics.ts",
+        "./sandbox.ts"
     ]
 }

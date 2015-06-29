@@ -6,10 +6,11 @@
   "scripts": {
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; tsd update --save --overwrite",
-    "build": "npm run build-rm; npm run build-coffee; npm run build-ts",
+    "build": "npm run build-rm; npm run build-ts; npm run concat",
     "build-rm": "rm -rf output/*; rm -rf lib/*",
     "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
     "build-ts": "node node_modules/typescript/bin/tsc --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration src/ts/*.ts;",
+    "concat": "cd output/src/ts; cat CanvasRender.js Signal.js Statictics.js sandbox.js > ../../../lib/duxca.lib.js ",
     "report": "open http://localhost:8000/report/",
     "demo": "open http://localhost:8000/demo/",
     "start": "Python -m SimpleHTTPServer 8000 &",
@@ -19,7 +20,7 @@
     "type": "git",
     "url": "https://github.com/legokichi/duxca.lib.js.git"
   },
-  "author": "",
+  "author": "legokichi",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/legokichi/duxca.lib.js/issues"
