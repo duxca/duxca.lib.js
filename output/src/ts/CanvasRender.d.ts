@@ -4,6 +4,7 @@ declare module duxca.lib {
         cnv: HTMLCanvasElement;
         ctx: CanvasRenderingContext2D;
         constructor(width: number, height: number);
+        clear(): void;
         drawSignal(signal: number[] | Float32Array, flagX?: boolean, flagY?: boolean): void;
         drawColLine(x: number): void;
         drawRowLine(y: number): void;

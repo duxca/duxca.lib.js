@@ -11,5 +11,5 @@ declare module duxca.lib.Statictics {
     function findMax(arr: number[] | Float32Array): [number, number];
     function findMin(arr: number[] | Float32Array): [number, number];
     function LWMA(arr: Float32Array): number;
-    function log(arr: number[] | Float32Array): void;
+    function all(arr: number[] | Float32Array): void;
 }

@@ -109,7 +109,7 @@ module duxca.lib.Statictics {
     return a / b
   }
 
-  export function log(arr:number[]|Float32Array): void{
+  export function all(arr:number[]|Float32Array): void{
     console.log(
       "len", arr.length, "\n",
       "min",findMin(arr), "\n",

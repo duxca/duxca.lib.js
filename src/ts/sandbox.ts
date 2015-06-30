@@ -2,18 +2,119 @@
 /// <reference path="../../tsd/navigator.getUserMedia/navigator.getUserMedia.d.ts"/>
 
 module duxca.lib.Sandbox {
+
   navigator.getUserMedia = (navigator.getUserMedia ||
                             navigator.webkitGetUserMedia ||
                             navigator.mozGetUserMedia);
 
-  export function testScriptProcessor(): void {
-    console.group("testScriptProcessor");
-    console.time("testScriptProcessor");
-    
+  export function testDetect(): void{
+    console.group("testDetect");
+    console.time("testDetect");
     navigator.getUserMedia({video: false, audio: true}, (stream)=>{
       var actx = new AudioContext();
       var source = actx.createMediaStreamSource(stream);
-      var processor = actx.createScriptProcessor(Math.pow(2, 8), 1, 1);
+      var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1);
+
+      source.connect(processor);
+      processor.connect(actx.destination);
+
+      var render_corr = new duxca.lib.CanvasRender(128, 128);
+
+      var raw_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 10));
+      var cliped_chirp = raw_chirp.subarray(0, raw_chirp.length/2);
+      var resized_chirp = new Float32Array(processor.bufferSize*2);
+      resized_chirp.set(cliped_chirp, 0);
+
+      var cacheBuffer = new Float32Array(processor.bufferSize*2);
+
+      var osc = new duxca.lib.OSC(actx);
+      var abuf = osc.createAudioBufferFromArrayBuffer(cliped_chirp, 44100);
+
+      var count = 0;
+      processor.addEventListener("audioprocess", handler);
+
+      function handler(ev: AudioProcessingEvent){
+        if(count > 100) {
+          stream.stop();
+          return end();
+        }
+
+        var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+        anode.connect(actx.destination);
+        anode.start(actx.currentTime);
+        
+        cacheBuffer.set(ev.inputBuffer.getChannelData(0), (processor.bufferSize%2) * processor.bufferSize);
+
+        var corr = duxca.lib.Signal.correlation(resized_chirp, cacheBuffer);
+        var cliped_corr = corr.subarray(0, corr.length/2);
+
+        console.log(
+          "max", duxca.lib.Statictics.findMax(cliped_corr), "\n",
+          "var", duxca.lib.Statictics.variance(cliped_corr), "\n"
+        );
+
+        render_corr.cnv.width = cliped_corr.length;
+        render_corr.drawSignal(cliped_corr, false, true);
+        console.screenshot(render_corr.cnv);
+
+        count++;
+      }
+
+    }, (err)=>{console.error(err); end();} );
+    function end(){
+      console.timeEnd("testDetect");
+      console.groupEnd();
+    }
+  }
+
+  export function testRecord(): void {
+    console.group("testRecord");
+    console.time("testRecord");
+
+    navigator.getUserMedia({video: false, audio: true}, (stream)=>{
+      var actx = new AudioContext();
+      var source = actx.createMediaStreamSource(stream);
+      var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1);
+      source.connect(processor);
+      processor.connect(actx.destination);
+
+      var recbuf = new RecordBuffer(processor.bufferSize, processor.channelCount);
+      var count = 0;
+      processor.addEventListener("audioprocess", handler);
+
+      function handler(ev: AudioProcessingEvent){
+        if(++count > 100) {
+          processor.removeEventListener("audioprocess", handler);
+          stream.stop();
+          var pcm = recbuf.toPCM();
+          //recbuf.clear();
+          var wav = new duxca.lib.Wave(recbuf.channel, actx.sampleRate, pcm);
+          var audio = wav.toAudio()
+          audio.loop = true;
+          audio.play();
+          console.log(recbuf, wav, audio);
+          return end();
+        }
+        if(count % 10 === 0) console.log(count);
+        recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+      }
+
+    }, (err)=>{console.error(err); end();} );
+
+    function end(){
+      console.timeEnd("testRecord");
+      console.groupEnd();
+    }
+  }
+
+  export function testScriptProcessor(): void {
+    console.group("testScriptProcessor");
+    console.time("testScriptProcessor");
+
+    navigator.getUserMedia({video: false, audio: true}, (stream)=>{
+      var actx = new AudioContext();
+      var source = actx.createMediaStreamSource(stream);
+      var processor = actx.createScriptProcessor(Math.pow(2, 9), 1, 1);
       source.connect(processor);
       processor.connect(actx.destination);
 
@@ -147,11 +248,11 @@ module duxca.lib.Sandbox {
     render_corr.drawSignal(corr, true, true);
 
     console.screenshot(render_cliped.cnv);
-    duxca.lib.Statictics.log(cliped_chirp);
+    duxca.lib.Statictics.all(cliped_chirp);
     console.screenshot(render_noised.cnv);
-    duxca.lib.Statictics.log(noised_chirp);
+    duxca.lib.Statictics.all(noised_chirp);
     console.screenshot(render_corr.cnv);
-    duxca.lib.Statictics.log(corr);
+    duxca.lib.Statictics.all(corr);
 
     console.timeEnd("testChirp");
     console.groupEnd();

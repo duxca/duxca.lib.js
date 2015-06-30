@@ -113,10 +113,10 @@ var duxca;
                 return a / b;
             }
             Statictics.LWMA = LWMA;
-            function log(arr) {
+            function all(arr) {
                 console.log("len", arr.length, "\n", "min", findMin(arr), "\n", "max", findMax(arr), "\n", "ave", average(arr), "\n", "med", median(arr), "\n", "mode", mode(arr), "\n", "var", variance(arr), "\n", "stdev", stdev(arr));
             }
-            Statictics.log = log;
+            Statictics.all = all;
         })(Statictics = lib.Statictics || (lib.Statictics = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

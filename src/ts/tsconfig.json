@@ -20,8 +20,11 @@
     "files": [
         "./CanvasRender.ts",
         "./OSC.ts",
+        "./RecordBuffer.ts",
         "./Sandbox.ts",
         "./Signal.ts",
-        "./Statictics.ts"
+        "./Statictics.ts",
+        "./Util.ts",
+        "./Wave.ts"
     ]
 }

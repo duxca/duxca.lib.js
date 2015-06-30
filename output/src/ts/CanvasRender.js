@@ -49,6 +49,9 @@ var duxca;
                 this.cnv.height = height;
                 this.ctx = this.cnv.getContext("2d");
             }
+            CanvasRender.prototype.clear = function () {
+                this.cnv.width = this.cnv.width;
+            };
             CanvasRender.prototype.drawSignal = function (signal, flagX, flagY) {
                 if (flagX === void 0) { flagX = false; }
                 if (flagY === void 0) { flagY = false; }
