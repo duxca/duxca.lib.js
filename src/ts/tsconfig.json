@@ -19,6 +19,7 @@
     ],
     "files": [
         "./CanvasRender.ts",
+        "./Metronome.ts",
         "./OSC.ts",
         "./RecordBuffer.ts",
         "./Sandbox.ts",

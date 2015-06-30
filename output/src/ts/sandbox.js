@@ -1,5 +1,7 @@
+/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
+/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/navigator.getUserMedia/navigator.getUserMedia.d.ts"/>
+/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
 var duxca;
 (function (duxca) {
     var lib;
@@ -9,6 +11,25 @@ var duxca;
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
+            function testDetect2() {
+                console.group("testDetect2");
+                console.time("testDetect2");
+                var maybeStream = new Promise(function (resolbe, reject) {
+                    return navigator.getUserMedia({ video: false, audio: true }, resolbe, reject);
+                });
+                maybeStream.then(function (stream) {
+                    var actx = new AudioContext();
+                    var source = actx.createMediaStreamSource(stream);
+                    var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1);
+                    source.connect(processor);
+                    processor.connect(actx.destination);
+                }).catch(function end(err) {
+                    err && console.error(err);
+                    console.timeEnd("testDetect");
+                    console.groupEnd();
+                });
+            }
+            Sandbox.testDetect2 = testDetect2;
             function testDetect() {
                 console.group("testDetect");
                 console.time("testDetect");
@@ -33,13 +54,15 @@ var duxca;
                             stream.stop();
                             return end();
                         }
-                        var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-                        anode.connect(actx.destination);
-                        anode.start(actx.currentTime);
+                        if (count % 2 === 0) {
+                            var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+                            anode.connect(actx.destination);
+                            anode.start(actx.currentTime);
+                        }
                         cacheBuffer.set(ev.inputBuffer.getChannelData(0), (processor.bufferSize % 2) * processor.bufferSize);
                         var corr = duxca.lib.Signal.correlation(resized_chirp, cacheBuffer);
                         var cliped_corr = corr.subarray(0, corr.length / 2);
-                        console.log("max", duxca.lib.Statictics.findMax(cliped_corr), "\n", "var", duxca.lib.Statictics.variance(cliped_corr), "\n");
+                        console.log("min", duxca.lib.Statictics.findMax(cliped_corr), "\n", "max", duxca.lib.Statictics.findMin(cliped_corr), "\n", "ave", duxca.lib.Statictics.average(cliped_corr), "\n", "med", duxca.lib.Statictics.median(cliped_corr), "\n", "var", duxca.lib.Statictics.variance(cliped_corr), "\n");
                         render_corr.cnv.width = cliped_corr.length;
                         render_corr.drawSignal(cliped_corr, false, true);
                         console.screenshot(render_corr.cnv);

@@ -1,3 +1,4 @@
+/// <reference path="../../../tsd/DataView/DataView.d.ts" />
 declare module duxca.lib {
     class Wave {
         view: DataView;

@@ -17,5 +17,11 @@
     "webrtc/MediaStream.d.ts": {
       "commit": "6f04d25ad38982d372cc3cda62fa4c0eef9e24d7"
     }
+    "bluebird/bluebird.d.ts": {
+      "commit": "3d80989bbba37cbe6ef0682c94fa7d8cb95f196d"
+    },
+    "zepto/zepto.d.ts": {
+      "commit": "3d80989bbba37cbe6ef0682c94fa7d8cb95f196d"
+    }
   }
 }
