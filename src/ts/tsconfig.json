@@ -19,6 +19,7 @@
     ],
     "files": [
         "./CanvasRender.ts",
+        "./FPS.ts",
         "./Metronome.ts",
         "./OSC.ts",
         "./RecordBuffer.ts",

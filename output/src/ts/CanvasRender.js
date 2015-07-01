@@ -55,6 +55,9 @@ var duxca;
             CanvasRender.prototype.drawSignal = function (signal, flagX, flagY) {
                 if (flagX === void 0) { flagX = false; }
                 if (flagY === void 0) { flagY = false; }
+                if (flagY) {
+                    signal = duxca.lib.Signal.standard(signal, 1);
+                }
                 var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
                 var zoomY = !flagY ? 1 : this.cnv.height / Math.max.apply(null, signal);
                 this.ctx.beginPath();

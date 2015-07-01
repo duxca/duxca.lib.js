@@ -34,6 +34,7 @@ module duxca.lib {
 
   export class RecordBuffer {
 
+    sampleRate: number
     bufferSize: number;
     channel: number;
     maximamRecordSize: number;
@@ -41,7 +42,8 @@ module duxca.lib {
     sampleTimes: number[];
     count: number;
 
-    constructor(bufferSize:number, channel:number, maximamRecordSize:number=Infinity) {
+    constructor(sampleRate: number, bufferSize:number, channel:number, maximamRecordSize:number=Infinity) {
+      this.sampleRate = sampleRate;
       this.bufferSize = bufferSize;
       this.channel = channel;
       this.maximamRecordSize = maximamRecordSize != null ? maximamRecordSize : Infinity;
@@ -61,11 +63,11 @@ module duxca.lib {
       this.count = 0;
     }
 
-    add(buffers:Float32Array[], currentTime:number):void {
+    add(chsBuffer:Float32Array[], currentTime:number):void {
       this.sampleTimes.push(currentTime)
       this.count++;
-      for(var i=0; i<buffers.length; i++){
-        this.chsBuffers[i].push(buffers[i]);
+      for(var i=0; i<chsBuffer.length; i++){
+        this.chsBuffers[i].push(chsBuffer[i]);
       }
       if (this.chsBuffers[0].length >= this.maximamRecordSize) {
         for(var i=0; i<this.chsBuffers.length; i++){

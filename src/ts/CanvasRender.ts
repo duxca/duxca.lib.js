@@ -43,12 +43,15 @@ module duxca.lib {
       this.cnv.height = height;
       this.ctx = <CanvasRenderingContext2D>this.cnv.getContext("2d");
     }
-    
+
     clear(): void{
       this.cnv.width = this.cnv.width;
     }
 
-    drawSignal(signal:number[]|Float32Array, flagX:boolean=false, flagY:boolean=false):void {
+    drawSignal(signal:Float32Array, flagX:boolean=false, flagY:boolean=false):void {
+      if(flagY){
+        signal = duxca.lib.Signal.standard(signal, 1);
+      }
       var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
       var zoomY = !flagY ? 1 : this.cnv.height / Math.max.apply(null, signal);
       this.ctx.beginPath();

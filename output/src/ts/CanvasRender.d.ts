@@ -5,7 +5,7 @@ declare module duxca.lib {
         ctx: CanvasRenderingContext2D;
         constructor(width: number, height: number);
         clear(): void;
-        drawSignal(signal: number[] | Float32Array, flagX?: boolean, flagY?: boolean): void;
+        drawSignal(signal: Float32Array, flagX?: boolean, flagY?: boolean): void;
         drawColLine(x: number): void;
         drawRowLine(y: number): void;
         drawSpectrogram(spectrogram: Float32Array[], max?: number): void;

@@ -5,9 +5,20 @@ var duxca;
     (function (lib) {
         var Signal;
         (function (Signal) {
+            function standard(arr, max_val) {
+                if (max_val === void 0) { max_val = 1; }
+                var min = duxca.lib.Statictics.findMin(arr)[0];
+                var max = duxca.lib.Statictics.findMax(arr)[0];
+                var _arr = new Float32Array(arr.length);
+                for (var j = 0; j < arr.length; j++) {
+                    _arr[j] = (arr[j] - min) / (max - min) * max_val;
+                }
+                return _arr;
+            }
+            Signal.standard = standard;
             function correlation(signalA, signalB, sampleRate) {
                 if (signalA.length !== signalB.length)
-                    throw new Error("unmatch signal length A and B");
+                    throw new Error("unmatch signal length A and B as " + signalA.length + " and " + signalB.length);
                 var fft = new FFT(signalA.length, sampleRate);
                 fft.forward(signalA);
                 //var a_spectrum = new Float32Array(fft.spectrum);

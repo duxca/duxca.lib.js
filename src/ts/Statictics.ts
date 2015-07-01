@@ -25,6 +25,10 @@ module duxca.lib.Statictics {
     return Math.sqrt(variance(arr));
   }
 
+  export function stdscore(arr:number[]|Float32Array, x:number):number {
+    return 10*(x - average(arr))/variance(arr)+50;
+  }
+
   export function derivative(arr:number[]|Float32Array):number[] {
     var results = [0];
     for(var i=1; 0<arr.length; i++){

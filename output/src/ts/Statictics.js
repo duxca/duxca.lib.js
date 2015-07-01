@@ -29,6 +29,10 @@ var duxca;
                 return Math.sqrt(variance(arr));
             }
             Statictics.stdev = stdev;
+            function stdscore(arr, x) {
+                return 10 * (x - average(arr)) / variance(arr) + 50;
+            }
+            Statictics.stdscore = stdscore;
             function derivative(arr) {
                 var results = [0];
                 for (var i = 1; 0 < arr.length; i++) {

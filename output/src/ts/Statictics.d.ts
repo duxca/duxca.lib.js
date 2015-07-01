@@ -3,6 +3,7 @@ declare module duxca.lib.Statictics {
     function average(arr: number[] | Float32Array): number;
     function variance(arr: number[] | Float32Array): number;
     function stdev(arr: number[] | Float32Array): number;
+    function stdscore(arr: number[] | Float32Array, x: number): number;
     function derivative(arr: number[] | Float32Array): number[];
     function median(arr: number[] | Float32Array): number;
     function KDE(arr: number[] | Float32Array, h?: number): number[];

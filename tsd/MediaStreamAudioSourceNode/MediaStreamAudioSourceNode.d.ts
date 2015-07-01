@@ -1,6 +1,6 @@
 
 interface MediaStream{
-
+  stop(): void;
 }
 
 interface AudioContext {

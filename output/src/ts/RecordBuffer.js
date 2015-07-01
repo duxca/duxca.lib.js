@@ -32,8 +32,9 @@ var duxca;
             return int16arr;
         }
         var RecordBuffer = (function () {
-            function RecordBuffer(bufferSize, channel, maximamRecordSize) {
+            function RecordBuffer(sampleRate, bufferSize, channel, maximamRecordSize) {
                 if (maximamRecordSize === void 0) { maximamRecordSize = Infinity; }
+                this.sampleRate = sampleRate;
                 this.bufferSize = bufferSize;
                 this.channel = channel;
                 this.maximamRecordSize = maximamRecordSize != null ? maximamRecordSize : Infinity;
@@ -51,11 +52,11 @@ var duxca;
                 }
                 this.count = 0;
             };
-            RecordBuffer.prototype.add = function (buffers, currentTime) {
+            RecordBuffer.prototype.add = function (chsBuffer, currentTime) {
                 this.sampleTimes.push(currentTime);
                 this.count++;
-                for (var i = 0; i < buffers.length; i++) {
-                    this.chsBuffers[i].push(buffers[i]);
+                for (var i = 0; i < chsBuffer.length; i++) {
+                    this.chsBuffers[i].push(chsBuffer[i]);
                 }
                 if (this.chsBuffers[0].length >= this.maximamRecordSize) {
                     for (var i = 0; i < this.chsBuffers.length; i++) {

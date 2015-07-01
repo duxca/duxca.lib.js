@@ -2,8 +2,18 @@
 
 module duxca.lib.Signal {
 
+  export function standard(arr: Float32Array, max_val=1):Float32Array {
+    var min = duxca.lib.Statictics.findMin(arr)[0];
+    var max = duxca.lib.Statictics.findMax(arr)[0];
+    var _arr = new Float32Array(arr.length);
+    for(var j=0; j<arr.length; j++){
+      _arr[j] = (arr[j] - min) / (max - min) * max_val;
+    }
+    return _arr;
+  }
+
   export function correlation(signalA: Float32Array, signalB: Float32Array, sampleRate?:number):Float32Array {
-    if(signalA.length !== signalB.length) throw new Error("unmatch signal length A and B")
+    if(signalA.length !== signalB.length) throw new Error("unmatch signal length A and B as "+signalA.length+" and "+signalB.length)
     var fft = new FFT(signalA.length, sampleRate);
     fft.forward(signalA);
     //var a_spectrum = new Float32Array(fft.spectrum);
