@@ -42,12 +42,13 @@ module duxca.lib.Signal {
     return [fft.real, fft.imag, fft.spectrum];
   }
 
-  export function createChirpSignal(pulse_length: number): Float32Array{
+  export function createChirpSignal(pulse_length: number, downchirp=false): Float32Array{
+    var flag = downchirp ? 1 : -1;
     var pulse_real = new Float32Array(pulse_length);
     var pulse_imag = new Float32Array(pulse_length);
     for(var i=0; i<pulse_length/2; i++){
       pulse_real[i] = Math.cos(Math.PI*i*(i/pulse_length + 1/2));
-      pulse_imag[i] = -Math.sin(Math.PI*i*(i/pulse_length + 1/2));
+      pulse_imag[i] = flag*Math.sin(Math.PI*i*(i/pulse_length + 1/2));
     }
     for(var i=pulse_length/2+1; i<pulse_length; i++){
       pulse_real[i] = pulse_real[pulse_length-i];

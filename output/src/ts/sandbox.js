@@ -11,6 +11,12 @@ var duxca;
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
+            /*console.screenshot = (cnv)=>{
+              var img = new Image();
+              img.src = cnv.toDataURL("image/png");
+              document.body.appendChild(img);
+              document.body.appendChild(document.createElement("br"));
+            };*/
             function testDetect2() {
                 console.group("testDetect2");
                 console.time("testDetect2");
@@ -23,11 +29,15 @@ var duxca;
                     var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1);
                     source.connect(processor);
                     processor.connect(actx.destination);
-                    var raw_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 12));
-                    var cliped_chirp = raw_chirp.subarray(0, raw_chirp.length / 2);
+                    var up_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 14), false);
+                    var down_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 14), true);
+                    var cliped_chirp = up_chirp;
+                    for (var i = 0; i < cliped_chirp.length; i++) {
+                        cliped_chirp[i] += down_chirp[i];
+                    }
                     var osc = new duxca.lib.OSC(actx);
                     var abuf = osc.createAudioBufferFromArrayBuffer(cliped_chirp, 44100);
-                    var met = new lib.Metronome(actx, 0.25);
+                    var met = new lib.Metronome(actx, 0.5);
                     met.nextTick = function () {
                         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
                         anode.connect(actx.destination);
@@ -43,11 +53,13 @@ var duxca;
                         function recur() {
                             console.log(rfps + "/60\t" + pfps + "/" + (actx.sampleRate / processor.bufferSize * 1000 | 0) / 1000);
                             rfps.step();
-                            if (actx.currentTime > 1) {
-                                console.groupEnd();
-                                stream.stop();
-                                processor.removeEventListener("audioprocess", handler);
-                                resolve(Promise.resolve([recbuf, cliped_chirp]));
+                            if (actx.currentTime > 2) {
+                                setTimeout(function () {
+                                    stream.stop();
+                                    processor.removeEventListener("audioprocess", handler);
+                                    console.groupEnd();
+                                    resolve(Promise.resolve([recbuf, cliped_chirp]));
+                                }, met.interval * 1000);
                                 return;
                             }
                             met.step();
@@ -73,7 +85,7 @@ var duxca;
                     var pcm = recbuf.toPCM();
                     var wav = new duxca.lib.Wave(recbuf.channel, recbuf.sampleRate, pcm);
                     var audio = wav.toAudio();
-                    audio.autoplay = true;
+                    //audio.autoplay = true;
                     document.body.appendChild(audio);
                     var rawdata = recbuf.merge(0);
                     console.group("rawdata:" + rawdata.length);
@@ -117,6 +129,8 @@ var duxca;
                     });
                 }).then(function (_a) {
                     var rawdata = _a[0], cliped_chirp = _a[1];
+                    console.group("correlation");
+                    console.time("correlation");
                     console.log(rawdata.length, cliped_chirp.length);
                     var render = new duxca.lib.CanvasRender(128, 128);
                     var windowsize = cliped_chirp.length;
@@ -133,15 +147,40 @@ var duxca;
                         }
                     }
                     var concat_corr = duxca.lib.Signal.standard(concat_corr, 100);
-                    console.log("min", duxca.lib.Statictics.findMin(concat_corr), "\n", "max", duxca.lib.Statictics.findMax(concat_corr), "\n", "ave:", duxca.lib.Statictics.average(concat_corr), "\n", "med:", duxca.lib.Statictics.median(concat_corr), "\n", "var:", duxca.lib.Statictics.variance(concat_corr), "\n");
-                    for (var i = 0; i < concat_corr.length; i += windowsize) {
-                        var _corr = concat_corr.subarray(i, i + windowsize);
-                        var _b = duxca.lib.Statictics.findMax(_corr), max = _b[0], maxid = _b[1];
-                        console.log("ptr:", i, "\n", "peak:", [max, maxid], "\n", "stdscore", duxca.lib.Statictics.stdscore(concat_corr, concat_corr[i + maxid]), "\n");
+                    var ave = duxca.lib.Statictics.average(concat_corr);
+                    var vari = duxca.lib.Statictics.variance(concat_corr);
+                    console.log("ave:", ave, "\n", "med:", duxca.lib.Statictics.median(concat_corr), "\n", "var:", vari, "\n");
+                    var stdscores = [];
+                    for (var i = 0; i < concat_corr.length; i++) {
+                        var stdscore = 10 * (concat_corr[i] - ave) / vari + 50;
+                        stdscores.push(stdscore);
+                    }
+                    var splitsize = Math.pow(2, 10);
+                    for (var i = 0; i < concat_corr.length; i += splitsize) {
+                        var _corr = concat_corr.subarray(i, i + splitsize);
+                        var __corr = concat_corr.subarray(i, i + splitsize * 2);
+                        var pulses = [];
+                        for (var j = i; j < i + splitsize * 2; j++) {
+                            if (stdscores[j] > 80) {
+                                var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j - i]);
+                                if (localscore > 60) {
+                                    console.log("_stdscore", j, stdscores[j], localscore);
+                                    pulses.push(j);
+                                }
+                            }
+                        }
+                        console.log("ptr:", i);
                         render.cnv.width = _corr.length;
                         render.drawSignal(_corr);
+                        var _b = duxca.lib.Statictics.findMax(pulses), _j = _b[0], id = _b[1];
+                        if (id > 0) {
+                            console.log("stdscore", stdscores[_j], "index", _j);
+                            render.drawColLine(_j - i);
+                        }
                         console.screenshot(render.cnv);
                     }
+                    console.timeEnd("correlation");
+                    console.groupEnd();
                 }).catch(function end(err) {
                     console.error(err);
                 }).then(function () {
