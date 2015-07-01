@@ -4,6 +4,7 @@
 /// <reference path="../../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts" />
 declare module duxca.lib.Sandbox {
     function testDetect2(): void;
+    function showChirp(): void;
     function testDetect(): void;
     function testRecord(): void;
     function testScriptProcessor(): void;

@@ -15,6 +15,11 @@ module duxca.lib.Sandbox {
     document.body.appendChild(img);
     document.body.appendChild(document.createElement("br"));
   };*/
+
+
+
+
+
   export function testDetect2(): void{
     console.group("testDetect2");
     console.time("testDetect2");
@@ -29,17 +34,15 @@ module duxca.lib.Sandbox {
       source.connect(processor);
       processor.connect(actx.destination);
 
-      var up_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 14), false);
-      var down_chirp = duxca.lib.Signal.createChirpSignal(Math.pow(2, 14), true);
-      var cliped_chirp = up_chirp;
-      for(var i=0; i<cliped_chirp.length; i++){
-        cliped_chirp[i] += down_chirp[i];
-      }
-
+      var pulse = duxca.lib.Signal.createBarkerCodedChirp(3, 12);
+      for(var pow=0; pulse.length > Math.pow(2, pow); pow++);
+      var cliped_chirp = new Float32Array(Math.pow(2, pow));
+      cliped_chirp.set(pulse, 0);
+      console.log(pulse.length, cliped_chirp.length);
 
       var osc = new duxca.lib.OSC(actx);
       var abuf = osc.createAudioBufferFromArrayBuffer(cliped_chirp, 44100);
-      var met = new Metronome(actx, 0.5);
+      var met = new Metronome(actx, 1);
       met.nextTick = ()=>{
         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
         anode.connect(actx.destination);
@@ -58,7 +61,7 @@ module duxca.lib.Sandbox {
         function recur(){
           console.log(rfps+"/60\t"+pfps+"/"+(actx.sampleRate/processor.bufferSize*1000|0)/1000);
           rfps.step();
-          if(actx.currentTime > 2) {
+          if(actx.currentTime > 5) {
             setTimeout(()=>{
               stream.stop();
               processor.removeEventListener("audioprocess", handler);
@@ -189,27 +192,20 @@ module duxca.lib.Sandbox {
         var _corr = concat_corr.subarray(i, i+splitsize);
         var __corr = concat_corr.subarray(i, i+splitsize*2);
 
-        var pulses:number[] = [];
-        for(var j=i; j<i+splitsize*2; j++){
-          if(stdscores[j]>80){
-            var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j-i]);
-            if(localscore>60){
-              console.log("_stdscore", j, stdscores[j], localscore);
-              pulses.push(j);
-            }
-          }
-        }
-
         console.log("ptr:", i);
         render.cnv.width = _corr.length;
         render.drawSignal(_corr);
 
-        var [_j, id] = duxca.lib.Statictics.findMax(pulses)
-        if(id>0){
-          console.log("stdscore", stdscores[_j], "index", _j);
-          render.drawColLine(_j-i);
-        }
 
+        for(var j=i; j<i+splitsize; j++){
+          if(stdscores[j]>400){
+            var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j-i]);
+            if(localscore>60){
+              console.log("stdscore", stdscores[j], localscore, "index", j);
+              render.drawColLine(j-i);
+            }
+          }
+        }
         console.screenshot(render.cnv);
       }
 
@@ -224,6 +220,34 @@ module duxca.lib.Sandbox {
   }
 
 
+
+  export function showChirp(): void{
+    var bitwidth = Math.pow(2, 10);
+    var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
+    var down_chirp = new Float32Array(up_chirp);
+    for(var i=0; i<down_chirp.length; i++){
+      down_chirp[i] *= -1;
+    }
+    var render = new duxca.lib.CanvasRender(128, 128);
+    render.cnv.width = up_chirp.length;
+    render.drawSignal(up_chirp, true, true);
+    console.screenshot(render.element);
+    render.cnv.width = up_chirp.length;
+    render.drawSignal(down_chirp, true, true);
+    console.screenshot(render.element);
+    /*
+    var pulse = new Float32Array(bitwidth/2*5);
+    var code = duxca.lib.Signal.createBarkerCode(4);
+    for(var i=0; i<code.length; i++){
+      for(var j=0; j<bitwidth; j++){
+        pulse[i*bitwidth/2+j] += (code[i] === 1) ? up_chirp[j] : down_chirp[j];
+      }
+    }*/
+    var pulse = duxca.lib.Signal.createBarkerCodedChirp(13);
+    render.cnv.width = pulse.length;
+    render.drawSignal(pulse, true, true);
+    console.screenshot(render.element);
+  }
 
   export function testDetect(): void{
     console.group("testDetect");

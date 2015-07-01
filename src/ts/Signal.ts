@@ -59,5 +59,45 @@ module duxca.lib.Signal {
     return inv_real;
   }
 
+  export function createBarkerCode(n: number): number[]{
+    switch(n){
+      case 2: return [1, -1];
+      case 3: return [1, 1, -1];
+      case 4: return [1, 1, -1, 1];
+      case 5: return [1, 1, 1, -1, 1];
+      case 7: return [1, 1, 1, -1, -1, 1, -1];
+      case 11: return [1, 1, 1, -1, -1, -1, 1, -1, -1, 1, -1];
+      case 13: return [1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1];
+      default: throw new Error("cannot make barker code outer 2, 3, 4, 5, 7, 11, 13");
+    }
+  }
+
+  export function autocorr(arr: number[]): number[]{
+    function _autocorr(j:number): number{
+      var sum = 0;
+      for(var i=0; i<arr.length-j; i++) sum += arr[i]*arr[i+j];
+      return sum;
+    }
+    return arr.map((v,j)=> _autocorr(j));
+  }
+
+  export function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower=10): Float32Array{
+    var bitwidth = Math.pow(2, bitWithBinaryPower);
+    var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
+    var down_chirp = new Float32Array(up_chirp);
+    for(var i=0; i<down_chirp.length; i++){
+      down_chirp[i] *= -1;
+    }
+    var pulse = new Float32Array(bitwidth/2*barkerCodeN+bitwidth/2);
+    var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
+    for(var i=0; i<code.length; i++){
+      var tmp = (code[i] === 1) ? up_chirp : down_chirp;
+      for(var j=0; j<tmp.length; j++){
+        pulse[i*bitwidth/2+j] += tmp[j];
+      }
+    }
+    return pulse;
+  }
+
 
 }
