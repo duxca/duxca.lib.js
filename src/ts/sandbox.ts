@@ -16,7 +16,261 @@ module duxca.lib.Sandbox {
     document.body.appendChild(document.createElement("br"));
   };*/
 
+  export function testDetect3(): void{
+    var PULSE_INTERVAL_SEC = 1;
+    var RECORD_SEC = 3;
+    var CUTOFF_STANDARDSCORE = 100;
 
+    console.group("testDetect3");
+    console.time("testDetect3");
+
+    var maybeStream = new Promise<MediaStream>((resolbe, reject)=>
+      navigator.getUserMedia({video: false, audio: true}, resolbe, reject));
+
+    maybeStream.then((stream)=>{
+      var actx = new AudioContext();
+      var source = actx.createMediaStreamSource(stream);
+      var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+      source.connect(processor);
+      processor.connect(actx.destination);
+
+      console.group("create barker coded chirp signal");
+      console.time("create barker coded chirp signal");
+      var pulse = duxca.lib.Signal.createBarkerCodedChirp(13, 12);
+      for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
+      var barkerChirp = new Float32Array(Math.pow(2, pow));
+      barkerChirp.set(pulse, 0);
+      console.timeEnd("create barker coded chirp signal");
+      console.groupEnd();
+
+      console.group("requestAnimationFrame, audioprocess, metronome");
+      console.time("requestAnimationFrame, audioprocess, metronome");
+      return new Promise<[RecordBuffer, Float32Array]>((resolve, reject)=>{
+
+        var osc = new duxca.lib.OSC(actx);
+        var abuf = osc.createAudioBufferFromArrayBuffer(barkerChirp, 44100);
+        var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
+        var met = new Metronome(actx, PULSE_INTERVAL_SEC);
+        var rfps = new FPS(1000);
+        var pfps = new FPS(1000);
+        met.nextTick = nextTick;
+        processor.addEventListener("audioprocess", handler);
+        nextTick();
+        recur();
+
+        function handler(ev: AudioProcessingEvent){
+          pfps.step();
+          recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+        }
+
+        function nextTick(){
+          var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+          anode.connect(actx.destination);
+          anode.start(met.nextTime);
+        }
+
+        function recur(){
+          console.log(rfps+"/60", pfps+"/"+(actx.sampleRate/processor.bufferSize*1000|0)/1000);
+          rfps.step();
+          if(actx.currentTime > RECORD_SEC) {
+            setTimeout(()=>{
+              stream.stop();
+              processor.removeEventListener("audioprocess", handler);
+              console.timeEnd("requestAnimationFrame, audioprocess, metronome");
+              console.groupEnd();
+              resolve(Promise.resolve([recbuf, barkerChirp]));
+            }, met.interval*1000);// wait beep
+            return;
+          }
+          met.step();
+          requestAnimationFrame(recur);
+        }
+      });
+    }).then(([recbuf, barkerChirp])=>{
+      var render = new duxca.lib.CanvasRender(128, 128);
+
+      console.group("show chirp");
+      console.time("show chirp");
+      var _barkerChirp = duxca.lib.Signal.normalize(barkerChirp, 128);
+      var splitsize = Math.pow(2, 10);
+      var lastptr = 0;
+      for(var i=0; i<_barkerChirp.length; i+=splitsize){
+        var part = _barkerChirp.subarray(i, i+splitsize);
+        render.cnv.width = part.length;
+        render.drawSignal(part, false, false);
+        console.log(
+          lastptr+"-"+(i-1)+"/"+_barkerChirp.length,
+          (i-lastptr)/recbuf.sampleRate*1000+"ms",
+          render.cnv.width+"x"+render.cnv.height
+        );
+        console.screenshot(render.element);
+        lastptr = i;
+      }
+      console.timeEnd("show chirp");
+      console.groupEnd();
+
+      console.group("show record");
+      console.time("show record");
+      var pcm = recbuf.toPCM();
+      var wav = new duxca.lib.Wave(recbuf.channel, recbuf.sampleRate, pcm);
+      var audio = wav.toAudio();
+      //audio.autoplay = true;
+      document.body.appendChild(audio);
+      console.timeEnd("show record");
+      console.groupEnd();
+
+      console.group("calc correlation");
+      console.time("calc correlation");
+      var rawdata = recbuf.merge();
+      recbuf.clear();
+      var windowsize = barkerChirp.length;
+      var resized_charp = new Float32Array(windowsize*2); // for overwrap adding way correlation
+      resized_charp.set(barkerChirp, 0);
+      var buffer = new Float32Array(windowsize*2); // for overwrap adding way correlation
+      var correlation = new Float32Array(rawdata.length);
+      for(var i=0; rawdata.length - (i+windowsize) >= resized_charp.length; i+=windowsize){
+        buffer.set(rawdata.subarray(i, i+windowsize), 0);
+        var corr = duxca.lib.Signal.correlation(buffer, resized_charp);
+        for(var j=0;j<corr.length;j++){
+          correlation[i+j] = corr[j];
+        }
+      }
+      console.timeEnd("calc correlation");
+      console.groupEnd();
+
+      console.group("calc stdscores");
+      console.time("calc stdscores");
+      var _correlation = duxca.lib.Signal.normalize(correlation, 100);
+      var ave = duxca.lib.Statictics.average(_correlation);
+      var vari = duxca.lib.Statictics.variance(_correlation);
+      console.log(
+        "ave:", ave, "\n",
+        "med:", duxca.lib.Statictics.median(_correlation), "\n",
+        "var:", vari, "\n"
+      );
+      var stdscores = new Float32Array(_correlation.length);
+      for(var i=0; i<_correlation.length; i++){
+        stdscores[i] = 10*(_correlation[i] - ave)/vari+50;
+      }
+      console.timeEnd("calc stdscores");
+      console.groupEnd();
+
+      console.group("show correlation and stdscores");
+      console.time("show correlation and stdscores");
+      var render = new duxca.lib.CanvasRender(128, 128);
+      var splitsize = Math.pow(2, 10);
+      var _correlation = duxca.lib.Signal.normalize(correlation, 128);
+      var _stdscores = duxca.lib.Signal.normalize(stdscores, 128);
+      var min = duxca.lib.Statictics.findMin(stdscores)[0];
+      var max = duxca.lib.Statictics.findMax(stdscores)[0];
+      var stdscoreline = new Float32Array(splitsize);
+      for(var i=0; i<stdscoreline.length; i++){
+        stdscoreline[i] = (CUTOFF_STANDARDSCORE - min) / (max - min) * 128;
+      }
+      var lastptr = 0;
+      for(var i=0; i<_correlation.length; i+=splitsize){
+        var corpart = _correlation.subarray(i, i+splitsize);
+        var stdpart = _stdscores.subarray(i, i+splitsize);
+        render.cnv.width = part.length;
+        render.ctx.strokeStyle = "gray";
+        render.drawSignal(stdpart);
+        render.ctx.strokeStyle = "gray";
+        render.drawSignal(stdscoreline);
+        if(i%(PULSE_INTERVAL_SEC*recbuf.sampleRate) > (i+splitsize)%(PULSE_INTERVAL_SEC*recbuf.sampleRate)){
+          var intvlptr = ((i/(PULSE_INTERVAL_SEC*recbuf.sampleRate)|0)+1)*PULSE_INTERVAL_SEC*recbuf.sampleRate;
+          render.ctx.strokeStyle = "red";
+          render.drawColLine(intvlptr-i);
+        }
+        console.log(
+          lastptr+"-"+(i-1)+"/"+_correlation.length,
+          (i-lastptr)/recbuf.sampleRate*1000+"ms",
+          render.cnv.width+"x"+render.cnv.height
+        );
+        for(var j=i;j<i+splitsize; j++){
+          if(stdscores[j] > CUTOFF_STANDARDSCORE){
+            console.log("stdscore", stdscores[j]);
+          }
+        }
+        render.ctx.strokeStyle = "black";
+        render.drawSignal(corpart);
+        console.screenshot(render.cnv);
+        lastptr = i;
+      }
+      console.timeEnd("calc");
+      console.groupEnd();
+      var splitsize = PULSE_INTERVAL_SEC*recbuf.sampleRate;
+      var count = 0;
+      for(var i=0; i<stdscores.length; i+=splitsize){
+        var stdpart = stdscores.subarray(i, i+splitsize);
+        console.log(count++, i, duxca.lib.Statictics.findMax(stdpart));
+      }
+      console.group("calc");
+      console.time("calc");
+
+      console.timeEnd("calc");
+      console.groupEnd();
+
+      console.group("show spectrogram");
+      console.time("show spectrogram");
+      return new Promise<[Float32Array, Float32Array]>((resolve, reject)=>{
+        var windowsize = Math.pow(2, 8); // spectrgram height
+        var slidewidth = Math.pow(2, 6); // spectrgram width rate
+        var sampleRate = recbuf.sampleRate;
+        console.log(
+          "sampleRate:", sampleRate, "\n",
+          "windowsize:", windowsize, "\n",
+          "slidewidth:", slidewidth, "\n",
+          "windowsize(ms):", windowsize/sampleRate*1000, "\n",
+          "slidewidth(ms):", slidewidth/sampleRate*1000, "\n"
+        );
+        var spectrums: Float32Array[] = [];
+        var ptr = 0;
+        var lstptr = 0;
+        var count = 0;
+        recur();
+
+        function recur(){
+          if(ptr+windowsize > rawdata.length){
+            draw();
+            console.timeEnd("show spectrogram");
+            console.groupEnd();
+            return resolve(Promise.resolve([rawdata, barkerChirp]));
+          }
+          var spectrum = duxca.lib.Signal.fft(rawdata.subarray(ptr, ptr+windowsize), sampleRate)[2];
+          for(var i=0; i<spectrum.length;i++){
+            spectrum[i] = spectrum[i]*20000;
+          }
+          spectrums.push(spectrum);
+          if(count%512===511){
+            draw();
+          }
+          ptr += slidewidth;
+          count++;
+          setTimeout(recur);
+        }
+
+        function draw(){
+          console.log(
+            "ptr", lstptr+"-"+(ptr-1)+"/"+rawdata.length,
+            "ms", lstptr/sampleRate*1000+"-"+(ptr-1)/sampleRate*1000+"/"+rawdata.length*1000/sampleRate,
+            spectrums.length+"x"+spectrums[0].length
+          );
+          render.cnv.width = spectrums.length;
+          render.cnv.height = spectrums[0].length;
+          render.drawSpectrogram(spectrums);
+          console.screenshot(render.cnv);
+          spectrums = [];
+          lstptr = ptr;
+        }
+      });
+    }).catch(function end(err){
+      console.error(err);
+      err instanceof Error && console.error(err.stack);
+    }).then(()=>{
+      console.timeEnd("testDetect2");
+      console.groupEnd();
+    });
+  }
 
 
 
