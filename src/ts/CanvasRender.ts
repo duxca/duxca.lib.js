@@ -50,7 +50,7 @@ module duxca.lib {
 
     drawSignal(signal:Float32Array, flagX:boolean=false, flagY:boolean=false):void {
       if(flagY){
-        signal = duxca.lib.Signal.standard(signal, 1);
+        signal = duxca.lib.Signal.normalize(signal, 1);
       }
       var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
       var zoomY = !flagY ? 1 : this.cnv.height / Math.max.apply(null, signal);

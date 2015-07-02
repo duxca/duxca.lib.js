@@ -13,4 +13,5 @@ declare module duxca.lib.Statictics {
     function findMin(arr: number[] | Float32Array): [number, number];
     function LWMA(arr: Float32Array): number;
     function all(arr: number[] | Float32Array): void;
+    function k_means1D(data: number[], k: number): number[];
 }

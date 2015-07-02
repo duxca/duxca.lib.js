@@ -146,7 +146,7 @@ var duxca;
                             concat_corr[i + j] = corr[j];
                         }
                     }
-                    var concat_corr = duxca.lib.Signal.standard(concat_corr, 100);
+                    var concat_corr = duxca.lib.Signal.normalize(concat_corr, 100);
                     var ave = duxca.lib.Statictics.average(concat_corr);
                     var vari = duxca.lib.Statictics.variance(concat_corr);
                     console.log("ave:", ave, "\n", "med:", duxca.lib.Statictics.median(concat_corr), "\n", "var:", vari, "\n");

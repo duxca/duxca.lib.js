@@ -124,4 +124,40 @@ module duxca.lib.Statictics {
       "var",variance(arr), "\n",
       "stdev",stdev(arr));
   }
+
+  export function k_means1D(data:number[], k:number){
+    var klass: number[] = [];
+    for(var i=0; i<data.length; i++){
+      klass[i] = (Math.random()*10000|0)%k;
+    }
+    var count = 0;
+    recur:while(true){
+      if(++count > 100000) throw new Error("Maximum call stack size exceeded");
+      var laststate = klass.slice(0);
+      var sums:number[][] = [];
+      for(var j=0; j<k; j++){
+        sums[j] = [];
+      }
+      for(var i=0; i<data.length; i++){
+        sums[klass[i]].push(data[i]);
+      }
+      var aves:number[] = [];
+      for(var j=0; j<k; j++){
+        aves[j] = duxca.lib.Statictics.average(sums[j]);
+      }
+      for(var i=0; i<data.length; i++){
+        for(var j=0; j<aves.length; j++){
+          if(Math.abs(aves[klass[i]] - data[i]) > Math.abs(aves[j] - data[i])){
+            klass[i] = j;
+          }
+        }
+      }
+      for(var i=0; i<klass.length; i++){
+        if(klass[i] !== laststate[i]){
+          continue recur;
+        }
+      }
+      return klass;
+    }
+  }
 }

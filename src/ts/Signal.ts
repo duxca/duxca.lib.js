@@ -2,7 +2,7 @@
 
 module duxca.lib.Signal {
 
-  export function standard(arr: Float32Array, max_val=1):Float32Array {
+  export function normalize(arr: Float32Array, max_val=1):Float32Array {
     var min = duxca.lib.Statictics.findMin(arr)[0];
     var max = duxca.lib.Statictics.findMax(arr)[0];
     var _arr = new Float32Array(arr.length);

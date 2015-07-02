@@ -121,6 +121,43 @@ var duxca;
                 console.log("len", arr.length, "\n", "min", findMin(arr), "\n", "max", findMax(arr), "\n", "ave", average(arr), "\n", "med", median(arr), "\n", "mode", mode(arr), "\n", "var", variance(arr), "\n", "stdev", stdev(arr));
             }
             Statictics.all = all;
+            function k_means1D(data, k) {
+                var klass = [];
+                for (var i = 0; i < data.length; i++) {
+                    klass[i] = (Math.random() * 10000 | 0) % k;
+                }
+                var count = 0;
+                recur: while (true) {
+                    if (++count > 100000)
+                        throw new Error("Maximum call stack size exceeded");
+                    var laststate = klass.slice(0);
+                    var sums = [];
+                    for (var j = 0; j < k; j++) {
+                        sums[j] = [];
+                    }
+                    for (var i = 0; i < data.length; i++) {
+                        sums[klass[i]].push(data[i]);
+                    }
+                    var aves = [];
+                    for (var j = 0; j < k; j++) {
+                        aves[j] = duxca.lib.Statictics.average(sums[j]);
+                    }
+                    for (var i = 0; i < data.length; i++) {
+                        for (var j = 0; j < aves.length; j++) {
+                            if (Math.abs(aves[klass[i]] - data[i]) > Math.abs(aves[j] - data[i])) {
+                                klass[i] = j;
+                            }
+                        }
+                    }
+                    for (var i = 0; i < klass.length; i++) {
+                        if (klass[i] !== laststate[i]) {
+                            continue recur;
+                        }
+                    }
+                    return klass;
+                }
+            }
+            Statictics.k_means1D = k_means1D;
         })(Statictics = lib.Statictics || (lib.Statictics = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

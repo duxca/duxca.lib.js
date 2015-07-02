@@ -5,7 +5,7 @@ var duxca;
     (function (lib) {
         var Signal;
         (function (Signal) {
-            function standard(arr, max_val) {
+            function normalize(arr, max_val) {
                 if (max_val === void 0) { max_val = 1; }
                 var min = duxca.lib.Statictics.findMin(arr)[0];
                 var max = duxca.lib.Statictics.findMax(arr)[0];
@@ -15,7 +15,7 @@ var duxca;
                 }
                 return _arr;
             }
-            Signal.standard = standard;
+            Signal.normalize = normalize;
             function correlation(signalA, signalB, sampleRate) {
                 if (signalA.length !== signalB.length)
                     throw new Error("unmatch signal length A and B as " + signalA.length + " and " + signalB.length);

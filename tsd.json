@@ -6,22 +6,22 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "qunit/qunit.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "es6-promise/es6-promise.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "webaudioapi/waa.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "webrtc/MediaStream.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "bluebird/bluebird.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "zepto/zepto.d.ts": {
-      "commit": "c7b1128cc9a8f5797bade826e7632b36b06a856c"
+      "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     }
   }
 }

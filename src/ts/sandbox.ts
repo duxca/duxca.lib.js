@@ -172,7 +172,7 @@ module duxca.lib.Sandbox {
         }
       }
 
-      var concat_corr = duxca.lib.Signal.standard(concat_corr, 100);
+      var concat_corr = duxca.lib.Signal.normalize(concat_corr, 100);
       var ave = duxca.lib.Statictics.average(concat_corr);
       var vari = duxca.lib.Statictics.variance(concat_corr);
       console.log(
