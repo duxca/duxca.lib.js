@@ -29,7 +29,7 @@ var duxca;
                     var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1);
                     source.connect(processor);
                     processor.connect(actx.destination);
-                    var pulse = duxca.lib.Signal.createBarkerCodedChirp(3, 12);
+                    var pulse = duxca.lib.Signal.createBarkerCodedChirp(13, 12);
                     for (var pow = 0; pulse.length > Math.pow(2, pow); pow++)
                         ;
                     var cliped_chirp = new Float32Array(Math.pow(2, pow));
@@ -53,7 +53,7 @@ var duxca;
                         function recur() {
                             console.log(rfps + "/60\t" + pfps + "/" + (actx.sampleRate / processor.bufferSize * 1000 | 0) / 1000);
                             rfps.step();
-                            if (actx.currentTime > 5) {
+                            if (actx.currentTime > 4) {
                                 setTimeout(function () {
                                     stream.stop();
                                     processor.removeEventListener("audioprocess", handler);
@@ -163,7 +163,7 @@ var duxca;
                         render.cnv.width = _corr.length;
                         render.drawSignal(_corr);
                         for (var j = i; j < i + splitsize; j++) {
-                            if (stdscores[j] > 400) {
+                            if (stdscores[j] > 80) {
                                 var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j - i]);
                                 if (localscore > 60) {
                                     console.log("stdscore", stdscores[j], localscore, "index", j);
