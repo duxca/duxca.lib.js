@@ -132,7 +132,6 @@ var duxca;
                     console.group("correlation");
                     console.time("correlation");
                     console.log(rawdata.length, cliped_chirp.length);
-                    var render = new duxca.lib.CanvasRender(128, 128);
                     var windowsize = cliped_chirp.length;
                     var resized_charp = new Float32Array(windowsize * 2);
                     resized_charp.set(cliped_chirp, 0);
@@ -146,6 +145,10 @@ var duxca;
                             concat_corr[i + j] = corr[j];
                         }
                     }
+                    console.timeEnd("correlation");
+                    console.groupEnd();
+                    console.group("show correlation");
+                    console.time("show correlation");
                     var concat_corr = duxca.lib.Signal.normalize(concat_corr, 100);
                     var ave = duxca.lib.Statictics.average(concat_corr);
                     var vari = duxca.lib.Statictics.variance(concat_corr);
@@ -155,6 +158,8 @@ var duxca;
                         var stdscore = 10 * (concat_corr[i] - ave) / vari + 50;
                         stdscores.push(stdscore);
                     }
+                    var render = new duxca.lib.CanvasRender(128, 128);
+                    var goodscoreIds = [];
                     var splitsize = Math.pow(2, 10);
                     for (var i = 0; i < concat_corr.length; i += splitsize) {
                         var _corr = concat_corr.subarray(i, i + splitsize);
@@ -163,9 +168,10 @@ var duxca;
                         render.cnv.width = _corr.length;
                         render.drawSignal(_corr);
                         for (var j = i; j < i + splitsize; j++) {
-                            if (stdscores[j] > 80) {
+                            if (stdscores[j] > 90) {
                                 var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j - i]);
                                 if (localscore > 60) {
+                                    goodscoreIds.push(j);
                                     console.log("stdscore", stdscores[j], localscore, "index", j);
                                     render.drawColLine(j - i);
                                 }
@@ -173,7 +179,37 @@ var duxca;
                         }
                         console.screenshot(render.cnv);
                     }
-                    console.timeEnd("correlation");
+                    console.timeEnd("correlation show");
+                    console.groupEnd();
+                    console.group("clustering");
+                    console.time("clustering");
+                    console.log(goodscoreIds);
+                    var clusterN = 3;
+                    var clusterized = duxca.lib.Statictics.k_means1D(goodscoreIds, clusterN);
+                    console.log(clusterized);
+                    var clusterIds = [];
+                    for (var j = 0; j < clusterN; j++) {
+                        clusterIds[j] = [];
+                    }
+                    for (var i = 0; i < clusterized.length; i++) {
+                        clusterIds[clusterized[i]].push(goodscoreIds[i]);
+                    }
+                    console.log(clusterIds);
+                    var results = [];
+                    for (var i = 0; i < clusterIds.length; i++) {
+                        var _b = duxca.lib.Statictics.findMax(clusterIds[i].map(function (id) { return stdscores[id]; })), stdscore = _b[0], _id = _b[1];
+                        var id = clusterIds[i][_id];
+                        var val = concat_corr[id];
+                        console.log("index", id, "val", val, "stdscore", stdscore);
+                        results.push(id);
+                    }
+                    console.log(results.sort(function (a, b) { return a - b; }));
+                    var _interval = [];
+                    for (var i = 1; i < results.length; i++) {
+                        _interval[i - 1] = results[i] - results[i - 1];
+                    }
+                    console.log(_interval);
+                    console.timeEnd("clustering");
                     console.groupEnd();
                 }).catch(function end(err) {
                     console.error(err);
@@ -183,6 +219,12 @@ var duxca;
                 });
             }
             Sandbox.testDetect2 = testDetect2;
+            function testKmeans() {
+                var arr = [1, 2, 3, 4, 5, 30, 435, 46, 3, 436, 63];
+                console.log(arr);
+                console.log(duxca.lib.Statictics.k_means1D(arr, 3));
+            }
+            Sandbox.testKmeans = testKmeans;
             function showChirp() {
                 var bitwidth = Math.pow(2, 10);
                 var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
