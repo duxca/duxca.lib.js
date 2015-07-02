@@ -16,7 +16,8 @@
   ],
   "dependencies": {
     "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
-    "console.snapshot": "git://github.com/adriancooney/console.snapshot.git"
+    "console.snapshot": "git://github.com/adriancooney/console.snapshot.git",
+    "peerjs": "~0.3.14"
   },
   "devDependencies": {
     "qunit": "~1.17.1",

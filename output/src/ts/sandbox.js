@@ -17,7 +17,7 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement("br"));
             };*/
-            function testDetect2() {
+            function testDetect2Kmeans() {
                 console.group("testDetect2");
                 console.time("testDetect2");
                 var maybeStream = new Promise(function (resolbe, reject) {
@@ -38,22 +38,24 @@ var duxca;
                     var osc = new duxca.lib.OSC(actx);
                     var abuf = osc.createAudioBufferFromArrayBuffer(cliped_chirp, 44100);
                     var met = new lib.Metronome(actx, 1);
-                    met.nextTick = function () {
-                        var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-                        anode.connect(actx.destination);
-                        anode.start(actx.currentTime);
-                    };
                     var rfps = new lib.FPS(1000);
                     var pfps = new lib.FPS(1000);
                     var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
                     return new Promise(function (resolve, reject) {
                         console.group("fps\trequestAnimationFrame\taudioprocess");
                         recur();
+                        nextTick();
+                        met.nextTick = nextTick;
                         processor.addEventListener("audioprocess", handler);
+                        function nextTick() {
+                            var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+                            anode.connect(actx.destination);
+                            anode.start(met.nextTime);
+                        }
                         function recur() {
                             console.log(rfps + "/60\t" + pfps + "/" + (actx.sampleRate / processor.bufferSize * 1000 | 0) / 1000);
                             rfps.step();
-                            if (actx.currentTime > 4) {
+                            if (actx.currentTime > 10) {
                                 setTimeout(function () {
                                     stream.stop();
                                     processor.removeEventListener("audioprocess", handler);
@@ -63,7 +65,7 @@ var duxca;
                                 return;
                             }
                             met.step();
-                            requestAnimationFrame(recur);
+                            setTimeout(recur, 0);
                         }
                         function handler(ev) {
                             pfps.step();
@@ -168,7 +170,7 @@ var duxca;
                         render.cnv.width = _corr.length;
                         render.drawSignal(_corr);
                         for (var j = i; j < i + splitsize; j++) {
-                            if (stdscores[j] > 90) {
+                            if (stdscores[j] > 200) {
                                 var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j - i]);
                                 if (localscore > 60) {
                                     goodscoreIds.push(j);
@@ -184,7 +186,7 @@ var duxca;
                     console.group("clustering");
                     console.time("clustering");
                     console.log(goodscoreIds);
-                    var clusterN = 3;
+                    var clusterN = 10;
                     var clusterized = duxca.lib.Statictics.k_means1D(goodscoreIds, clusterN);
                     console.log(clusterized);
                     var clusterIds = [];
@@ -218,7 +220,7 @@ var duxca;
                     console.groupEnd();
                 });
             }
-            Sandbox.testDetect2 = testDetect2;
+            Sandbox.testDetect2Kmeans = testDetect2Kmeans;
             function testKmeans() {
                 var arr = [1, 2, 3, 4, 5, 30, 435, 46, 3, 436, 63];
                 console.log(arr);

@@ -20,7 +20,7 @@ module duxca.lib.Sandbox {
 
 
 
-  export function testDetect2(): void{
+  export function testDetect2Kmeans(): void{
     console.group("testDetect2");
     console.time("testDetect2");
 
@@ -43,11 +43,6 @@ module duxca.lib.Sandbox {
       var osc = new duxca.lib.OSC(actx);
       var abuf = osc.createAudioBufferFromArrayBuffer(cliped_chirp, 44100);
       var met = new Metronome(actx, 1);
-      met.nextTick = ()=>{
-        var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-        anode.connect(actx.destination);
-        anode.start(actx.currentTime);
-      };
       var rfps = new FPS(1000);
       var pfps = new FPS(1000);
 
@@ -55,13 +50,22 @@ module duxca.lib.Sandbox {
 
       return new Promise<[RecordBuffer, Float32Array]>((resolve, reject)=>{
         console.group("fps\trequestAnimationFrame\taudioprocess");
+
         recur();
+        nextTick();
+        met.nextTick = nextTick;
         processor.addEventListener("audioprocess", handler);
+
+        function nextTick(){
+          var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+          anode.connect(actx.destination);
+          anode.start(met.nextTime);
+        }
 
         function recur(){
           console.log(rfps+"/60\t"+pfps+"/"+(actx.sampleRate/processor.bufferSize*1000|0)/1000);
           rfps.step();
-          if(actx.currentTime > 4) {
+          if(actx.currentTime > 10) {
             setTimeout(()=>{
               stream.stop();
               processor.removeEventListener("audioprocess", handler);
@@ -71,7 +75,7 @@ module duxca.lib.Sandbox {
             return;
           }
           met.step();
-          requestAnimationFrame(recur);
+          setTimeout(recur, 0);
         }
 
         function handler(ev: AudioProcessingEvent){
@@ -205,7 +209,7 @@ module duxca.lib.Sandbox {
         render.drawSignal(_corr);
 
         for(var j=i; j<i+splitsize; j++){
-          if(stdscores[j]>90){
+          if(stdscores[j]>200){
             var localscore = duxca.lib.Statictics.stdscore(__corr, __corr[j-i]);
             if(localscore>60){
               goodscoreIds.push(j);
@@ -225,7 +229,7 @@ module duxca.lib.Sandbox {
       console.time("clustering");
 
       console.log(goodscoreIds);
-      var clusterN = 3;
+      var clusterN = 10;
       var clusterized = duxca.lib.Statictics.k_means1D(goodscoreIds, clusterN)
       console.log(clusterized);
       var clusterIds:number[][] = [];

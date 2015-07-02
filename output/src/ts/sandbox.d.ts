@@ -3,7 +3,7 @@
 /// <reference path="../../../tsd/console.snapshot/console.snapshot.d.ts" />
 /// <reference path="../../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts" />
 declare module duxca.lib.Sandbox {
-    function testDetect2(): void;
+    function testDetect2Kmeans(): void;
     function testKmeans(): void;
     function showChirp(): void;
     function testDetect(): void;
