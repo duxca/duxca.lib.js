@@ -68,6 +68,7 @@ var duxca;
             Signal.createChirpSignal = createChirpSignal;
             function createBarkerCode(n) {
                 switch (n) {
+                    case 1: return [1];
                     case 2: return [1, -1];
                     case 3: return [1, 1, -1];
                     case 4: return [1, 1, -1, 1];

@@ -18,8 +18,9 @@ module duxca.lib.Sandbox {
 
   export function testDetect3(): void{
     var PULSE_INTERVAL_SEC = 1;
-    var RECORD_SEC = 3;
+    var RECORD_SEC = 11;
     var CUTOFF_STANDARDSCORE = 100;
+    var TEST_INPUT_MYSELF = false;
 
     console.group("testDetect3");
     console.time("testDetect3");
@@ -31,16 +32,37 @@ module duxca.lib.Sandbox {
       var actx = new AudioContext();
       var source = actx.createMediaStreamSource(stream);
       var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
-      source.connect(processor);
+      !TEST_INPUT_MYSELF && source.connect(processor);
       processor.connect(actx.destination);
 
       console.group("create barker coded chirp signal");
       console.time("create barker coded chirp signal");
-      var pulse = duxca.lib.Signal.createBarkerCodedChirp(13, 12);
+      var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
       for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
       var barkerChirp = new Float32Array(Math.pow(2, pow));
       barkerChirp.set(pulse, 0);
       console.timeEnd("create barker coded chirp signal");
+      console.groupEnd();
+
+      console.group("show chirp");
+      console.time("show chirp");
+      var render = new duxca.lib.CanvasRender(128, 128);
+      var _pulse = duxca.lib.Signal.normalize(pulse, 128);
+      var splitsize = Math.pow(2, 10);
+      var lastptr = 0;
+      for(var i=0; i<_pulse.length; i+=splitsize){
+        var part = _pulse.subarray(i, i+splitsize);
+        render.cnv.width = part.length;
+        render.drawSignal(part, false, false);
+        console.log(
+          lastptr+"-"+(i-1)+"/"+_pulse.length,
+          (i-lastptr)/actx.sampleRate*1000+"ms",
+          render.cnv.width+"x"+render.cnv.height
+        );
+        console.screenshot(render.element);
+        lastptr = i;
+      }
+      console.timeEnd("show chirp");
       console.groupEnd();
 
       console.group("requestAnimationFrame, audioprocess, metronome");
@@ -65,7 +87,7 @@ module duxca.lib.Sandbox {
 
         function nextTick(){
           var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-          anode.connect(actx.destination);
+          anode.connect(TEST_INPUT_MYSELF?processor:actx.destination);
           anode.start(met.nextTime);
         }
 
@@ -79,7 +101,7 @@ module duxca.lib.Sandbox {
               console.timeEnd("requestAnimationFrame, audioprocess, metronome");
               console.groupEnd();
               resolve(Promise.resolve([recbuf, barkerChirp]));
-            }, met.interval*1000);// wait beep
+            }, met.interval*1.5*1000);// wait beep
             return;
           }
           met.step();
@@ -88,26 +110,6 @@ module duxca.lib.Sandbox {
       });
     }).then(([recbuf, barkerChirp])=>{
       var render = new duxca.lib.CanvasRender(128, 128);
-
-      console.group("show chirp");
-      console.time("show chirp");
-      var _barkerChirp = duxca.lib.Signal.normalize(barkerChirp, 128);
-      var splitsize = Math.pow(2, 10);
-      var lastptr = 0;
-      for(var i=0; i<_barkerChirp.length; i+=splitsize){
-        var part = _barkerChirp.subarray(i, i+splitsize);
-        render.cnv.width = part.length;
-        render.drawSignal(part, false, false);
-        console.log(
-          lastptr+"-"+(i-1)+"/"+_barkerChirp.length,
-          (i-lastptr)/recbuf.sampleRate*1000+"ms",
-          render.cnv.width+"x"+render.cnv.height
-        );
-        console.screenshot(render.element);
-        lastptr = i;
-      }
-      console.timeEnd("show chirp");
-      console.groupEnd();
 
       console.group("show record");
       console.time("show record");
@@ -131,7 +133,7 @@ module duxca.lib.Sandbox {
       for(var i=0; rawdata.length - (i+windowsize) >= resized_charp.length; i+=windowsize){
         buffer.set(rawdata.subarray(i, i+windowsize), 0);
         var corr = duxca.lib.Signal.correlation(buffer, resized_charp);
-        for(var j=0;j<corr.length;j++){
+        for(var j=0; j<corr.length; j++){
           correlation[i+j] = corr[j];
         }
       }
@@ -157,7 +159,6 @@ module duxca.lib.Sandbox {
 
       console.group("show correlation and stdscores");
       console.time("show correlation and stdscores");
-      var render = new duxca.lib.CanvasRender(128, 128);
       var splitsize = Math.pow(2, 10);
       var _correlation = duxca.lib.Signal.normalize(correlation, 128);
       var _stdscores = duxca.lib.Signal.normalize(stdscores, 128);
@@ -168,10 +169,11 @@ module duxca.lib.Sandbox {
         stdscoreline[i] = (CUTOFF_STANDARDSCORE - min) / (max - min) * 128;
       }
       var lastptr = 0;
+      var count = 0;
       for(var i=0; i<_correlation.length; i+=splitsize){
         var corpart = _correlation.subarray(i, i+splitsize);
         var stdpart = _stdscores.subarray(i, i+splitsize);
-        render.cnv.width = part.length;
+        render.cnv.width = corpart.length;
         render.ctx.strokeStyle = "gray";
         render.drawSignal(stdpart);
         render.ctx.strokeStyle = "gray";
@@ -180,15 +182,17 @@ module duxca.lib.Sandbox {
           var intvlptr = ((i/(PULSE_INTERVAL_SEC*recbuf.sampleRate)|0)+1)*PULSE_INTERVAL_SEC*recbuf.sampleRate;
           render.ctx.strokeStyle = "red";
           render.drawColLine(intvlptr-i);
+          count++;
         }
         console.log(
+          ""+count,
           lastptr+"-"+(i-1)+"/"+_correlation.length,
           (i-lastptr)/recbuf.sampleRate*1000+"ms",
           render.cnv.width+"x"+render.cnv.height
         );
         for(var j=i;j<i+splitsize; j++){
           if(stdscores[j] > CUTOFF_STANDARDSCORE){
-            console.log("stdscore", stdscores[j]);
+            console.log("stdscore", stdscores[j], j);
           }
         }
         render.ctx.strokeStyle = "black";
@@ -196,17 +200,33 @@ module duxca.lib.Sandbox {
         console.screenshot(render.cnv);
         lastptr = i;
       }
-      console.timeEnd("calc");
+      console.timeEnd("calc stdscores");
       console.groupEnd();
-      var splitsize = PULSE_INTERVAL_SEC*recbuf.sampleRate;
-      var count = 0;
-      for(var i=0; i<stdscores.length; i+=splitsize){
-        var stdpart = stdscores.subarray(i, i+splitsize);
-        console.log(count++, i, duxca.lib.Statictics.findMax(stdpart));
-      }
+
       console.group("calc");
       console.time("calc");
-
+      var splitsize = PULSE_INTERVAL_SEC*recbuf.sampleRate;
+      var results:number[] = [];
+      var count = 0;
+      var lastptr = 0;
+      for(var i=splitsize; i<stdscores.length; i+=splitsize){
+        var stdpart = stdscores.subarray(i, i+splitsize);
+        var [max_score, offset] = duxca.lib.Statictics.findMax(stdpart);
+        console.log(count++, i+offset, offset, i+offset-lastptr, max_score);
+        results.push(offset);
+        lastptr = i+offset;
+      }
+      results.shift();
+      results.pop();
+      console.log(results);
+      console.log(
+        "min", duxca.lib.Statictics.findMin(results)[0], "\n",
+        "max", duxca.lib.Statictics.findMax(results)[0], "\n",
+        "ave", duxca.lib.Statictics.average(results), "\n",
+        "med", duxca.lib.Statictics.median(results), "\n",
+        "mode", duxca.lib.Statictics.mode(results), "\n",
+        "stdev", duxca.lib.Statictics.stdev(results)
+      );
       console.timeEnd("calc");
       console.groupEnd();
 
@@ -274,7 +294,7 @@ module duxca.lib.Sandbox {
 
 
 
-  export function testDetect2Kmeans(): void{
+  export function testDetect2(): void{
     console.group("testDetect2");
     console.time("testDetect2");
 
@@ -285,7 +305,7 @@ module duxca.lib.Sandbox {
       var actx = new AudioContext();
       var source = actx.createMediaStreamSource(stream);
       var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1);
-      source.connect(processor);
+      //source.connect(processor);
       processor.connect(actx.destination);
 
       var pulse = duxca.lib.Signal.createBarkerCodedChirp(13, 12);
@@ -312,7 +332,7 @@ module duxca.lib.Sandbox {
 
         function nextTick(){
           var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-          anode.connect(actx.destination);
+          anode.connect(processor)//actx.destination);
           anode.start(met.nextTime);
         }
 
