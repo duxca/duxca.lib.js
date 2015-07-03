@@ -50,6 +50,7 @@ module duxca.lib.P2P {
     }
 
     create(){
+      setInterval(()=> this.stabilize(), 1000);
     }
 
     join(id: string):Promise<Chord>{
@@ -81,11 +82,10 @@ module duxca.lib.P2P {
     }
 
     stabilize(){
-      this.succesor[0].send({msg:"Am I your predecessor?", id:""});
+      this.succesor.length>0&&this.succesor[0].send({msg:"Am I your predecessor?", id:""});
     }
 
     connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string; id:string})=> void{
-      setInterval(()=> this.stabilize(), 1000);
       return dataHandler.bind(this);
 
       function dataHandler(data:{msg:string, id:string, succesor:string[]}): void{
@@ -93,7 +93,7 @@ module duxca.lib.P2P {
         switch(<string>msg){
           // response
           case "Yes. You are my predecessor.":
-            setTimeout(()=> this.stabilize(), 5000);
+            setInterval(()=> this.stabilize(), 1000);
             break;
           case "No. Your succesor is worng.":
             conn.close();

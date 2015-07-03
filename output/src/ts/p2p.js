@@ -43,6 +43,8 @@ var duxca;
                     });
                 };
                 Chord.prototype.create = function () {
+                    var _this = this;
+                    setInterval(function () { return _this.stabilize(); }, 1000);
                 };
                 Chord.prototype.join = function (id) {
                     var _this = this;
@@ -70,11 +72,9 @@ var duxca;
                     });
                 };
                 Chord.prototype.stabilize = function () {
-                    this.succesor[0].send({ msg: "Am I your predecessor?", id: "" });
+                    this.succesor.length > 0 && this.succesor[0].send({ msg: "Am I your predecessor?", id: "" });
                 };
                 Chord.prototype.connDataHandlerCreater = function (conn) {
-                    var _this = this;
-                    setInterval(function () { return _this.stabilize(); }, 1000);
                     return dataHandler.bind(this);
                     function dataHandler(data) {
                         var _this = this;
@@ -82,7 +82,7 @@ var duxca;
                         switch (msg) {
                             // response
                             case "Yes. You are my predecessor.":
-                                setTimeout(function () { return _this.stabilize(); }, 5000);
+                                setInterval(function () { return _this.stabilize(); }, 1000);
                                 break;
                             case "No. Your succesor is worng.":
                                 conn.close();

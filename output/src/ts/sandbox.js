@@ -18,18 +18,25 @@ var duxca;
               document.body.appendChild(document.createElement("br"));
             };*/
             function testChord(id) {
-                var chds = [1, 2, 3, 4].map(function (_, i) {
+                var chd0 = new duxca.lib.P2P.Chord();
+                chd0.init().then(function () {
+                    console.log("chd0", chd0.peer.id);
+                    return chd0.create();
+                }).catch(function (err) { return console.error(err); });
+                var chds = [1, 2].map(function (_, i) {
                     var chd = new duxca.lib.P2P.Chord();
                     chd.init().then(function () {
                         console.log("chd" + i, chd.peer.id);
-                        return chd.create();
+                        return chd.join(chd0.peer.id);
                     }).catch(function (err) { return console.error(err); });
                     return chd;
                 });
+                chds.unshift(chd0);
+                console.log(chds);
                 setInterval(function () {
                     console.info("==========");
                     chds.forEach(function (chd, i) {
-                        console.log("chd" + i, chd.succesor[0], chd.predecessor[0], chd);
+                        console.log("chd" + i, chd.succesor[0], chd.predecessor[0]);
                     });
                 }, 10000);
             }
