@@ -7,13 +7,11 @@ module duxca.lib.P2P {
     peer: PeerJs.Peer;
     succesor: PeerJs.DataConnection[];
     predecessor: PeerJs.DataConnection[];
-    callbacks:{
-      onopen: ()=>void;
-      onconnection: ()=>void;
-    }
 
     constructor(){
       this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
+      this.succesor = [];
+      this.predecessor = [];
     }
 
     init():Promise<Chord>{
@@ -67,7 +65,6 @@ module duxca.lib.P2P {
           conn.off('open', openHandler);
           conn.off('error', errorHandler.bind(this));
           this.succesor[0] = conn;
-          setTimeout(()=> this.stabilize(), 0);
           resolve(Promise.resolve(this));
         }
 
@@ -88,7 +85,8 @@ module duxca.lib.P2P {
     }
 
     connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string; id:string})=> void{
-      return dataHandler;
+      setInterval(()=> this.stabilize(), 1000);
+      return dataHandler.bind(this);
 
       function dataHandler(data:{msg:string, id:string, succesor:string[]}): void{
         var {msg, id} = data;

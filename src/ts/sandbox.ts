@@ -19,18 +19,20 @@ module duxca.lib.Sandbox {
 
 
   export function testChord(id?:string): void{
-    var chd1 = new duxca.lib.P2P.Chord();
-    var chd2 = new duxca.lib.P2P.Chord();
-    chd1.init().then(()=>{
-      console.log("chd1", chd1.peer.id);
-      return chd1.create();
-    }).catch((err)=>console.error(err));
-    chd2.init().then(()=>{
-      console.log("chd2", chd2.peer.id);
-      return chd2.join(chd1.peer.id);
-    }).then(()=>{
-      
-    }).catch((err)=>console.error(err));
+    var chds = [1,2,3,4].map((_, i)=>{
+      var chd = new duxca.lib.P2P.Chord();
+      chd.init().then(()=>{
+        console.log("chd"+i, chd.peer.id);
+        return chd.create();
+      }).catch((err)=>console.error(err));
+      return chd;
+    });
+    setInterval(()=>{
+      console.info("==========")
+      chds.forEach((chd, i)=>{
+        console.log("chd"+i, chd.succesor[0], chd.predecessor[0], chd);
+      });
+    }, 10000)
   }
 
 

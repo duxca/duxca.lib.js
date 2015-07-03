@@ -5,10 +5,6 @@ declare module duxca.lib.P2P {
         peer: PeerJs.Peer;
         succesor: PeerJs.DataConnection[];
         predecessor: PeerJs.DataConnection[];
-        callbacks: {
-            onopen: () => void;
-            onconnection: () => void;
-        };
         constructor();
         init(): Promise<Chord>;
         create(): void;

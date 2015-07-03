@@ -18,17 +18,20 @@ var duxca;
               document.body.appendChild(document.createElement("br"));
             };*/
             function testChord(id) {
-                var chd1 = new duxca.lib.P2P.Chord();
-                var chd2 = new duxca.lib.P2P.Chord();
-                chd1.init().then(function () {
-                    console.log("chd1", chd1.peer.id);
-                    return chd1.create();
-                }).catch(function (err) { return console.error(err); });
-                chd2.init().then(function () {
-                    console.log("chd2", chd2.peer.id);
-                    return chd2.join(chd1.peer.id);
-                }).then(function () {
-                }).catch(function (err) { return console.error(err); });
+                var chds = [1, 2, 3, 4].map(function (_, i) {
+                    var chd = new duxca.lib.P2P.Chord();
+                    chd.init().then(function () {
+                        console.log("chd" + i, chd.peer.id);
+                        return chd.create();
+                    }).catch(function (err) { return console.error(err); });
+                    return chd;
+                });
+                setInterval(function () {
+                    console.info("==========");
+                    chds.forEach(function (chd, i) {
+                        console.log("chd" + i, chd.succesor[0], chd.predecessor[0], chd);
+                    });
+                }, 10000);
             }
             Sandbox.testChord = testChord;
             function testDetect3() {

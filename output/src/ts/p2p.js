@@ -9,6 +9,8 @@ var duxca;
             var Chord = (function () {
                 function Chord() {
                     this.peer = new Peer({ host: location.hostname, port: 9000, debug: 2 });
+                    this.succesor = [];
+                    this.predecessor = [];
                 }
                 Chord.prototype.init = function () {
                     var _this = this;
@@ -51,12 +53,10 @@ var duxca;
                         conn.on("data", _this.connDataHandlerCreater.call(_this, conn));
                         conn.on('close', closeHandler.bind(_this));
                         function openHandler() {
-                            var _this = this;
                             console.log(this.peer.id + "conn:open");
                             conn.off('open', openHandler);
                             conn.off('error', errorHandler.bind(this));
                             this.succesor[0] = conn;
-                            setTimeout(function () { return _this.stabilize(); }, 0);
                             resolve(Promise.resolve(this));
                         }
                         function errorHandler(err) {
@@ -73,7 +73,9 @@ var duxca;
                     this.succesor[0].send({ msg: "Am I your predecessor?", id: "" });
                 };
                 Chord.prototype.connDataHandlerCreater = function (conn) {
-                    return dataHandler;
+                    var _this = this;
+                    setInterval(function () { return _this.stabilize(); }, 1000);
+                    return dataHandler.bind(this);
                     function dataHandler(data) {
                         var _this = this;
                         var msg = data.msg, id = data.id;
