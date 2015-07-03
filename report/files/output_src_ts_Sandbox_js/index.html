@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">59.21</p>
+      <p class="stat">59.95</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">723</p>
+      <p class="stat">734</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">141.67</p>
+      <p class="stat">139.97</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">13.95</p>
+      <p class="stat">14.32</p>
     </div>
   </div>
 </div>
@@ -108,9 +108,20 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement(&quot;br&quot;));
             };*/
-            function chord() {
+            function testChord(id) {
+                var chd1 = new duxca.lib.P2P.Chord();
+                var chd2 = new duxca.lib.P2P.Chord();
+                chd1.init().then(function () {
+                    console.log(&quot;chd1&quot;, chd1.peer.id);
+                    return chd1.create();
+                }).catch(function (err) { return console.error(err); });
+                chd2.init().then(function () {
+                    console.log(&quot;chd2&quot;, chd2.peer.id);
+                    return chd2.join(chd1.peer.id);
+                }).then(function () {
+                }).catch(function (err) { return console.error(err); });
             }
-            Sandbox.chord = chord;
+            Sandbox.testChord = testChord;
             function testDetect3() {
                 var PULSE_BOOST_COUNT = 1;
                 var PULSE_INTERVAL_SEC = 0.5;

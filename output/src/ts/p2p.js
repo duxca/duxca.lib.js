@@ -1,4 +1,5 @@
-/// <reference path="../../typings/peerjs/peerjs.d.ts"/>
+/// <reference path="../../tsd/peerjs/peerjs.d.ts"/>
+/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 var duxca;
 (function (duxca) {
     var lib;
@@ -7,90 +8,122 @@ var duxca;
         (function (P2P) {
             var Chord = (function () {
                 function Chord() {
-                    var _this = this;
                     this.peer = new Peer({ host: location.hostname, port: 9000, debug: 2 });
-                    this.peer.on('open', function (id) {
-                        _this.callbacks.onopen();
-                    });
-                    this.peer.on('connection', function (conn) {
-                        console.log("offer connection:", conn.peer, conn);
-                        conn.on("data", function (_a) {
-                            var msg = _a.msg, data = _a.data;
-                            switch (msg) {
-                                case "Am I your predecessor?":
-                                    if (typeof _this.predecessor[0] === "undefined" && typeof _this.succesor[0] === "undefined") {
-                                        _this.succesor[0] = conn;
-                                        _this.predecessor[0] = conn;
-                                        conn.send("Yes. You are my predecessor.");
-                                    }
-                                    else if (typeof _this.predecessor[0] === "undefined") {
-                                        _this.predecessor[0] = conn;
-                                        conn.send("Yes. You are my predecessor.");
-                                    }
-                                    else if (_this.predecessor[0].peer === conn.peer) {
-                                        conn.send("Yes. You are my predecessor.");
-                                    }
-                                    else {
-                                        var pred = parseInt(_this.predecessor[0].peer, 36); // "abcdefghijklmnopqrstuvwxyz0123456789".length -> 36
-                                        var newbee = parseInt(conn.peer, 36);
-                                        var myid = parseInt(_this.peer.id, 36);
-                                        if (myid > newbee && newbee > pred) {
-                                            _this.predecessor[0] = conn;
-                                            conn.send("Yes. You are my predecessor.");
-                                        }
-                                        else if (myid > pred && pred > newbee) {
-                                            conn.send({ msg: "No. Your succesor is worng.", data: _this.predecessor[0].peer });
-                                        }
-                                        else if (newbee > myid) {
-                                            if (_this.amIRoot) {
-                                                conn.send({ msg: "No. Your succesor is worng.", data: _this.succesor[0].peer });
-                                            }
-                                            else {
-                                                conn.send({ msg: "No. Your succesor is worng.", data: _this.succesor[0].peer });
-                                            }
-                                        }
-                                    }
-                                    break;
-                            }
-                        });
-                    });
-                    this.peer.on('close', function () { console.log("closed"); });
-                    this.peer.on('disconnected', function () { console.log("disconnected"); });
-                    this.peer.on('error', function (err) { console.error(err); });
-                    this.callbacks = {
-                        onopen: function () { },
-                        onconnection: function () { }
-                    };
                 }
+                Chord.prototype.init = function () {
+                    var _this = this;
+                    return new Promise(function (resolve, reject) {
+                        _this.peer.on('open', openHandler.bind(_this));
+                        _this.peer.on('error', errorHandler.bind(_this));
+                        _this.peer.on('close', closeHandler.bind(_this));
+                        _this.peer.on('disconnected', disconnectedHandler.bind(_this));
+                        _this.peer.on('connection', connectionHandler.bind(_this));
+                        function openHandler(id) {
+                            console.log(this.peer.id, "peer:open", id);
+                            this.peer.off('open', openHandler);
+                            this.peer.off('error', errorHandler);
+                            resolve(Promise.resolve(this));
+                        }
+                        function errorHandler(err) {
+                            console.error(this.peer.id, "peer:error", err);
+                            reject(err);
+                        }
+                        function closeHandler() {
+                            console.log(this.peer.id, "peer:close");
+                        }
+                        function disconnectedHandler() {
+                            console.log(this.peer.id, "peer:disconnected");
+                        }
+                        function connectionHandler(conn) {
+                            console.log(this.peer.id, "peer:connection", conn.peer, conn);
+                            conn.on("data", this.connDataHandlerCreater.call(this, conn));
+                        }
+                    });
+                };
                 Chord.prototype.create = function () {
-                    this.amIRoot = true;
                 };
                 Chord.prototype.join = function (id) {
                     var _this = this;
-                    this.amIRoot = false;
-                    var conn = this.peer.connect(id);
-                    conn.on('open', function () {
-                        _this.succesor[0] = conn;
-                        _this.stabilize();
-                        conn.on("data", function (_a) {
-                            var msg = _a.msg, data = _a.data;
-                            switch (msg) {
-                                case "Yes. You are my predecessor.":
-                                    setTimeout(function () { return _this.stabilize(); }, 5000);
-                                    break;
-                                case "No. Your succesor is worng.":
-                                    conn.close();
-                                    _this.join(data);
-                                    break;
-                            }
-                        });
+                    return new Promise(function (resolve, reject) {
+                        var conn = _this.peer.connect(id);
+                        conn.on('open', openHandler.bind(_this));
+                        conn.on('error', errorHandler.bind(_this));
+                        conn.on("data", _this.connDataHandlerCreater.call(_this, conn));
+                        conn.on('close', closeHandler.bind(_this));
+                        function openHandler() {
+                            var _this = this;
+                            console.log(this.peer.id + "conn:open");
+                            conn.off('open', openHandler);
+                            conn.off('error', errorHandler.bind(this));
+                            this.succesor[0] = conn;
+                            setTimeout(function () { return _this.stabilize(); }, 0);
+                            resolve(Promise.resolve(this));
+                        }
+                        function errorHandler(err) {
+                            console.error(this.peer.id + "conn:error", err);
+                            conn.close();
+                            reject(err);
+                        }
+                        function closeHandler() {
+                            console.log(this.peer.id + "conn:close");
+                        }
                     });
-                    conn.on('data', function (data) { console.log(data); });
-                    conn.on('close', function () { console.log("close"); });
-                    conn.on('error', function (err) { console.error(err); });
                 };
                 Chord.prototype.stabilize = function () {
-                    this.succesor[0].send({ msg: "Am I your predecessor?", data: "" });
+                    this.succesor[0].send({ msg: "Am I your predecessor?", id: "" });
+                };
+                Chord.prototype.connDataHandlerCreater = function (conn) {
+                    return dataHandler;
+                    function dataHandler(data) {
+                        var _this = this;
+                        var msg = data.msg, id = data.id;
+                        switch (msg) {
+                            // response
+                            case "Yes. You are my predecessor.":
+                                setTimeout(function () { return _this.stabilize(); }, 5000);
+                                break;
+                            case "No. Your succesor is worng.":
+                                conn.close();
+                                this.join(id);
+                                break;
+                            // request
+                            case "Am I your predecessor?":
+                                if (typeof this.predecessor[0] === "undefined" && typeof this.succesor[0] === "undefined") {
+                                    this.succesor[0] = conn;
+                                    this.predecessor[0] = conn;
+                                    conn.send({ msg: "Yes. You are my predecessor.", id: "" });
+                                }
+                                else if (typeof this.predecessor[0] === "undefined") {
+                                    this.predecessor[0] = conn;
+                                    conn.send({ msg: "Yes. You are my predecessor.", id: "" });
+                                }
+                                else if (this.predecessor[0].peer === conn.peer) {
+                                    conn.send({ msg: "Yes. You are my predecessor.", id: "" });
+                                }
+                                else {
+                                    var min = 0;
+                                    var max = Math.pow(36, 17) - 1; // "abcdefghijklmnopqrstuvwxyz0123456789".length -> 36
+                                    var myid = parseInt(this.peer.id, 36);
+                                    var succ = parseInt(this.succesor[0].peer, 36);
+                                    var pred = parseInt(this.predecessor[0].peer, 36);
+                                    var newbee = parseInt(conn.peer, 36);
+                                    if ((myid > pred && pred > newbee) || (newbee > myid)) {
+                                        conn.send({ msg: "No. Your succesor is worng.", data: this.predecessor[0].peer });
+                                    }
+                                    else if ((myid > newbee && newbee > pred) ||
+                                        (pred > myid && ((myid > newbee && newbee > min) || (max > newbee && newbee > pred)))) {
+                                        //this.predecessor[0].send("please stabilize now");
+                                        this.predecessor[0] = conn;
+                                        conn.send({ msg: "Yes. You are my predecessor.", id: "" });
+                                    }
+                                    else {
+                                        console.warn("something wrong");
+                                        debugger;
+                                    }
+                                }
+                                break;
+                        }
+                    }
                 };
                 return Chord;
             })();

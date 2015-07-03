@@ -20,14 +20,15 @@ var duxca;
             function testChord(id) {
                 var chd1 = new duxca.lib.P2P.Chord();
                 var chd2 = new duxca.lib.P2P.Chord();
-                chd1.callbacks.onopen = function () {
+                chd1.init().then(function () {
                     console.log("chd1", chd1.peer.id);
-                    chd1.create();
-                };
-                chd2.callbacks.onopen = function () {
+                    return chd1.create();
+                }).catch(function (err) { return console.error(err); });
+                chd2.init().then(function () {
                     console.log("chd2", chd2.peer.id);
-                    chd2.join(chd1.peer.id);
-                };
+                    return chd2.join(chd1.peer.id);
+                }).then(function () {
+                }).catch(function (err) { return console.error(err); });
             }
             Sandbox.testChord = testChord;
             function testDetect3() {

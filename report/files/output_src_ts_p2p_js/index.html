@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Plato - output/src/ts/p2p.js</title>
+  <title>Plato - output/src/ts/P2P.js</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="">
@@ -36,7 +36,7 @@
 
 <div class="jumbotron">
   <div class="container">
-    <h1>output/src/ts/p2p.js</h1>
+    <h1>output/src/ts/P2P.js</h1>
   </div>
 </div>
 
@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">84.62</p>
+      <p class="stat">68.38</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">20</p>
+      <p class="stat">131</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">12.73</p>
+      <p class="stat">52.88</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">0.10</p>
+      <p class="stat">1.72</p>
     </div>
   </div>
 </div>
@@ -89,25 +89,137 @@
 
 <div class="container">
   <div class="row">
-    <textarea id="file-source" class="col-md-12">/// &lt;reference path=&quot;../../typings/peerjs/peerjs.d.ts&quot;/&gt;
+    <textarea id="file-source" class="col-md-12">/// &lt;reference path=&quot;../../tsd/peerjs/peerjs.d.ts&quot;/&gt;
+/// &lt;reference path=&quot;../../typings/bluebird/bluebird.d.ts&quot;/&gt;
 var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        var SUCCESSOR_MAX = 1;
-        var PREDECESSOR_MAX = 1;
-        var Chord = (function () {
-            function Chord() {
-            }
-            Chord.prototype.create = function () {
-                //new Peer({key: &#039;lwjd5qra8257b9&#039;})
-            };
-            Chord.prototype.join = function () {
-            };
-            Chord.prototype.stabilize = function () {
-            };
-            return Chord;
-        })();
+        var P2P;
+        (function (P2P) {
+            var Chord = (function () {
+                function Chord() {
+                    this.peer = new Peer({ host: location.hostname, port: 9000, debug: 2 });
+                }
+                Chord.prototype.init = function () {
+                    var _this = this;
+                    return new Promise(function (resolve, reject) {
+                        _this.peer.on(&#039;open&#039;, openHandler.bind(_this));
+                        _this.peer.on(&#039;error&#039;, errorHandler.bind(_this));
+                        _this.peer.on(&#039;close&#039;, closeHandler.bind(_this));
+                        _this.peer.on(&#039;disconnected&#039;, disconnectedHandler.bind(_this));
+                        _this.peer.on(&#039;connection&#039;, connectionHandler.bind(_this));
+                        function openHandler(id) {
+                            console.log(this.peer.id, &quot;peer:open&quot;, id);
+                            this.peer.off(&#039;open&#039;, openHandler);
+                            this.peer.off(&#039;error&#039;, errorHandler);
+                            resolve(Promise.resolve(this));
+                        }
+                        function errorHandler(err) {
+                            console.error(this.peer.id, &quot;peer:error&quot;, err);
+                            reject(err);
+                        }
+                        function closeHandler() {
+                            console.log(this.peer.id, &quot;peer:close&quot;);
+                        }
+                        function disconnectedHandler() {
+                            console.log(this.peer.id, &quot;peer:disconnected&quot;);
+                        }
+                        function connectionHandler(conn) {
+                            console.log(this.peer.id, &quot;peer:connection&quot;, conn.peer, conn);
+                            conn.on(&quot;data&quot;, this.connDataHandlerCreater.call(this, conn));
+                        }
+                    });
+                };
+                Chord.prototype.create = function () {
+                };
+                Chord.prototype.join = function (id) {
+                    var _this = this;
+                    return new Promise(function (resolve, reject) {
+                        var conn = _this.peer.connect(id);
+                        conn.on(&#039;open&#039;, openHandler.bind(_this));
+                        conn.on(&#039;error&#039;, errorHandler.bind(_this));
+                        conn.on(&quot;data&quot;, _this.connDataHandlerCreater.call(_this, conn));
+                        conn.on(&#039;close&#039;, closeHandler.bind(_this));
+                        function openHandler() {
+                            var _this = this;
+                            console.log(this.peer.id + &quot;conn:open&quot;);
+                            conn.off(&#039;open&#039;, openHandler);
+                            conn.off(&#039;error&#039;, errorHandler.bind(this));
+                            this.succesor[0] = conn;
+                            setTimeout(function () { return _this.stabilize(); }, 0);
+                            resolve(Promise.resolve(this));
+                        }
+                        function errorHandler(err) {
+                            console.error(this.peer.id + &quot;conn:error&quot;, err);
+                            conn.close();
+                            reject(err);
+                        }
+                        function closeHandler() {
+                            console.log(this.peer.id + &quot;conn:close&quot;);
+                        }
+                    });
+                };
+                Chord.prototype.stabilize = function () {
+                    this.succesor[0].send({ msg: &quot;Am I your predecessor?&quot;, id: &quot;&quot; });
+                };
+                Chord.prototype.connDataHandlerCreater = function (conn) {
+                    return dataHandler;
+                    function dataHandler(data) {
+                        var _this = this;
+                        var msg = data.msg, id = data.id;
+                        switch (msg) {
+                            // response
+                            case &quot;Yes. You are my predecessor.&quot;:
+                                setTimeout(function () { return _this.stabilize(); }, 5000);
+                                break;
+                            case &quot;No. Your succesor is worng.&quot;:
+                                conn.close();
+                                this.join(id);
+                                break;
+                            // request
+                            case &quot;Am I your predecessor?&quot;:
+                                if (typeof this.predecessor[0] === &quot;undefined&quot; &amp;&amp; typeof this.succesor[0] === &quot;undefined&quot;) {
+                                    this.succesor[0] = conn;
+                                    this.predecessor[0] = conn;
+                                    conn.send({ msg: &quot;Yes. You are my predecessor.&quot;, id: &quot;&quot; });
+                                }
+                                else if (typeof this.predecessor[0] === &quot;undefined&quot;) {
+                                    this.predecessor[0] = conn;
+                                    conn.send({ msg: &quot;Yes. You are my predecessor.&quot;, id: &quot;&quot; });
+                                }
+                                else if (this.predecessor[0].peer === conn.peer) {
+                                    conn.send({ msg: &quot;Yes. You are my predecessor.&quot;, id: &quot;&quot; });
+                                }
+                                else {
+                                    var min = 0;
+                                    var max = Math.pow(36, 17) - 1; // &quot;abcdefghijklmnopqrstuvwxyz0123456789&quot;.length -&gt; 36
+                                    var myid = parseInt(this.peer.id, 36);
+                                    var succ = parseInt(this.succesor[0].peer, 36);
+                                    var pred = parseInt(this.predecessor[0].peer, 36);
+                                    var newbee = parseInt(conn.peer, 36);
+                                    if ((myid &gt; pred &amp;&amp; pred &gt; newbee) || (newbee &gt; myid)) {
+                                        conn.send({ msg: &quot;No. Your succesor is worng.&quot;, data: this.predecessor[0].peer });
+                                    }
+                                    else if ((myid &gt; newbee &amp;&amp; newbee &gt; pred) ||
+                                        (pred &gt; myid &amp;&amp; ((myid &gt; newbee &amp;&amp; newbee &gt; min) || (max &gt; newbee &amp;&amp; newbee &gt; pred)))) {
+                                        //this.predecessor[0].send(&quot;please stabilize now&quot;);
+                                        this.predecessor[0] = conn;
+                                        conn.send({ msg: &quot;Yes. You are my predecessor.&quot;, id: &quot;&quot; });
+                                    }
+                                    else {
+                                        console.warn(&quot;something wrong&quot;);
+                                        debugger;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                };
+                return Chord;
+            })();
+            P2P.Chord = Chord;
+        })(P2P = lib.P2P || (lib.P2P = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));</textarea>
   </div>

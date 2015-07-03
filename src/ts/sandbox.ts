@@ -21,14 +21,16 @@ module duxca.lib.Sandbox {
   export function testChord(id?:string): void{
     var chd1 = new duxca.lib.P2P.Chord();
     var chd2 = new duxca.lib.P2P.Chord();
-    chd1.callbacks.onopen = ()=>{
+    chd1.init().then(()=>{
       console.log("chd1", chd1.peer.id);
-      chd1.create();
-    };
-    chd2.callbacks.onopen = ()=>{
+      return chd1.create();
+    }).catch((err)=>console.error(err));
+    chd2.init().then(()=>{
       console.log("chd2", chd2.peer.id);
-      chd2.join(chd1.peer.id);
-    }
+      return chd2.join(chd1.peer.id);
+    }).then(()=>{
+      
+    }).catch((err)=>console.error(err));
   }
 
 

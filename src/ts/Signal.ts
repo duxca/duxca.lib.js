@@ -14,22 +14,22 @@ module duxca.lib.Signal {
 
   export function correlation(signalA: Float32Array|number[], signalB: Float32Array|number[], sampleRate?:number):Float32Array {
     if(signalA.length !== signalB.length) throw new Error("unmatch signal length A and B as "+signalA.length+" and "+signalB.length)
-    var fft = new FFT(signalA.length, sampleRate);
-    fft.forward(signalA);
+    var _fft = new FFT(signalA.length, sampleRate);
+    _fft.forward(signalA);
     //var a_spectrum = new Float32Array(fft.spectrum);
-    var a_real = new Float32Array(fft.real);
-    var a_imag = new Float32Array(fft.imag);
-    fft.forward(signalB);
-    //var b_spectrum = new Float32Array(fft.spectrum);
-    var b_real = fft.real;//new Float32Array(fft.real);
-    var b_imag = fft.imag;//new Float32Array(fft.imag);
+    var a_real = new Float32Array(_fft.real);
+    var a_imag = new Float32Array(_fft.imag);
+    _fft.forward(signalB);
+    //var b_spectrum = new Float32Array(_fft.spectrum);
+    var b_real = _fft.real;//new Float32Array(_fft.real);
+    var b_imag = _fft.imag;//new Float32Array(_fft.imag);
     var cross_real = b_real;//new Float32Array(b_real.length);
     var cross_imag = b_imag;//new Float32Array(b_imag.length);
     for(var i = 0; i<cross_real.length; i++){
       cross_real[i] = a_real[i] * b_real[i] / cross_real.length;
       cross_imag[i] = a_imag[i] * b_imag[i] / cross_imag.length;
     }
-    var inv_real = fft.inverse(cross_real, cross_imag);
+    var inv_real = _fft.inverse(cross_real, cross_imag);
     for(var i=0; i<inv_real.length; i++){
       inv_real[i] = inv_real[i]/inv_real.length;
     }
@@ -50,9 +50,9 @@ module duxca.lib.Signal {
   }
 
   export function fft(signal: Float32Array, sampleRate=44100): [Float32Array, Float32Array, Float32Array]{
-    var fft = new FFT(signal.length, sampleRate);
-    fft.forward(signal);
-    return [fft.real, fft.imag, fft.spectrum];
+    var _fft = new FFT(signal.length, sampleRate);
+    _fft.forward(signal);
+    return [_fft.real, _fft.imag, _fft.spectrum];
   }
 
   export function createChirpSignal(pulse_length: number, downchirp=false): Float32Array{
@@ -67,8 +67,8 @@ module duxca.lib.Signal {
       pulse_real[i] = pulse_real[pulse_length-i];
       pulse_imag[i] = -pulse_imag[pulse_length-i];
     }
-    var fft = new FFT(pulse_length, 44100);
-    var inv_real = fft.inverse(pulse_real, pulse_imag);
+    var _fft = new FFT(pulse_length, 44100);
+    var inv_real = _fft.inverse(pulse_real, pulse_imag);
     return inv_real;
   }
 
