@@ -16,8 +16,17 @@ module duxca.lib.Sandbox {
     document.body.appendChild(document.createElement("br"));
   };*/
 
+
+
+  export function testChord(): void{
+
+  }
+
+
+
   export function testDetect3(): void{
-    var PULSE_INTERVAL_SEC = 1;
+    var PULSE_BOOST_COUNT = 1;
+    var PULSE_INTERVAL_SEC = 0.5;
     var RECORD_SEC = 11;
     var CUTOFF_STANDARDSCORE = 100;
     var TEST_INPUT_MYSELF = false;
@@ -37,10 +46,15 @@ module duxca.lib.Sandbox {
 
       console.group("create barker coded chirp signal");
       console.time("create barker coded chirp signal");
-      var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
-      for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
+      var [a, b] = duxca.lib.Signal.createComplementaryCode(5);
+      console.log(a.length);
+      var pulse = duxca.lib.Signal.createCodedChirp(a, 6);//var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
+      for(var pow=0; pulse.length*PULSE_BOOST_COUNT > Math.pow(2, pow); pow++);//for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
       var barkerChirp = new Float32Array(Math.pow(2, pow));
-      barkerChirp.set(pulse, 0);
+      for(var i=0; i<PULSE_BOOST_COUNT; i++){
+        barkerChirp.set(pulse, pulse.length*i);
+      }
+      console.log(pulse.length, barkerChirp.length);
       console.timeEnd("create barker coded chirp signal");
       console.groupEnd();
 
@@ -55,7 +69,7 @@ module duxca.lib.Sandbox {
         render.cnv.width = part.length;
         render.drawSignal(part, false, false);
         console.log(
-          lastptr+"-"+(i-1)+"/"+_pulse.length,
+          lastptr+"-"+(i+splitsize)+"/"+_pulse.length,
           (i-lastptr)/actx.sampleRate*1000+"ms",
           render.cnv.width+"x"+render.cnv.height
         );
@@ -203,8 +217,8 @@ module duxca.lib.Sandbox {
       console.timeEnd("calc stdscores");
       console.groupEnd();
 
-      console.group("calc");
-      console.time("calc");
+      console.group("calc cycle");
+      console.time("calc cycle");
       var splitsize = PULSE_INTERVAL_SEC*recbuf.sampleRate;
       var results:number[] = [];
       var count = 0;
@@ -227,7 +241,7 @@ module duxca.lib.Sandbox {
         "mode", duxca.lib.Statictics.mode(results), "\n",
         "stdev", duxca.lib.Statictics.stdev(results)
       );
-      console.timeEnd("calc");
+      console.timeEnd("calc cycle");
       console.groupEnd();
 
       console.group("show spectrogram");
@@ -544,12 +558,22 @@ module duxca.lib.Sandbox {
 
 
 
-
-
   export function testKmeans(): void{
     var arr = [1,2,3,4,5,30,435,46,3,436,63];
     console.log(arr);
     console.log(duxca.lib.Statictics.k_means1D(arr, 3));
+  }
+
+
+
+  export function testComplementaryCode(n:number=0){
+    var [a, b] = duxca.lib.Signal.createComplementaryCode(n);
+    console.log(0, a, b);
+    var _a = duxca.lib.Signal.autocorr(a)
+    var _b = duxca.lib.Signal.autocorr(b)
+    console.log(_a);
+    console.log(_b);
+    console.log(_a.map((x, i)=> x+_b[i]));
   }
 
 
@@ -581,6 +605,8 @@ module duxca.lib.Sandbox {
     render.drawSignal(pulse, true, true);
     console.screenshot(render.element);
   }
+
+
 
   export function testDetect(): void{
     console.group("testDetect");

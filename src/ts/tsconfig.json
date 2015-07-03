@@ -27,6 +27,7 @@
         "./Signal.ts",
         "./Statictics.ts",
         "./Util.ts",
-        "./Wave.ts"
+        "./Wave.ts",
+        "./p2p.ts"
     ]
 }

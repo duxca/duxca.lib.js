@@ -53,7 +53,7 @@ module duxca.lib {
         signal = duxca.lib.Signal.normalize(signal, 1);
       }
       var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
-      var zoomY = !flagY ? 1 : this.cnv.height / Math.max.apply(null, signal);
+      var zoomY = !flagY ? 1 : this.cnv.height / duxca.lib.Statictics.findMax(signal)[0];
       this.ctx.beginPath();
       this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
       for(var i = 1; i<signal.length; i++){

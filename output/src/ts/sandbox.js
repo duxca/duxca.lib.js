@@ -17,8 +17,12 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement("br"));
             };*/
+            function chord() {
+            }
+            Sandbox.chord = chord;
             function testDetect3() {
-                var PULSE_INTERVAL_SEC = 1;
+                var PULSE_BOOST_COUNT = 1;
+                var PULSE_INTERVAL_SEC = 0.5;
                 var RECORD_SEC = 11;
                 var CUTOFF_STANDARDSCORE = 100;
                 var TEST_INPUT_MYSELF = false;
@@ -35,11 +39,16 @@ var duxca;
                     processor.connect(actx.destination);
                     console.group("create barker coded chirp signal");
                     console.time("create barker coded chirp signal");
-                    var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
-                    for (var pow = 0; pulse.length > Math.pow(2, pow); pow++)
-                        ; // ajasting power of two for FFT
+                    var _c = duxca.lib.Signal.createComplementaryCode(5), a = _c[0], b = _c[1];
+                    console.log(a.length);
+                    var pulse = duxca.lib.Signal.createCodedChirp(a, 6); //var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
+                    for (var pow = 0; pulse.length * PULSE_BOOST_COUNT > Math.pow(2, pow); pow++)
+                        ; //for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
                     var barkerChirp = new Float32Array(Math.pow(2, pow));
-                    barkerChirp.set(pulse, 0);
+                    for (var i = 0; i < PULSE_BOOST_COUNT; i++) {
+                        barkerChirp.set(pulse, pulse.length * i);
+                    }
+                    console.log(pulse.length, barkerChirp.length);
                     console.timeEnd("create barker coded chirp signal");
                     console.groupEnd();
                     console.group("show chirp");
@@ -52,7 +61,7 @@ var duxca;
                         var part = _pulse.subarray(i, i + splitsize);
                         render.cnv.width = part.length;
                         render.drawSignal(part, false, false);
-                        console.log(lastptr + "-" + (i - 1) + "/" + _pulse.length, (i - lastptr) / actx.sampleRate * 1000 + "ms", render.cnv.width + "x" + render.cnv.height);
+                        console.log(lastptr + "-" + (i + splitsize) + "/" + _pulse.length, (i - lastptr) / actx.sampleRate * 1000 + "ms", render.cnv.width + "x" + render.cnv.height);
                         console.screenshot(render.element);
                         lastptr = i;
                     }
@@ -97,8 +106,8 @@ var duxca;
                             requestAnimationFrame(recur);
                         }
                     });
-                }).then(function (_a) {
-                    var recbuf = _a[0], barkerChirp = _a[1];
+                }).then(function (_c) {
+                    var recbuf = _c[0], barkerChirp = _c[1];
                     var render = new duxca.lib.CanvasRender(128, 128);
                     console.group("show record");
                     console.time("show record");
@@ -179,15 +188,15 @@ var duxca;
                     }
                     console.timeEnd("calc stdscores");
                     console.groupEnd();
-                    console.group("calc");
-                    console.time("calc");
+                    console.group("calc cycle");
+                    console.time("calc cycle");
                     var splitsize = PULSE_INTERVAL_SEC * recbuf.sampleRate;
                     var results = [];
                     var count = 0;
                     var lastptr = 0;
                     for (var i = splitsize; i < stdscores.length; i += splitsize) {
                         var stdpart = stdscores.subarray(i, i + splitsize);
-                        var _b = duxca.lib.Statictics.findMax(stdpart), max_score = _b[0], offset = _b[1];
+                        var _d = duxca.lib.Statictics.findMax(stdpart), max_score = _d[0], offset = _d[1];
                         console.log(count++, i + offset, offset, i + offset - lastptr, max_score);
                         results.push(offset);
                         lastptr = i + offset;
@@ -196,7 +205,7 @@ var duxca;
                     results.pop();
                     console.log(results);
                     console.log("min", duxca.lib.Statictics.findMin(results)[0], "\n", "max", duxca.lib.Statictics.findMax(results)[0], "\n", "ave", duxca.lib.Statictics.average(results), "\n", "med", duxca.lib.Statictics.median(results), "\n", "mode", duxca.lib.Statictics.mode(results), "\n", "stdev", duxca.lib.Statictics.stdev(results));
-                    console.timeEnd("calc");
+                    console.timeEnd("calc cycle");
                     console.groupEnd();
                     console.group("show spectrogram");
                     console.time("show spectrogram");
@@ -303,8 +312,8 @@ var duxca;
                             recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
                         }
                     });
-                }).then(function (_a) {
-                    var recbuf = _a[0], cliped_chirp = _a[1];
+                }).then(function (_c) {
+                    var recbuf = _c[0], cliped_chirp = _c[1];
                     var render = new duxca.lib.CanvasRender(128, 128);
                     console.group("cliped_chirp:" + cliped_chirp.length);
                     var min = duxca.lib.Statictics.findMin(cliped_chirp)[0];
@@ -360,8 +369,8 @@ var duxca;
                             lstptr = ptr;
                         }
                     });
-                }).then(function (_a) {
-                    var rawdata = _a[0], cliped_chirp = _a[1];
+                }).then(function (_c) {
+                    var rawdata = _c[0], cliped_chirp = _c[1];
                     console.group("correlation");
                     console.time("correlation");
                     console.log(rawdata.length, cliped_chirp.length);
@@ -430,7 +439,7 @@ var duxca;
                     console.log(clusterIds);
                     var results = [];
                     for (var i = 0; i < clusterIds.length; i++) {
-                        var _b = duxca.lib.Statictics.findMax(clusterIds[i].map(function (id) { return stdscores[id]; })), stdscore = _b[0], _id = _b[1];
+                        var _d = duxca.lib.Statictics.findMax(clusterIds[i].map(function (id) { return stdscores[id]; })), stdscore = _d[0], _id = _d[1];
                         var id = clusterIds[i][_id];
                         var val = concat_corr[id];
                         console.log("index", id, "val", val, "stdscore", stdscore);
@@ -458,6 +467,17 @@ var duxca;
                 console.log(duxca.lib.Statictics.k_means1D(arr, 3));
             }
             Sandbox.testKmeans = testKmeans;
+            function testComplementaryCode(n) {
+                if (n === void 0) { n = 0; }
+                var _c = duxca.lib.Signal.createComplementaryCode(n), a = _c[0], b = _c[1];
+                console.log(0, a, b);
+                var _a = duxca.lib.Signal.autocorr(a);
+                var _b = duxca.lib.Signal.autocorr(b);
+                console.log(_a);
+                console.log(_b);
+                console.log(_a.map(function (x, i) { return x + _b[i]; }));
+            }
+            Sandbox.testComplementaryCode = testComplementaryCode;
             function showChirp() {
                 var bitwidth = Math.pow(2, 10);
                 var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
@@ -587,7 +607,7 @@ var duxca;
                             return end();
                         }
                         var buf = new Float32Array(ev.inputBuffer.getChannelData(0));
-                        var _a = duxca.lib.Signal.fft(buf, actx.sampleRate), real = _a[0], imag = _a[1], spectrum = _a[2];
+                        var _c = duxca.lib.Signal.fft(buf, actx.sampleRate), real = _c[0], imag = _c[1], spectrum = _c[2];
                         for (var i = 0; i < spectrum.length; i++) {
                             spectrum[i] = spectrum[i] * 20000;
                         }

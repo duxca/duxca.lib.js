@@ -17,11 +17,17 @@
     "webrtc/MediaStream.d.ts": {
       "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
+    "webrtc/RTCPeerConnection.d.ts": {
+      "commit": "edc17cd1b492cd1a702950ec943dd27608ce1824"
+    },
     "bluebird/bluebird.d.ts": {
       "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
     },
     "zepto/zepto.d.ts": {
       "commit": "4ba73ef59f93e38a70573cfc46375de37b004635"
+    },
+    "peerjs/peerjs.d.ts": {
+      "commit": "d73cbcb405788eb85cc4a4167b963ef4dd630cdc"
     }
   }
 }

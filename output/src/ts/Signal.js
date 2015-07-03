@@ -41,6 +41,20 @@ var duxca;
                 return inv_real;
             }
             Signal.correlation = correlation;
+            function autocorr(arr) {
+                return crosscorr(arr, arr);
+            }
+            Signal.autocorr = autocorr;
+            function crosscorr(arrA, arrB) {
+                function _autocorr(j) {
+                    var sum = 0;
+                    for (var i = 0; i < arrA.length - j; i++)
+                        sum += arrA[i] * arrB[i + j];
+                    return sum;
+                }
+                return arrA.map(function (v, j) { return _autocorr(j); });
+            }
+            Signal.crosscorr = crosscorr;
             function fft(signal, sampleRate) {
                 if (sampleRate === void 0) { sampleRate = 44100; }
                 var fft = new FFT(signal.length, sampleRate);
@@ -80,17 +94,20 @@ var duxca;
                 }
             }
             Signal.createBarkerCode = createBarkerCode;
-            function autocorr(arr) {
-                function _autocorr(j) {
-                    var sum = 0;
-                    for (var i = 0; i < arr.length - j; i++)
-                        sum += arr[i] * arr[i + j];
-                    return sum;
+            function createComplementaryCode(pow2) {
+                var a = [1, 1];
+                var b = [1, -1];
+                function compress(a, b) {
+                    return [a.concat(b), a.concat(b.map(function (x) { return -x; }))];
                 }
-                return arr.map(function (v, j) { return _autocorr(j); });
+                while (pow2--) {
+                    _a = compress(a, b), a = _a[0], b = _a[1];
+                }
+                return [a, b];
+                var _a;
             }
-            Signal.autocorr = autocorr;
-            function createBarkerCodedChirp(barkerCodeN, bitWithBinaryPower) {
+            Signal.createComplementaryCode = createComplementaryCode;
+            function createCodedChirp(code, bitWithBinaryPower) {
                 if (bitWithBinaryPower === void 0) { bitWithBinaryPower = 10; }
                 var bitwidth = Math.pow(2, bitWithBinaryPower);
                 var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
@@ -98,8 +115,7 @@ var duxca;
                 for (var i = 0; i < down_chirp.length; i++) {
                     down_chirp[i] *= -1;
                 }
-                var pulse = new Float32Array(bitwidth / 2 * barkerCodeN + bitwidth / 2);
-                var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
+                var pulse = new Float32Array(bitwidth / 2 * code.length + bitwidth / 2);
                 for (var i = 0; i < code.length; i++) {
                     var tmp = (code[i] === 1) ? up_chirp : down_chirp;
                     for (var j = 0; j < tmp.length; j++) {
@@ -107,6 +123,11 @@ var duxca;
                     }
                 }
                 return pulse;
+            }
+            Signal.createCodedChirp = createCodedChirp;
+            function createBarkerCodedChirp(barkerCodeN, bitWithBinaryPower) {
+                if (bitWithBinaryPower === void 0) { bitWithBinaryPower = 10; }
+                return createCodedChirp(createBarkerCode(barkerCodeN));
             }
             Signal.createBarkerCodedChirp = createBarkerCodedChirp;
         })(Signal = lib.Signal || (lib.Signal = {}));

@@ -12,7 +12,7 @@ module duxca.lib.Signal {
     return _arr;
   }
 
-  export function correlation(signalA: Float32Array, signalB: Float32Array, sampleRate?:number):Float32Array {
+  export function correlation(signalA: Float32Array|number[], signalB: Float32Array|number[], sampleRate?:number):Float32Array {
     if(signalA.length !== signalB.length) throw new Error("unmatch signal length A and B as "+signalA.length+" and "+signalB.length)
     var fft = new FFT(signalA.length, sampleRate);
     fft.forward(signalA);
@@ -34,6 +34,19 @@ module duxca.lib.Signal {
       inv_real[i] = inv_real[i]/inv_real.length;
     }
     return inv_real;
+  }
+
+  export function autocorr(arr: number[]): number[]{
+    return crosscorr(arr, arr);
+  }
+
+  export function crosscorr(arrA: number[], arrB: number[]): number[]{
+    function _autocorr(j:number): number{
+      var sum = 0;
+      for(var i=0; i<arrA.length-j; i++) sum += arrA[i]*arrB[i+j];
+      return sum;
+    }
+    return arrA.map((v,j)=> _autocorr(j));
   }
 
   export function fft(signal: Float32Array, sampleRate=44100): [Float32Array, Float32Array, Float32Array]{
@@ -73,24 +86,25 @@ module duxca.lib.Signal {
     }
   }
 
-  export function autocorr(arr: number[]): number[]{
-    function _autocorr(j:number): number{
-      var sum = 0;
-      for(var i=0; i<arr.length-j; i++) sum += arr[i]*arr[i+j];
-      return sum;
+  export function createComplementaryCode(pow2: number): number[][]{
+    var a = [1, 1];
+    var b = [1, -1];
+    function compress(a:number[], b:number[]){
+      return [a.concat(b), a.concat(b.map((x)=>-x))];
     }
-    return arr.map((v,j)=> _autocorr(j));
+    while(pow2--){
+      [a, b] = compress(a, b);
+    }
+    return [a, b];
   }
-
-  export function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower=10): Float32Array{
+  export function createCodedChirp(code: number[], bitWithBinaryPower=10): Float32Array{
     var bitwidth = Math.pow(2, bitWithBinaryPower);
     var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
     var down_chirp = new Float32Array(up_chirp);
     for(var i=0; i<down_chirp.length; i++){
       down_chirp[i] *= -1;
     }
-    var pulse = new Float32Array(bitwidth/2*barkerCodeN+bitwidth/2);
-    var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
+    var pulse = new Float32Array(bitwidth/2*code.length+bitwidth/2);
     for(var i=0; i<code.length; i++){
       var tmp = (code[i] === 1) ? up_chirp : down_chirp;
       for(var j=0; j<tmp.length; j++){
@@ -100,5 +114,7 @@ module duxca.lib.Signal {
     return pulse;
   }
 
-
+  export function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower=10): Float32Array{
+    return createCodedChirp(createBarkerCode(barkerCodeN));
+  }
 }
