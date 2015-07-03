@@ -18,8 +18,17 @@ module duxca.lib.Sandbox {
 
 
 
-  export function testChord(): void{
-
+  export function testChord(id?:string): void{
+    var chd1 = new duxca.lib.P2P.Chord();
+    var chd2 = new duxca.lib.P2P.Chord();
+    chd1.callbacks.onopen = ()=>{
+      console.log("chd1", chd1.peer.id);
+      chd1.create();
+    };
+    chd2.callbacks.onopen = ()=>{
+      console.log("chd2", chd2.peer.id);
+      chd2.join(chd1.peer.id);
+    }
   }
 
 

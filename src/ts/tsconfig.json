@@ -22,12 +22,12 @@
         "./FPS.ts",
         "./Metronome.ts",
         "./OSC.ts",
+        "./P2P.ts",
         "./RecordBuffer.ts",
         "./Sandbox.ts",
         "./Signal.ts",
         "./Statictics.ts",
         "./Util.ts",
-        "./Wave.ts",
-        "./p2p.ts"
+        "./Wave.ts"
     ]
 }

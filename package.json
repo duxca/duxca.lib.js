@@ -10,11 +10,12 @@
     "build-rm": "rm -rf output/*; rm -rf lib/*",
     "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
     "build-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration src/ts/*.ts;",
-    "concat": "cd output/src/ts; cat CanvasRender.js FPS.js Metronome.js OSC.js Sandbox.js Signal.js Statictics.js Util.js > ../../../lib/duxca.lib.js ",
+    "concat": "cd output/src/ts; cat CanvasRender.js FPS.js Metronome.js OSC.js P2P.js RecordBuffer.js Sandbox.js Signal.js Statictics.js Util.js Wave.js > ../../../lib/duxca.lib.js ",
+    "plato": "node node_modules/plato/bin/plato --title duxca.lib.js --jshint .jshintrc --recurse --dir report --exclude output/test/ output",
     "report": "open http://localhost:8000/report/",
     "demo": "open http://localhost:8000/demo/",
-    "start": "Python -m SimpleHTTPServer 8000 &",
-    "stop": "killall -- Python -m SimpleHTTPServer 8000; exit 0"
+    "start": "Python -m SimpleHTTPServer 8000 & node node_modules/peer/bin/peerjs --port 9000 --debug &",
+    "stop": "killall -- Python -m SimpleHTTPServer 8000; killall -- node node_modules/peer/bin/peerjs --port 9000 --debug; exit 0"
   },
   "repository": {
     "type": "git",
@@ -33,7 +34,6 @@
     "typescript": "^1.5.0-beta"
   },
   "dependencies": {
-    "peer": "^0.2.8",
-    "peerjs": "^0.3.14"
+    "peer": "^0.2.8"
   }
 }

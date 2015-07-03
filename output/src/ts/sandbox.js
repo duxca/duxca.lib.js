@@ -17,9 +17,19 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement("br"));
             };*/
-            function chord() {
+            function testChord(id) {
+                var chd1 = new duxca.lib.P2P.Chord();
+                var chd2 = new duxca.lib.P2P.Chord();
+                chd1.callbacks.onopen = function () {
+                    console.log("chd1", chd1.peer.id);
+                    chd1.create();
+                };
+                chd2.callbacks.onopen = function () {
+                    console.log("chd2", chd2.peer.id);
+                    chd2.join(chd1.peer.id);
+                };
             }
-            Sandbox.chord = chord;
+            Sandbox.testChord = testChord;
             function testDetect3() {
                 var PULSE_BOOST_COUNT = 1;
                 var PULSE_INTERVAL_SEC = 0.5;
