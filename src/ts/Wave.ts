@@ -1,4 +1,4 @@
-/// <!--reference path="../../tsd/DataView/DataView.d.ts"/>
+/// <reference path="../../tsd/DataView/DataView.d.ts"/>
 
 module duxca.lib {
 

@@ -37,7 +37,7 @@ var duxca;
                 this.sampleRate = sampleRate;
                 this.bufferSize = bufferSize;
                 this.channel = channel;
-                this.maximamRecordSize = maximamRecordSize != null ? maximamRecordSize : Infinity;
+                this.maximamRecordSize = typeof maximamRecordSize === "number" ? maximamRecordSize : Infinity;
                 this.chsBuffers = [];
                 this.sampleTimes = [];
                 for (var i = 0; i < this.channel; i++) {

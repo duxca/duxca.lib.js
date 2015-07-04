@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">60.51</p>
+      <p class="stat">60.74</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">760</p>
+      <p class="stat">752</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,7 +62,7 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">138.25</p>
+      <p class="stat">136.72</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
@@ -109,43 +109,35 @@ var duxca;
               document.body.appendChild(document.createElement(&quot;br&quot;));
             };*/
             function testChord(id) {
-                var chd0 = new duxca.lib.P2P.Chord();
-                var chd1 = new duxca.lib.P2P.Chord();
-                var chd2 = new duxca.lib.P2P.Chord();
-                var chd3 = new duxca.lib.P2P.Chord();
-                var chd4 = new duxca.lib.P2P.Chord();
-                chd0.init().then(function () {
-                    chd0.create();
-                    chd1.init().then(function () {
-                        chd1.join(chd0.peer.id);
-                        chd2.init().then(function () {
-                            chd2.join(chd0.peer.id);
-                            chd3.init().then(function () {
-                                chd3.join(chd2.peer.id);
-                                chd4.init().then(function () {
-                                    chd4.join(chd3.peer.id);
+                var chd0 = new duxca.lib.Chord2();
+                var chd1 = new duxca.lib.Chord2();
+                var chd2 = new duxca.lib.Chord2();
+                var chd3 = new duxca.lib.Chord2();
+                var chd4 = new duxca.lib.Chord2();
+                chd0.create().then(function () {
+                    return chd1.join(chd0.peer.id).then(function () {
+                        return chd2.join(chd0.peer.id).then(function () {
+                            return chd3.join(chd2.peer.id).then(function () {
+                                return chd4.join(chd3.peer.id).then(function () {
+                                    setInterval(function () {
+                                        chd0.ping().then(function (token) { return console.log(&quot;__TOKEN__&quot;, token.route); });
+                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
+                                            console.info(i, chd.predecessor &amp;&amp; chd.predecessor.open, chd.predecessor &amp;&amp; chd.predecessor.peer, chd.peer.id, chd.successor &amp;&amp; chd.successor.peer, chd.successor &amp;&amp; chd.successor.open, chd.successors);
+                                        });
+                                    }, 2000);
+                                    setTimeout(function () {
+                                        console.warn(&quot;chd4 destroied&quot;);
+                                        chd4.peer.destroy();
+                                    }, 20000);
+                                    setTimeout(function () {
+                                        console.warn(&quot;chd0 destroied&quot;);
+                                        chd0.peer.destroy();
+                                    }, 40000);
                                 });
                             });
                         });
                     });
-                });
-                setInterval(function () {
-                    [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
-                        console.info(i, chd.predecessor &amp;&amp; chd.predecessor.peer, chd.peer.id, chd.succesor &amp;&amp; chd.succesor.peer, chd.succesors);
-                    });
-                }, 5000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, &quot;is disconnected&quot;);
-                    chd4.peer.destroy();
-                }, 60000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, &quot;is disconnected&quot;);
-                    chd3.peer.destroy();
-                }, 90000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, &quot;is disconnected&quot;);
-                    chd2.peer.destroy();
-                }, 120000);
+                }).catch(function (err) { console.error(err); });
             }
             Sandbox.testChord = testChord;
             function testDetect3() {

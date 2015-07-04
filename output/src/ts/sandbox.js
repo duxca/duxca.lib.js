@@ -18,43 +18,35 @@ var duxca;
               document.body.appendChild(document.createElement("br"));
             };*/
             function testChord(id) {
-                var chd0 = new duxca.lib.P2P.Chord();
-                var chd1 = new duxca.lib.P2P.Chord();
-                var chd2 = new duxca.lib.P2P.Chord();
-                var chd3 = new duxca.lib.P2P.Chord();
-                var chd4 = new duxca.lib.P2P.Chord();
-                chd0.init().then(function () {
-                    chd0.create();
-                    chd1.init().then(function () {
-                        chd1.join(chd0.peer.id);
-                        chd2.init().then(function () {
-                            chd2.join(chd0.peer.id);
-                            chd3.init().then(function () {
-                                chd3.join(chd2.peer.id);
-                                chd4.init().then(function () {
-                                    chd4.join(chd3.peer.id);
+                var chd0 = new duxca.lib.Chord2();
+                var chd1 = new duxca.lib.Chord2();
+                var chd2 = new duxca.lib.Chord2();
+                var chd3 = new duxca.lib.Chord2();
+                var chd4 = new duxca.lib.Chord2();
+                chd0.create().then(function () {
+                    return chd1.join(chd0.peer.id).then(function () {
+                        return chd2.join(chd0.peer.id).then(function () {
+                            return chd3.join(chd2.peer.id).then(function () {
+                                return chd4.join(chd3.peer.id).then(function () {
+                                    setInterval(function () {
+                                        chd0.ping().then(function (token) { return console.log("__TOKEN__", token.route); });
+                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
+                                            console.info(i, chd.predecessor && chd.predecessor.open, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.successor && chd.successor.peer, chd.successor && chd.successor.open, chd.successors);
+                                        });
+                                    }, 2000);
+                                    setTimeout(function () {
+                                        console.warn("chd4 destroied");
+                                        chd4.peer.destroy();
+                                    }, 20000);
+                                    setTimeout(function () {
+                                        console.warn("chd0 destroied");
+                                        chd0.peer.destroy();
+                                    }, 40000);
                                 });
                             });
                         });
                     });
-                });
-                setInterval(function () {
-                    [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
-                        console.info(i, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.succesor && chd.succesor.peer, chd.succesors);
-                    });
-                }, 5000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, "is disconnected");
-                    chd4.peer.destroy();
-                }, 60000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, "is disconnected");
-                    chd3.peer.destroy();
-                }, 90000);
-                setTimeout(function () {
-                    console.log(chd4.peer.id, "is disconnected");
-                    chd2.peer.destroy();
-                }, 120000);
+                }).catch(function (err) { console.error(err); });
             }
             Sandbox.testChord = testChord;
             function testDetect3() {

@@ -1,19 +1,31 @@
 /// <reference path="../../tsd/peerjs/peerjs.d.ts"/>
 /// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 
-module duxca.lib.P2P {
+module duxca.lib {
 
   function distance(str:string){
     return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
   }
 
+  export declare module Chord{
+    export interface Token {
+     sender: string;
+     event: string;
+     route: string[];
+     data: any;
+     date: number;
+   }
+  }
+
   export class Chord{
+
     peer: PeerJs.Peer;
     succesor: PeerJs.DataConnection;
     predecessor: PeerJs.DataConnection;
     succesors: string[];
     predecessors: string[];
     joined: boolean;
+    ontoken: (token: Chord.Token, cb:(token: Chord.Token)=>void)=>void;
 
     constructor(){
       this.joined = false;
@@ -22,7 +34,11 @@ module duxca.lib.P2P {
       this.succesors = [];
       this.predecessor = null;
       this.predecessors = [];
+      this.ontoken = (token,cb)=> cb(token);
       var tid = setInterval(()=>{
+        if(!!this.predecessor&&this.predecessor.open&&!!this.succesor&&this.succesor.open){
+          this.joined=true;
+        }
         if(this.peer.id) this.stabilize();
       }, 5000);
     }
@@ -37,8 +53,6 @@ module duxca.lib.P2P {
 
         function openHandler(id: string){
           console.log(this.peer.id, "peer:open", "my id is", id);
-          this.peer.off('open', openHandler);
-          this.peer.off('error', errorHandler);
           resolve(Promise.resolve(this));
         }
 
@@ -78,9 +92,8 @@ module duxca.lib.P2P {
         conn.on('close', closeHandler.bind(this));
 
         function openHandler(){
-          console.log(this.peer.id, "conn:open");
-          conn.off('open', openHandler.bind(this));
-          conn.off('error', errorHandler.bind(this));
+          console.log(this.peer.id, "conn:open", "to", conn.peer);
+
           this.stabilize();
           resolve(Promise.resolve(this));
         }
@@ -115,18 +128,42 @@ module duxca.lib.P2P {
       }
     }
 
-    connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string; id:string})=> void{
-      return (data:{msg:string, id:string, succesors:string[]})=>{
+    connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string, id:string, succesors:string[], token:Chord.Token})=>void {
+      var callee: Function;
+      return callee = (data:{msg:string, id:string, succesors:string[], token:Chord.Token})=>{
         console.log(this.peer.id, "conn:data", data, "from", conn.peer);
         if(!this.succesor){
-          this.join(conn.peer);
+          this.join(conn.peer).then(()=>{
+            this.succesor.send({msg: "Token", token: {sender: this.peer.id, event:"ping", route:[this.peer.id], data:null, date:Date.now() }});
+            callee(data);
+          });
+          return;
         }
         if(!this.predecessor){
           this.predecessor = conn;
         }
-        var {msg, id, succesors} = data;
+        var {msg, id, succesors, token} = data;
 
         switch(msg){
+          // ring network trafic
+          case "Token":
+            if(token.sender === this.peer.id){
+              console.log("TOKEN_RESULT", token);
+              setTimeout(()=>{
+                this.succesor.send({msg: "Token", token: {sender: this.peer.id, event:"ping", route:[this.peer.id], data:null, date:Date.now()}});
+              },1000);
+              break;
+            }
+            if(token.route.indexOf(this.peer.id) !== -1){
+              console.log(this.peer.id, "conn:token", "dead token detected.", token);
+              break;
+            }
+            token.route.push(this.peer.id);
+            this.ontoken(token, (token: Chord.Token)=>{
+              this.succesor.send({msg: "Token", token: token});
+            });
+            break;
+
           // response
           case "Your succesor is worng.":
             conn.close();

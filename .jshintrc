@@ -25,9 +25,7 @@
     "nonstandard": true,
     "globals":  {
       "Promise": true,
-      "$": true,
-      "Encoding": true,
-      "SurfaceTxt2Yaml": true,
-      "JSZip": true
+      "Peer": true,
+      "FFT": true
     }
 }
