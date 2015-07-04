@@ -8,8 +8,8 @@ declare module duxca.lib.P2P {
         constructor();
         init(): Promise<Chord>;
         create(): void;
-        join(id: string): Promise<Chord>;
         stabilize(): void;
+        join(id: string): Promise<Chord>;
         connDataHandlerCreater(conn: PeerJs.DataConnection): (data: {
             msg: string;
             id: string;

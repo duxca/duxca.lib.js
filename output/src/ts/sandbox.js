@@ -19,26 +19,30 @@ var duxca;
             };*/
             function testChord(id) {
                 var chd0 = new duxca.lib.P2P.Chord();
+                var chd1 = new duxca.lib.P2P.Chord();
+                var chd2 = new duxca.lib.P2P.Chord();
+                var chd3 = new duxca.lib.P2P.Chord();
+                var chd4 = new duxca.lib.P2P.Chord();
                 chd0.init().then(function () {
-                    console.log("chd0", chd0.peer.id);
-                    return chd0.create();
-                }).catch(function (err) { return console.error(err); });
-                var chds = [1, 2].map(function (_, i) {
-                    var chd = new duxca.lib.P2P.Chord();
-                    chd.init().then(function () {
-                        console.log("chd" + i, chd.peer.id);
-                        return chd.join(chd0.peer.id);
-                    }).catch(function (err) { return console.error(err); });
-                    return chd;
-                });
-                chds.unshift(chd0);
-                console.log(chds);
-                setInterval(function () {
-                    console.info("==========");
-                    chds.forEach(function (chd, i) {
-                        console.log("chd" + i, chd.succesor[0], chd.predecessor[0]);
+                    chd0.create();
+                    chd1.init().then(function () {
+                        chd1.join(chd0.peer.id);
+                        chd2.init().then(function () {
+                            chd2.join(chd0.peer.id);
+                            chd3.init().then(function () {
+                                chd3.join(chd2.peer.id);
+                                chd4.init().then(function () {
+                                    chd4.join(chd3.peer.id);
+                                });
+                            });
+                        });
                     });
-                }, 10000);
+                });
+                setInterval(function () {
+                    [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
+                        console.info(i, chd.predecessor[0] && chd.predecessor[0].peer, chd.peer.id, chd.succesor[0] && chd.succesor[0].peer);
+                    });
+                }, 3000);
             }
             Sandbox.testChord = testChord;
             function testDetect3() {
