@@ -234,20 +234,24 @@ var duxca;
                                     console.log(_this.peer.id, "conn:token", "dead token detected.", data.token);
                                 break;
                             }
-                            if (_this.successor.open) {
-                                data.token.route.push(_this.peer.id);
-                                data.token.time.push(Date.now());
-                                if (_this.listeners[data.token.packet.event] instanceof Function) {
-                                    _this.listeners[data.token.packet.event](data.token, function (token) {
-                                        _this.successor.send({ msg: "Token", token: token });
-                                    });
+                            data.token.route.push(_this.peer.id);
+                            data.token.time.push(Date.now());
+                            var tokenpassing = function (token) {
+                                if (_this.successor.open) {
+                                    _this.successor.send({ msg: "Token", token: token });
                                 }
-                                else
-                                    _this.successor.send({ msg: "Token", token: data.token });
+                                else {
+                                    _this.stabilize();
+                                    setTimeout(function () { return tokenpassing(token); }, 1000);
+                                }
+                            };
+                            if (_this.listeners[data.token.packet.event] instanceof Function) {
+                                _this.listeners[data.token.packet.event](data.token, function (token) {
+                                    tokenpassing(token);
+                                });
                             }
                             else {
-                                _this.stabilize();
-                                setTimeout(function () { return ondata(data); }, 1000);
+                                tokenpassing(data.token);
                             }
                             break;
                         // response

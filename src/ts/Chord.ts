@@ -231,17 +231,22 @@ module duxca.lib {
               if(this.debug) console.log(this.peer.id, "conn:token", "dead token detected.", data.token);
               break;
             }
-            if(this.successor.open){
-              data.token.route.push(this.peer.id);
-              data.token.time.push(Date.now());
-              if(this.listeners[data.token.packet.event] instanceof Function){
-                this.listeners[data.token.packet.event](data.token, (token)=>{
-                  this.successor.send({msg: "Token", token});
-                });
-              }else this.successor.send({msg: "Token", token: data.token});
+            data.token.route.push(this.peer.id);
+            data.token.time.push(Date.now());
+            var tokenpassing = (token: Chord.Token)=>{
+              if(this.successor.open){
+                this.successor.send({msg: "Token", token: token});
+              }else{
+                this.stabilize();
+                setTimeout(()=> tokenpassing(token), 1000);
+              }
+            };
+            if(this.listeners[data.token.packet.event] instanceof Function){
+              this.listeners[data.token.packet.event](data.token, (token)=>{
+                tokenpassing(token);
+              });
             }else{
-              this.stabilize();
-              setTimeout(()=> ondata(data), 1000);
+              tokenpassing(data.token);
             }
             break;
 
