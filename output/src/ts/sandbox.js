@@ -40,9 +40,21 @@ var duxca;
                 });
                 setInterval(function () {
                     [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
-                        console.info(i, chd.predecessor[0] && chd.predecessor[0].peer, chd.peer.id, chd.succesor[0] && chd.succesor[0].peer);
+                        console.info(i, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.succesor && chd.succesor.peer, chd.succesors);
                     });
-                }, 3000);
+                }, 5000);
+                setTimeout(function () {
+                    console.log(chd4.peer.id, "is disconnected");
+                    chd4.peer.destroy();
+                }, 60000);
+                setTimeout(function () {
+                    console.log(chd4.peer.id, "is disconnected");
+                    chd3.peer.destroy();
+                }, 90000);
+                setTimeout(function () {
+                    console.log(chd4.peer.id, "is disconnected");
+                    chd2.peer.destroy();
+                }, 120000);
             }
             Sandbox.testChord = testChord;
             function testDetect3() {

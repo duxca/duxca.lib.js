@@ -3,13 +3,16 @@
 declare module duxca.lib.P2P {
     class Chord {
         peer: PeerJs.Peer;
-        succesor: PeerJs.DataConnection[];
-        predecessor: PeerJs.DataConnection[];
+        succesor: PeerJs.DataConnection;
+        predecessor: PeerJs.DataConnection;
+        succesors: string[];
+        predecessors: string[];
+        joined: boolean;
         constructor();
         init(): Promise<Chord>;
         create(): void;
-        stabilize(): void;
         join(id: string): Promise<Chord>;
+        stabilize(): void;
         connDataHandlerCreater(conn: PeerJs.DataConnection): (data: {
             msg: string;
             id: string;

@@ -3,16 +3,28 @@
 
 module duxca.lib.P2P {
 
+  function distance(str:string){
+    return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
+  }
+
   export class Chord{
     peer: PeerJs.Peer;
-    succesor: PeerJs.DataConnection[];
-    predecessor: PeerJs.DataConnection[];
+    succesor: PeerJs.DataConnection;
+    predecessor: PeerJs.DataConnection;
+    succesors: string[];
+    predecessors: string[];
+    joined: boolean;
 
     constructor(){
+      this.joined = false;
       this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
-      this.succesor = [];
-      this.predecessor = [];
-      setInterval(()=>{ console.log(this.peer.id, "setInterval"); this.stabilize(); }, 5000);
+      this.succesor = null;
+      this.succesors = [];
+      this.predecessor = null;
+      this.predecessors = [];
+      var tid = setInterval(()=>{
+        if(this.peer.id) this.stabilize();
+      }, 5000);
     }
 
     init():Promise<Chord>{
@@ -54,17 +66,12 @@ module duxca.lib.P2P {
       this.stabilize();
     }
 
-    stabilize(){
-      if(this.succesor.length>0){
-        this.succesor[0].send({msg:"Am I your predecessor?", id:""});
-      }
-    }
-
     join(id: string):Promise<Chord>{
       console.log(this.peer.id, "try:join", "to", id);
       return new Promise<Chord>((resolve, reject)=>{
         var conn = this.peer.connect(id);
-        this.succesor[0] = conn;
+        this.succesor = conn;
+        this.joined = true;
         conn.on('open', openHandler.bind(this));
         conn.on('error', errorHandler.bind(this));
         conn.on("data", this.connDataHandlerCreater.call(this, conn));
@@ -74,7 +81,6 @@ module duxca.lib.P2P {
           console.log(this.peer.id, "conn:open");
           conn.off('open', openHandler.bind(this));
           conn.off('error', errorHandler.bind(this));
-          this.succesor[0] = conn;
           this.stabilize();
           resolve(Promise.resolve(this));
         }
@@ -91,64 +97,102 @@ module duxca.lib.P2P {
       });
     }
 
-    connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string; id:string})=> void{
-      return dataHandler.bind(this);
+    stabilize(){
+      console.log(this.peer.id, "stabilize:to", !!this.succesor && this.succesor, this.joined);
+      if(!!this.succesor && this.succesor.open){
+        this.succesor.send({msg:"What are you predecessor?", id:"", succesors: []});
+      }
+      if(this.joined && !!this.succesor && !this.succesor.open){
+        console.log(this.peer.id, "stabilize:succesor", this.succesor, "is died. try", this.succesors[1]);
+        this.succesor.close();
+        this.succesor = null;
+        this.join(this.succesors[1]);
+      }
+      if(this.joined && !!this.predecessor && !this.predecessor.open){
+        console.log(this.peer.id, "stabilize:predecessor", this.predecessor, "is died.");
+        this.predecessor.close();
+        this.predecessor = null;
+      }
+    }
 
-      function dataHandler(data:{msg:string, id:string, succesor:string[]}): void{
+    connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string; id:string})=> void{
+      return (data:{msg:string, id:string, succesors:string[]})=>{
         console.log(this.peer.id, "conn:data", data, "from", conn.peer);
-        var {msg, id} = data;
-        switch(<string>msg){
+        if(!this.succesor){
+          this.join(conn.peer);
+        }
+        if(!this.predecessor){
+          this.predecessor = conn;
+        }
+        var {msg, id, succesors} = data;
+
+        switch(msg){
           // response
-          case "Yes. You are my predecessor.":
-            break;
-          case "No. Your succesor is worng.":
+          case "Your succesor is worng.":
             conn.close();
             this.join(id);
             break;
+          case "You need to stabilize now.":
+            this.stabilize();
+            break;
+          case "This is my predecessor.":
+            var min = 0;
+            var max =  distance("zzzzzzzzzzzzzzzz");
+            var myid = distance(this.peer.id);
+            var succ = distance(conn.peer);
+            var succ_says_pred = distance(id);
+            console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
+
+            if(id === this.peer.id){
+              this.succesors = [conn.peer].concat(succesors).slice(0, 3);
+            }else if(succ > succ_says_pred && succ_says_pred > myid){
+              conn.close();
+              this.join(id);
+              break;
+            }else{
+              conn.send({msg: "Check your predecessor", id: "", succesors: []});
+            }break;
 
           // request
-          case "Am I your predecessor?":
-            if(typeof this.predecessor[0] === "undefined" && typeof this.succesor[0] === "undefined"){ // first join after my create
-              this.succesor[0] = conn;
-              this.predecessor[0] = conn;
-              conn.send({msg: "Yes. You are my predecessor.", id:""});
-            }else if(typeof this.predecessor[0] === "undefined"){ // first stabilize after my join
-              this.predecessor[0] = conn;
-              conn.send({msg: "Yes. You are my predecessor.", id:""});
-            }else if(this.predecessor[0].peer === conn.peer){ // right predecessor
-              conn.send({msg: "Yes. You are my predecessor.", id:""});
+          case "What are you predecessor?":
+            if(!this.predecessor){
+              this.predecessor = conn;
+              conn.send({msg: "This is my predecessor.", id: conn.peer, succesors: this.succesors});
             }else{
-              function distance(str:string){
-                return str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+val );
-              }
-
-              var min = 0;
-              var max =  distance("zzzzzzzzzzzzzzzz");
-              var myid = distance(this.peer.id);
-              var succ = distance(this.succesor[0].peer);
-              var pred = distance(this.predecessor[0].peer);
-              var newbee = distance(conn.peer);
-              console.log(this.peer.id, "conn:distance", {min, max, myid, succ, pred, newbee});
-
-              if( myid > newbee && newbee > pred ){
-                //this.predecessor[0].send("please stabilize now");
-                this.predecessor[0] = conn;
-                conn.send({msg: "Yes. You are my predecessor.", id:""});
-              }else if( myid > pred && pred > newbee ){
-                conn.send({msg:"No. Your succesor is worng.", id: this.predecessor[0].peer});
-              }else if( pred > myid && ((max > newbee && newbee > pred) || (myid > newbee && newbee > min)) ){ // newbee number is my own responsivilty
-                //this.predecessor[0].send("please stabilize now");
-                this.predecessor[0] = conn;
-                conn.send({msg: "Yes. You are my predecessor.", id:""});
-              }else if( newbee > myid ){ // newbee number is predecessors responsivilty
-                conn.send({msg:"No. Your succesor is worng.", id: this.predecessor[0].peer});
-              }else{
-                console.warn("something wrong");
-                debugger;
-              }
+              conn.send({msg: "This is my predecessor.", id: this.predecessor.peer, succesors: this.succesors});
             }break;
+          case "Check your predecessor":
+            var min = 0;
+            var max =  distance("zzzzzzzzzzzzzzzz");
+            var myid = distance(this.peer.id);
+            var succ = distance(this.succesor.peer);
+            var pred = distance(this.predecessor.peer);
+            var newbee = distance(conn.peer);
+            console.log(this.peer.id, "conn:distance2", {min, max, myid, succ, pred, newbee});
+
+            if( myid > newbee && newbee > pred ){
+              if(this.predecessor.open){
+                this.predecessor.send({msg: "You need to stabilize now.", id:"", succesors:[]});
+              }
+              this.predecessor = conn;
+            }else if( myid > pred && pred > newbee ){
+              conn.send({msg:"Your succesor is worng.", id: this.predecessor.peer, succesors: []});
+            }else if( pred > myid && ((max > newbee && newbee > pred) || (myid > newbee && newbee > min)) ){
+              if(this.predecessor.open){
+                this.predecessor.send({msg: "You need to stabilize now.", id:"", succesors:[]});
+              }
+              this.predecessor = conn;
+            }else if( newbee > myid ){ // newbee number is predecessors responsivilty
+              conn.send({msg:"Your succesor is worng.", id: this.predecessor.peer, succesors:[]});
+            }else{
+              console.warn("something wrong2");
+              debugger;
+            }break;
+          default:
+            console.warn("something wrong2");
+            debugger;
         }
-      }
+      };
     }
   }
 }
