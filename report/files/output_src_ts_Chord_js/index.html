@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">65.02</p>
+      <p class="stat">63.67</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">299</p>
+      <p class="stat">326</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">83.90</p>
+      <p class="stat">98.46</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">4.14</p>
+      <p class="stat">4.65</p>
     </div>
   </div>
 </div>
@@ -107,9 +107,11 @@ var duxca;
                 this.predecessors = [];
                 this.peer = null;
                 this.debug = true;
-                this.ontoken = function (token, cb) { return cb(token); };
                 this.tid = null;
                 this.peer = null;
+                this.listeners = {};
+                this.requests = {};
+                this.lastRequestId = 0;
             }
             Chord.prototype._init = function () {
                 var _this = this;
@@ -174,6 +176,8 @@ var duxca;
             Chord.prototype.create = function () {
                 var _this = this;
                 return this._init().then(function () {
+                    if (_this.peer.destroyed)
+                        return Promise.reject(new Error(_this.peer.id + &quot; is already destroyed&quot;));
                     if (_this.debug)
                         console.log(_this.peer.id, &quot;create:done&quot;);
                 });
@@ -181,6 +185,8 @@ var duxca;
             Chord.prototype.join = function (id) {
                 var _this = this;
                 return this._init().then(function () {
+                    if (_this.peer.destroyed)
+                        return Promise.reject(new Error(_this.peer.id + &quot; is already destroyed&quot;));
                     if (typeof id !== &quot;string&quot;)
                         throw new Error(&quot;peer id is not string.&quot;);
                     var conn = _this.peer.connect(id);
@@ -204,6 +210,10 @@ var duxca;
                 });
             };
             Chord.prototype.stabilize = function () {
+                if (!this.peer)
+                    throw new Error(&quot;this node does not join yet&quot;);
+                if (this.peer.destroyed)
+                    throw new Error(this.peer.id + &quot; is already destroyed&quot;);
                 if (this.debug)
                     console.log(this.peer.id, &quot;stabilize:to&quot;, this.successor.peer);
                 if (!!this.successor &amp;&amp; this.successor.open) {
@@ -245,26 +255,35 @@ var duxca;
                     this.predecessor = null;
                 }
             };
-            Chord.prototype.ping = function () {
+            Chord.prototype.request = function (event, data) {
                 var _this = this;
                 return new Promise(function (resolve, reject) {
+                    if (!_this.peer)
+                        throw new Error(&quot;this node does not join yet&quot;);
                     if (_this.peer.destroyed)
                         reject(new Error(_this.peer.id + &quot; is already destroyed&quot;));
-                    var _token = {
-                        event: &quot;ping&quot;,
+                    if (!_this.successor)
+                        throw new Error(_this.peer.id + &quot; does not have successor.&quot;);
+                    if (!_this.successor.open)
+                        throw new Error(_this.peer.id + &quot; has successor, but not open.&quot;);
+                    var token = {
+                        packet: { event: event, data: data },
+                        requestId: _this.lastRequestId++,
                         route: [_this.peer.id],
                         time: [Date.now()]
                     };
-                    _this.ontoken = function (token, cb) {
-                        if (token.event === &quot;ping&quot; &amp;&amp; token.time[0] === _token.time[0] &amp;&amp; token.route[0] === _token.route[0]) {
-                            _this.ontoken = function (token, cb) { return cb(token); };
-                            resolve(Promise.resolve(token));
-                        }
-                        else
-                            cb(token);
+                    _this.requests[token.requestId] = function (_token) {
+                        delete _this.requests[token.requestId];
+                        resolve(Promise.resolve(_token));
                     };
-                    _this.successor.send({ msg: &quot;Token&quot;, token: _token });
+                    _this.successor.send({ msg: &quot;Token&quot;, token: token });
                 });
+            };
+            Chord.prototype.on = function (event, listener) {
+                this.listeners[event] = listener;
+            };
+            Chord.prototype.off = function (event, listener) {
+                delete this.listeners[event];
             };
             Chord.prototype._connectionHandler = function (conn) {
                 var _this = this;
@@ -297,7 +316,11 @@ var duxca;
                     switch (data.msg) {
                         // ring network trafic
                         case &quot;Token&quot;:
-                            if (data.token.route[0] !== _this.peer.id &amp;&amp; data.token.route.indexOf(_this.peer.id) !== -1) {
+                            if (data.token.route[0] === _this.peer.id &amp;&amp; _this.requests[data.token.requestId] instanceof Function) {
+                                _this.requests[data.token.requestId](data.token);
+                                break;
+                            }
+                            if (data.token.route.indexOf(_this.peer.id) !== -1) {
                                 if (_this.debug)
                                     console.log(_this.peer.id, &quot;conn:token&quot;, &quot;dead token detected.&quot;, data.token);
                                 break;
@@ -305,9 +328,13 @@ var duxca;
                             if (_this.successor.open) {
                                 data.token.route.push(_this.peer.id);
                                 data.token.time.push(Date.now());
-                                _this.ontoken(data.token, function (token) {
-                                    _this.successor.send({ msg: &quot;Token&quot;, token: token });
-                                });
+                                if (_this.listeners[data.token.packet.event] instanceof Function) {
+                                    _this.listeners[data.token.packet.event](data.token, function (token) {
+                                        _this.successor.send({ msg: &quot;Token&quot;, token: token });
+                                    });
+                                }
+                                else
+                                    _this.successor.send({ msg: &quot;Token&quot;, token: data.token });
                             }
                             else {
                                 _this.stabilize();
@@ -324,7 +351,7 @@ var duxca;
                             if (_this.debug)
                                 console.log(_this.peer.id, &quot;conn:distance1&quot;, { min: min, max: max, myid: myid, succ: succ, succ_says_pred: succ_says_pred });
                             if (data.id === _this.peer.id) {
-                                _this.successors = [conn.peer].concat(data.successors).slice(0, 3);
+                                _this.successors = [conn.peer].concat(data.successors).slice(0, 4);
                             }
                             else if (succ &gt; succ_says_pred &amp;&amp; succ_says_pred &gt; myid) {
                                 conn.close();

@@ -19,6 +19,7 @@ var duxca;
             };*/
             function testChord(id) {
                 var chd0 = new duxca.lib.Chord();
+                var a = function (token, cb) { cb(token); };
                 var chd1 = new duxca.lib.Chord();
                 var chd2 = new duxca.lib.Chord();
                 var chd3 = new duxca.lib.Chord();
@@ -29,7 +30,7 @@ var duxca;
                             return chd3.join(chd2.peer.id).then(function () {
                                 return chd4.join(chd3.peer.id).then(function () {
                                     setInterval(function () {
-                                        chd0.ping().then(function (token) { return console.log("__TOKEN__", token.route); });
+                                        chd1.request("ping").then(function (token) { console.log("PING", token); });
                                         [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
                                             console.info(i, chd.predecessor && chd.predecessor.open, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.successor && chd.successor.peer, chd.successor && chd.successor.open, chd.successors);
                                         });

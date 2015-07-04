@@ -20,7 +20,6 @@
     "files": [
         "./CanvasRender.ts",
         "./Chord.ts",
-        "./Chord2.ts",
         "./FPS.ts",
         "./Metronome.ts",
         "./OSC.ts",

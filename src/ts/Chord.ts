@@ -7,7 +7,8 @@ module duxca.lib {
   }
   export declare module Chord{
     interface Token {
-      event: string;
+      packet: {event: string, data: any};
+      requestId: number;
       route: string[];
       time: number[];
     }
@@ -22,8 +23,10 @@ module duxca.lib {
     joined: boolean;
     peer: PeerJs.Peer;
     debug: boolean;
-    ontoken: (token: Chord.Token, cb:(token: Chord.Token)=>void)=>void;
     tid: number;
+    listeners: {[event:string]: (token:Chord.Token, cb:(token:Chord.Token)=> void)=> void};
+    requests: {[requestId:number]: ((token:Chord.Token)=> void)};
+    lastRequestId: number;
 
     constructor(){
       this.joined = false;
@@ -33,9 +36,11 @@ module duxca.lib {
       this.predecessors = [];
       this.peer = null;
       this.debug = true;
-      this.ontoken = (token,cb)=> cb(token);
       this.tid = null;
       this.peer = null;
+      this.listeners = {};
+      this.requests = {};
+      this.lastRequestId = 0;
     }
 
     _init(): Promise<void>{
@@ -93,12 +98,14 @@ module duxca.lib {
 
     create(): Promise<void>{
       return this._init().then(()=>{
+        if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
         if(this.debug) console.log(this.peer.id, "create:done");
       });
     }
 
     join(id: string): Promise<void>{
       return this._init().then(()=>{
+        if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
         if(typeof id !== "string") throw new Error("peer id is not string.");
         var conn = this.peer.connect(id);
         this._connectionHandler(conn);
@@ -121,6 +128,8 @@ module duxca.lib {
     }
 
     stabilize(){
+      if(!this.peer) throw new Error("this node does not join yet");
+      if(this.peer.destroyed) throw new Error(this.peer.id+" is already destroyed");
       if(this.debug) console.log(this.peer.id, "stabilize:to", this.successor.peer);
       if(!!this.successor && this.successor.open){
         this.successor.send({msg:"What is your predecessor?"});
@@ -157,22 +166,32 @@ module duxca.lib {
       }
     }
 
-    ping():Promise<Chord.Token>{
+    request(event: string, data?: any): Promise<Chord.Token>{
       return new Promise<Chord.Token>((resolve, reject)=>{
+        if(!this.peer) throw new Error("this node does not join yet");
         if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
-        var _token: Chord.Token = {
-          event: "ping",
+        if(!this.successor) throw new Error(this.peer.id+" does not have successor.");
+        if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
+        var token = {
+          packet: {event, data},
+          requestId: this.lastRequestId++,
           route: [this.peer.id],
           time: [Date.now()]
         };
-        this.ontoken = (token,cb)=>{
-          if(token.event === "ping" && token.time[0] === _token.time[0] && token.route[0] === _token.route[0]){
-            this.ontoken = (token,cb)=> cb(token);
-            resolve(Promise.resolve(token));
-          }else cb(token);
+        this.requests[token.requestId] = (_token)=>{
+          delete this.requests[token.requestId];
+          resolve(Promise.resolve(_token));
         };
-        this.successor.send({msg: "Token", token:_token});
+        this.successor.send({msg: "Token", token});
       });
+    }
+
+    on(event: string, listener:(token:Chord.Token, cb:(token:Chord.Token)=> void)=> void): void{
+      this.listeners[event] = listener;
+    }
+
+    off(event: string, listener:(token:Chord.Token, cb:(token:Chord.Token)=> void)=> void): void{
+      delete this.listeners[event];
     }
 
     _connectionHandler(conn: PeerJs.DataConnection){
@@ -204,16 +223,22 @@ module duxca.lib {
         switch(data.msg){
           // ring network trafic
           case "Token":
-            if(data.token.route[0] !== this.peer.id && data.token.route.indexOf(this.peer.id) !== -1){
+            if(data.token.route[0] === this.peer.id && this.requests[data.token.requestId] instanceof Function){
+              this.requests[data.token.requestId](data.token);
+              break;
+            }
+            if(data.token.route.indexOf(this.peer.id) !== -1){
               if(this.debug) console.log(this.peer.id, "conn:token", "dead token detected.", data.token);
               break;
             }
             if(this.successor.open){
               data.token.route.push(this.peer.id);
               data.token.time.push(Date.now());
-              this.ontoken(data.token, (token: Chord.Token)=>{
-                this.successor.send({msg: "Token", token});
-              });
+              if(this.listeners[data.token.packet.event] instanceof Function){
+                this.listeners[data.token.packet.event](data.token, (token)=>{
+                  this.successor.send({msg: "Token", token});
+                });
+              }else this.successor.send({msg: "Token", token: data.token});
             }else{
               this.stabilize();
               setTimeout(()=> ondata(data), 1000);
@@ -230,7 +255,7 @@ module duxca.lib {
             if(this.debug) console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
 
             if(data.id === this.peer.id){ // no probrem
-              this.successors = [conn.peer].concat(data.successors).slice(0, 3);
+              this.successors = [conn.peer].concat(data.successors).slice(0, 4);
             }else if(succ > succ_says_pred && succ_says_pred > myid){ // chenge my successor
               conn.close();
               this.join(data.id);

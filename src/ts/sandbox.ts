@@ -20,6 +20,7 @@ module duxca.lib.Sandbox {
 
   export function testChord(id?:string): void{
     var chd0 = new duxca.lib.Chord();
+    var a = (token:Chord.Token, cb:(token:Chord.Token)=>void)=>{ cb(token); };
     var chd1 = new duxca.lib.Chord();
     var chd2 = new duxca.lib.Chord();
     var chd3 = new duxca.lib.Chord();
@@ -30,7 +31,7 @@ module duxca.lib.Sandbox {
           return chd3.join(chd2.peer.id).then(()=>{
             return chd4.join(chd3.peer.id).then(()=>{
               setInterval(function(){
-                chd0.ping().then((token)=> console.log("__TOKEN__",token.route) );
+                chd1.request("ping").then((token)=>{console.log("PING", token)});
                 [chd0, chd1, chd2, chd3, chd4].forEach(function(chd, i){
                   console.info(i, chd.predecessor&&chd.predecessor.open, chd.predecessor&&chd.predecessor.peer, chd.peer.id, chd.successor&&chd.successor.peer, chd.successor&&chd.successor.open, chd.successors);
                 });
