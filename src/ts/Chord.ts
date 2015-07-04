@@ -2,234 +2,289 @@
 /// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 
 module duxca.lib {
-
   function distance(str:string){
     return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
   }
-
   export declare module Chord{
-    export interface Token {
-     sender: string;
-     event: string;
-     route: string[];
-     data: any;
-     date: number;
-   }
+    interface Token {
+      event: string;
+      route: string[];
+      time: number[];
+    }
   }
 
   export class Chord{
 
-    peer: PeerJs.Peer;
-    succesor: PeerJs.DataConnection;
+    successor: PeerJs.DataConnection;
     predecessor: PeerJs.DataConnection;
-    succesors: string[];
+    successors: string[];
     predecessors: string[];
     joined: boolean;
+    peer: PeerJs.Peer;
+    debug: boolean;
     ontoken: (token: Chord.Token, cb:(token: Chord.Token)=>void)=>void;
+    tid: number;
 
     constructor(){
       this.joined = false;
-      this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
-      this.succesor = null;
-      this.succesors = [];
+      this.successor = null;
+      this.successors = [];
       this.predecessor = null;
       this.predecessors = [];
+      this.peer = null;
+      this.debug = true;
       this.ontoken = (token,cb)=> cb(token);
-      var tid = setInterval(()=>{
-        if(!!this.predecessor&&this.predecessor.open&&!!this.succesor&&this.succesor.open){
-          this.joined=true;
-        }
-        if(this.peer.id) this.stabilize();
-      }, 5000);
+      this.tid = null;
+      this.peer = null;
     }
 
-    init():Promise<Chord>{
-      return new Promise<Chord>((resolve, reject)=>{
-        this.peer.on('open', openHandler.bind(this));
-        this.peer.on('error', errorHandler.bind(this));
-        this.peer.on('close', closeHandler.bind(this));
-        this.peer.on('disconnected', disconnectedHandler.bind(this));
-        this.peer.on('connection', connectionHandler.bind(this));
-
-        function openHandler(id: string){
-          console.log(this.peer.id, "peer:open", "my id is", id);
-          resolve(Promise.resolve(this));
+    _init(): Promise<void>{
+      if(!!this.peer) return Promise.resolve();
+      this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
+      this.peer.on('open', (id)=>{ if(this.debug) console.log(this.peer.id, "peer:open", id); });
+      // open
+      // Emitted when a connection to the PeerServer is established.
+      // You may use the peer before this is emitted, but messages to the server will be queued.
+      // id is the brokering ID of the peer (which was either provided in the constructor or assigned by the server).
+      //   You should not wait for this event before connecting to other peers if connection speed is important.
+      this.peer.on('error', (err)=>{ if(this.debug) console.error(this.peer.id, "peer:error", err); });
+      // error
+      // Errors on the peer are almost always fatal and will destroy the peer.
+      // Errors from the underlying socket and PeerConnections are forwarded here.
+      this.peer.on('close', ()=>{
+        if(this.debug) console.log(this.peer.id, "peer:close");
+        clearInterval(this.tid);
+        this.joined = false;
+      });
+      // close
+      // Emitted when the peer is destroyed and can no longer accept or create any new connections.
+      // At this time, the peer's connections will all be closed.
+      //   To be extra certain that peers clean up correctly,
+      //   we recommend calling peer.destroy() on a peer when it is no longer needed.
+      this.peer.on('disconnected', ()=>{ if(this.debug) console.log(this.peer.id, "peer:disconnected"); });
+      // disconnected
+      // Emitted when the peer is disconnected from the signalling server,
+      // either manually or because the connection to the signalling server was lost.
+      // When a peer is disconnected, its existing connections will stay alive,
+      // but the peer cannot accept or create any new connections.
+      // You can reconnect to the server by calling peer.reconnect().
+      this.peer.on('connection', (conn: PeerJs.DataConnection)=>{
+        // Emitted when a new data connection is established from a remote peer.
+        if(this.debug) console.log(this.peer.id, "peer:connection", "from", conn.peer);
+        this._connectionHandler(conn);
+      });
+      this.tid = setInterval(()=>{
+        if(this.successor){
+          if(this.debug) console.log(this.peer.id, "setInterval");
+          this.stabilize();
         }
-
-        function errorHandler(err:any){
-          console.error(this.peer.id, "peer:error", err);
-          reject(err);
-        }
-
-        function closeHandler(){
-          console.log(this.peer.id, "peer:close");
-        }
-
-        function disconnectedHandler(){
-          console.log(this.peer.id, "peer:disconnected");
-        }
-
-        function connectionHandler(conn: PeerJs.DataConnection){
-          console.log(this.peer.id, "peer:connection", "from", conn.peer);
-          conn.on("data", this.connDataHandlerCreater.call(this, conn));
-        }
+      }, 3000);
+      return new Promise<void>((resolve, reject)=>{
+        this.peer.on('error', _error);
+        this.peer.on('open', _open);
+        var off = ()=>{
+          this.peer.off('error', _error);
+          this.peer.off('open', _open);
+        };
+        function _open(id:string){ off(); resolve(Promise.resolve()); }
+        function _error(err:any){ off(); reject(err); }
       });
     }
 
-    create(){
-      this.stabilize();
+    create(): Promise<void>{
+      return this._init().then(()=>{
+        if(this.debug) console.log(this.peer.id, "create:done");
+      });
     }
 
-    join(id: string):Promise<Chord>{
-      console.log(this.peer.id, "try:join", "to", id);
-      return new Promise<Chord>((resolve, reject)=>{
+    join(id: string): Promise<void>{
+      return this._init().then(()=>{
+        if(typeof id !== "string") throw new Error("peer id is not string.");
         var conn = this.peer.connect(id);
-        this.succesor = conn;
-        this.joined = true;
-        conn.on('open', openHandler.bind(this));
-        conn.on('error', errorHandler.bind(this));
-        conn.on("data", this.connDataHandlerCreater.call(this, conn));
-        conn.on('close', closeHandler.bind(this));
-
-        function openHandler(){
-          console.log(this.peer.id, "conn:open", "to", conn.peer);
-
-          this.stabilize();
-          resolve(Promise.resolve(this));
-        }
-
-        function errorHandler(err:any){
-          console.error(this.peer.id, "conn:error", err);
-          conn.close();
-          reject(err);
-        }
-
-        function closeHandler(){
-          console.log(this.peer.id, "conn:close", conn.peer);
-        }
+        this._connectionHandler(conn);
+        return new Promise<void>((resolve, reject)=>{
+          conn.on('error', _error);
+          conn.on('open', _open);
+          var off = ()=>{
+            conn.off('error', _error);
+            conn.off('open', _open);
+          };
+          function _open(){ off(); resolve(Promise.resolve()); }
+          function _error(err:any){ off(); reject(err); }
+        }).then(()=>{
+          if(this.debug) console.log(this.peer.id, "join:done", "to", id);
+          this.successor = conn;
+          this.joined = true;
+          setTimeout(()=>this.stabilize(), 0);
+        });
       });
     }
 
     stabilize(){
-      console.log(this.peer.id, "stabilize:to", !!this.succesor && this.succesor, this.joined);
-      if(!!this.succesor && this.succesor.open){
-        this.succesor.send({msg:"What are you predecessor?", id:"", succesors: []});
+      if(this.debug) console.log(this.peer.id, "stabilize:to", this.successor.peer);
+      if(!!this.successor && this.successor.open){
+        this.successor.send({msg:"What is your predecessor?"});
       }
-      if(this.joined && !!this.succesor && !this.succesor.open){
-        console.log(this.peer.id, "stabilize:succesor", this.succesor, "is died. try", this.succesors[1]);
-        this.succesor.close();
-        this.succesor = null;
-        this.join(this.succesors[1]);
+      if(this.joined && !!this.successor && !this.successor.open){
+        if(typeof this.successors[1] !== "string"){
+          if(!!this.predecessor && this.predecessor.open){
+            // when all successor are died, try predecessor as new successor
+            if(this.debug) console.log(this.peer.id, "stabilize:successor", this.successor.peer, "is died. fail back to predecessor", this.predecessor.peer);
+            //this.successor.close();
+            this.successor = null;
+            this.join(this.predecessor.peer);
+          }
+          if(this.debug) console.log(this.peer.id, "stabilize:all connects are lost. Nothing to do");
+          this.joined = false;
+          clearInterval(this.tid);
+          return;
+        }
+        if(this.successors[1] !== this.peer.id){
+          if(this.debug) console.log(this.peer.id, "stabilize:successor", this.successor.peer, "is died. try successor[1]", this.successors[1], this.successors);
+          //this.successor.close();
+          this.successor = null;
+          this.join(this.successors[1]);
+        }else{
+          this.successors.shift();
+          this.stabilize();
+          return;
+        }
       }
       if(this.joined && !!this.predecessor && !this.predecessor.open){
-        console.log(this.peer.id, "stabilize:predecessor", this.predecessor, "is died.");
-        this.predecessor.close();
+        if(this.debug) console.log(this.peer.id, "stabilize:predecessor", this.predecessor.peer, "is died.");
+        //this.predecessor.close();
         this.predecessor = null;
       }
     }
 
-    connDataHandlerCreater(conn: PeerJs.DataConnection): (data:{msg:string, id:string, succesors:string[], token:Chord.Token})=>void {
-      var callee: Function;
-      return callee = (data:{msg:string, id:string, succesors:string[], token:Chord.Token})=>{
-        console.log(this.peer.id, "conn:data", data, "from", conn.peer);
-        if(!this.succesor){
+    ping():Promise<Chord.Token>{
+      return new Promise<Chord.Token>((resolve, reject)=>{
+        if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
+        var _token: Chord.Token = {
+          event: "ping",
+          route: [this.peer.id],
+          time: [Date.now()]
+        };
+        this.ontoken = (token,cb)=>{
+          if(token.event === "ping" && token.time[0] === _token.time[0] && token.route[0] === _token.route[0]){
+            this.ontoken = (token,cb)=> cb(token);
+            resolve(Promise.resolve(token));
+          }else cb(token);
+        };
+        this.successor.send({msg: "Token", token:_token});
+      });
+    }
+
+    _connectionHandler(conn: PeerJs.DataConnection){
+      conn.on('open', ()=>{ if(this.debug) console.log(this.peer.id, "conn:open", "to", conn.peer); });
+      conn.on('close', ()=>{
+        // Emitted when either you or the remote peer closes the data connection.
+        //  Firefox does not yet support this event.
+        if(this.debug) console.log(this.peer.id, "conn:close", "to", conn.peer);
+      });
+      conn.on('error', (err)=>{
+        if(this.debug) console.error(this.peer.id, "conn:error", "to", conn.peer, err);
+        this.stabilize();
+      });
+
+      var ondata: (data:{msg:string, id:string, successors:string[], token:Chord.Token})=>void = null;
+      conn.on('data', ondata = (data)=>{
+        if(!this.successor){
           this.join(conn.peer).then(()=>{
-            this.succesor.send({msg: "Token", token: {sender: this.peer.id, event:"ping", route:[this.peer.id], data:null, date:Date.now() }});
-            callee(data);
+            ondata(data);
           });
           return;
         }
         if(!this.predecessor){
           this.predecessor = conn;
         }
-        var {msg, id, succesors, token} = data;
 
-        switch(msg){
+        if(this.debug) console.log(this.peer.id, "conn:data", data, "from", conn.peer);
+
+        switch(data.msg){
           // ring network trafic
           case "Token":
-            if(token.sender === this.peer.id){
-              console.log("TOKEN_RESULT", token);
-              setTimeout(()=>{
-                this.succesor.send({msg: "Token", token: {sender: this.peer.id, event:"ping", route:[this.peer.id], data:null, date:Date.now()}});
-              },1000);
+            if(data.token.route[0] !== this.peer.id && data.token.route.indexOf(this.peer.id) !== -1){
+              if(this.debug) console.log(this.peer.id, "conn:token", "dead token detected.", data.token);
               break;
             }
-            if(token.route.indexOf(this.peer.id) !== -1){
-              console.log(this.peer.id, "conn:token", "dead token detected.", token);
-              break;
+            if(this.successor.open){
+              data.token.route.push(this.peer.id);
+              data.token.time.push(Date.now());
+              this.ontoken(data.token, (token: Chord.Token)=>{
+                this.successor.send({msg: "Token", token});
+              });
+            }else{
+              this.stabilize();
+              setTimeout(()=> ondata(data), 1000);
             }
-            token.route.push(this.peer.id);
-            this.ontoken(token, (token: Chord.Token)=>{
-              this.succesor.send({msg: "Token", token: token});
-            });
             break;
 
           // response
-          case "Your succesor is worng.":
-            conn.close();
-            this.join(id);
-            break;
-          case "You need to stabilize now.":
-            this.stabilize();
-            break;
           case "This is my predecessor.":
             var min = 0;
             var max =  distance("zzzzzzzzzzzzzzzz");
             var myid = distance(this.peer.id);
             var succ = distance(conn.peer);
-            var succ_says_pred = distance(id);
-            console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
+            var succ_says_pred = distance(data.id);
+            if(this.debug) console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
 
-            if(id === this.peer.id){
-              this.succesors = [conn.peer].concat(succesors).slice(0, 3);
-            }else if(succ > succ_says_pred && succ_says_pred > myid){
+            if(data.id === this.peer.id){ // no probrem
+              this.successors = [conn.peer].concat(data.successors).slice(0, 3);
+            }else if(succ > succ_says_pred && succ_says_pred > myid){ // chenge my successor
               conn.close();
-              this.join(id);
-              break;
-            }else{
-              conn.send({msg: "Check your predecessor", id: "", succesors: []});
-            }break;
+              this.join(data.id);
+            }else{ // successor's right predecessor is me
+              conn.send({msg: "Check your predecessor."});
+            }
+            break;
+          case "Your successor is worng.": // routing right address
+            conn.close();
+            this.join(data.id);
+            break;
+          case "You need stabilize now.": // successor's predecessor is chenged
+            this.stabilize();
+            break;
 
           // request
-          case "What are you predecessor?":
-            if(!this.predecessor){
-              this.predecessor = conn;
-              conn.send({msg: "This is my predecessor.", id: conn.peer, succesors: this.succesors});
-            }else{
-              conn.send({msg: "This is my predecessor.", id: this.predecessor.peer, succesors: this.succesors});
-            }break;
-          case "Check your predecessor":
+          case "What is your predecessor?":
+            conn.send({msg: "This is my predecessor.", id: this.predecessor.peer, successors: this.successors});
+            break;
+          case "Check your predecessor.":
             var min = 0;
             var max =  distance("zzzzzzzzzzzzzzzz");
             var myid = distance(this.peer.id);
-            var succ = distance(this.succesor.peer);
+            var succ = distance(this.successor.peer);
             var pred = distance(this.predecessor.peer);
             var newbee = distance(conn.peer);
-            console.log(this.peer.id, "conn:distance2", {min, max, myid, succ, pred, newbee});
+            if(this.debug) console.log(this.peer.id, "conn:distance2", {min, max, myid, succ, pred, newbee});
 
-            if( myid > newbee && newbee > pred ){
+            if( (myid > newbee && newbee > pred) ){ // change my predecessor
               if(this.predecessor.open){
-                this.predecessor.send({msg: "You need to stabilize now.", id:"", succesors:[]});
+                this.predecessor.send({msg: "You need stabilize now."});
               }
               this.predecessor = conn;
-            }else if( myid > pred && pred > newbee ){
-              conn.send({msg:"Your succesor is worng.", id: this.predecessor.peer, succesors: []});
-            }else if( pred > myid && ((max > newbee && newbee > pred) || (myid > newbee && newbee > min)) ){
+            }else if( (myid > pred && pred > newbee) ){ // newbee number is predecessors responsivilty
+              conn.send({msg:"Your successor is worng.", id: this.predecessor.peer});
+            }else if( (pred > myid && ((max > newbee && newbee > pred) || (myid > newbee && newbee > min))) ){ // change my predecesso
               if(this.predecessor.open){
-                this.predecessor.send({msg: "You need to stabilize now.", id:"", succesors:[]});
+                this.predecessor.send({msg: "You need stabilize now."});
               }
               this.predecessor = conn;
-            }else if( newbee > myid ){ // newbee number is predecessors responsivilty
-              conn.send({msg:"Your succesor is worng.", id: this.predecessor.peer, succesors:[]});
+            }else if( pred !== newbee && newbee > myid ){ // newbee number is predecessors responsivilty
+              conn.send({msg:"Your successor is worng.", id: this.predecessor.peer});
+            }else if(newbee === pred){
+              // ok. all right.
             }else{
               console.warn("something wrong2");
               debugger;
             }break;
           default:
-            console.warn("something wrong2");
+            console.warn("something wrong3", data.msg);
             debugger;
         }
-      };
+      });
     }
+
   }
 }

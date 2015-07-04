@@ -43,7 +43,7 @@ module duxca.lib.Statictics {
 
   export function KDE(arr:number[]|Float32Array, h?:number):number[] {
     // kernel density estimation
-    if (h == null) {
+    if (typeof h !== "number") {
       h = 0.9 * stdev(arr) * Math.pow(arr.length, -1 / 5) + 0.0000000001;
     }
     function kernel(x:number):number {

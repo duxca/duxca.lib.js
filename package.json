@@ -10,7 +10,7 @@
     "build-rm": "rm -rf output/*; rm -rf lib/*",
     "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
     "build-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration src/ts/*.ts;",
-    "concat": "cd output/src/ts; cat CanvasRender.js Chord2.js Chord.js FPS.js Metronome.js OSC.js RecordBuffer.js Sandbox.js Signal.js Statictics.js Util.js Wave.js > ../../../lib/duxca.lib.js ",
+    "concat": "cd output/src/ts; cat CanvasRender.js Chord.js FPS.js Metronome.js OSC.js RecordBuffer.js Sandbox.js Signal.js Statictics.js Util.js Wave.js > ../../../lib/duxca.lib.js ",
     "plato": "node node_modules/plato/bin/plato --title duxca.lib.js --jshint .jshintrc --recurse --dir report --exclude output/test/ output; npm run report",
     "report": "open http://localhost:8000/report/",
     "demo": "open http://localhost:8000/demo/",

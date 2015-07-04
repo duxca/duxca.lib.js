@@ -47,7 +47,7 @@ var duxca;
             Statictics.median = median;
             function KDE(arr, h) {
                 // kernel density estimation
-                if (h == null) {
+                if (typeof h !== "number") {
                     h = 0.9 * stdev(arr) * Math.pow(arr.length, -1 / 5) + 0.0000000001;
                 }
                 function kernel(x) {

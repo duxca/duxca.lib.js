@@ -19,11 +19,11 @@ module duxca.lib.Sandbox {
 
 
   export function testChord(id?:string): void{
-    var chd0 = new duxca.lib.Chord2();
-    var chd1 = new duxca.lib.Chord2();
-    var chd2 = new duxca.lib.Chord2();
-    var chd3 = new duxca.lib.Chord2();
-    var chd4 = new duxca.lib.Chord2();
+    var chd0 = new duxca.lib.Chord();
+    var chd1 = new duxca.lib.Chord();
+    var chd2 = new duxca.lib.Chord();
+    var chd3 = new duxca.lib.Chord();
+    var chd4 = new duxca.lib.Chord();
     chd0.create().then(()=>{
       return chd1.join(chd0.peer.id).then(()=>{
         return chd2.join(chd0.peer.id).then(()=>{

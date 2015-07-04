@@ -3,31 +3,27 @@
 declare module duxca.lib {
     module Chord {
         interface Token {
-            sender: string;
             event: string;
             route: string[];
-            data: any;
-            date: number;
+            time: number[];
         }
     }
     class Chord {
-        peer: PeerJs.Peer;
-        succesor: PeerJs.DataConnection;
+        successor: PeerJs.DataConnection;
         predecessor: PeerJs.DataConnection;
-        succesors: string[];
+        successors: string[];
         predecessors: string[];
         joined: boolean;
+        peer: PeerJs.Peer;
+        debug: boolean;
         ontoken: (token: Chord.Token, cb: (token: Chord.Token) => void) => void;
+        tid: number;
         constructor();
-        init(): Promise<Chord>;
-        create(): void;
-        join(id: string): Promise<Chord>;
+        _init(): Promise<void>;
+        create(): Promise<void>;
+        join(id: string): Promise<void>;
         stabilize(): void;
-        connDataHandlerCreater(conn: PeerJs.DataConnection): (data: {
-            msg: string;
-            id: string;
-            succesors: string[];
-            token: Chord.Token;
-        }) => void;
+        ping(): Promise<Chord.Token>;
+        _connectionHandler(conn: PeerJs.DataConnection): void;
     }
 }
