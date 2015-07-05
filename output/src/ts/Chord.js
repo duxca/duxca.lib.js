@@ -21,6 +21,7 @@ var duxca;
                 this.listeners = {};
                 this.requests = {};
                 this.lastRequestId = 0;
+                this.STABILIZE_INTERVAL = 5000;
             }
             Chord.prototype._init = function () {
                 var _this = this;
@@ -70,7 +71,7 @@ var duxca;
                             console.log(_this.peer.id, "setInterval");
                         _this.stabilize();
                     }
-                }, 3000);
+                }, this.STABILIZE_INTERVAL);
                 return new Promise(function (resolve, reject) {
                     _this.peer.on('error', _error);
                     _this.peer.on('open', _open);
@@ -89,6 +90,7 @@ var duxca;
                         return Promise.reject(new Error(_this.peer.id + " is already destroyed"));
                     if (_this.debug)
                         console.log(_this.peer.id, "create:done");
+                    return _this;
                 });
             };
             Chord.prototype.join = function (id) {
@@ -97,7 +99,7 @@ var duxca;
                     if (_this.peer.destroyed)
                         return Promise.reject(new Error(_this.peer.id + " is already destroyed"));
                     if (typeof id !== "string")
-                        throw new Error("peer id is not string.");
+                        return Promise.reject(new Error("peer id is not string."));
                     var conn = _this.peer.connect(id);
                     _this._connectionHandler(conn);
                     return new Promise(function (resolve, reject) {
@@ -115,6 +117,7 @@ var duxca;
                         _this.successor = conn;
                         _this.joined = true;
                         setTimeout(function () { return _this.stabilize(); }, 0);
+                        return _this;
                     });
                 });
             };
@@ -166,7 +169,6 @@ var duxca;
             };
             Chord.prototype.request = function (event, data, timeout) {
                 var _this = this;
-                if (timeout === void 0) { timeout = 5000; }
                 return new Promise(function (resolve, reject) {
                     if (!_this.peer)
                         throw new Error("this node does not join yet");
@@ -182,7 +184,9 @@ var duxca;
                         route: [_this.peer.id],
                         time: [Date.now()]
                     };
-                    setTimeout(function () { return reject(new Error("timeout")); }, timeout);
+                    if (typeof timeout === "number") {
+                        setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
+                    }
                     _this.requests[token.requestId] = function (_token) {
                         delete _this.requests[token.requestId];
                         resolve(Promise.resolve(_token));

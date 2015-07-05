@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">64.38</p>
+      <p class="stat">64.30</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">334</p>
+      <p class="stat">338</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">100.95</p>
+      <p class="stat">96.92</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">4.76</p>
+      <p class="stat">4.84</p>
     </div>
   </div>
 </div>
@@ -112,6 +112,7 @@ var duxca;
                 this.listeners = {};
                 this.requests = {};
                 this.lastRequestId = 0;
+                this.STABILIZE_INTERVAL = 5000;
             }
             Chord.prototype._init = function () {
                 var _this = this;
@@ -161,7 +162,7 @@ var duxca;
                             console.log(_this.peer.id, &quot;setInterval&quot;);
                         _this.stabilize();
                     }
-                }, 3000);
+                }, this.STABILIZE_INTERVAL);
                 return new Promise(function (resolve, reject) {
                     _this.peer.on(&#039;error&#039;, _error);
                     _this.peer.on(&#039;open&#039;, _open);
@@ -180,6 +181,7 @@ var duxca;
                         return Promise.reject(new Error(_this.peer.id + &quot; is already destroyed&quot;));
                     if (_this.debug)
                         console.log(_this.peer.id, &quot;create:done&quot;);
+                    return _this;
                 });
             };
             Chord.prototype.join = function (id) {
@@ -188,7 +190,7 @@ var duxca;
                     if (_this.peer.destroyed)
                         return Promise.reject(new Error(_this.peer.id + &quot; is already destroyed&quot;));
                     if (typeof id !== &quot;string&quot;)
-                        throw new Error(&quot;peer id is not string.&quot;);
+                        return Promise.reject(new Error(&quot;peer id is not string.&quot;));
                     var conn = _this.peer.connect(id);
                     _this._connectionHandler(conn);
                     return new Promise(function (resolve, reject) {
@@ -206,6 +208,7 @@ var duxca;
                         _this.successor = conn;
                         _this.joined = true;
                         setTimeout(function () { return _this.stabilize(); }, 0);
+                        return _this;
                     });
                 });
             };
@@ -257,7 +260,6 @@ var duxca;
             };
             Chord.prototype.request = function (event, data, timeout) {
                 var _this = this;
-                if (timeout === void 0) { timeout = 5000; }
                 return new Promise(function (resolve, reject) {
                     if (!_this.peer)
                         throw new Error(&quot;this node does not join yet&quot;);
@@ -273,7 +275,9 @@ var duxca;
                         route: [_this.peer.id],
                         time: [Date.now()]
                     };
-                    setTimeout(function () { return reject(new Error(&quot;timeout&quot;)); }, timeout);
+                    if (typeof timeout === &quot;number&quot;) {
+                        setTimeout(function () { return reject(new Error(_this.peer.id + &quot;request(&quot; + event + &quot;):timeout(&quot; + timeout + &quot;)&quot;)); }, timeout);
+                    }
                     _this.requests[token.requestId] = function (_token) {
                         delete _this.requests[token.requestId];
                         resolve(Promise.resolve(_token));

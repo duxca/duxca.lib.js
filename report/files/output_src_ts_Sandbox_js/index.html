@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">63.20</p>
+      <p class="stat">61.52</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">822</p>
+      <p class="stat">775</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">147.90</p>
+      <p class="stat">144.63</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">15.88</p>
+      <p class="stat">15.24</p>
     </div>
   </div>
 </div>
@@ -108,108 +108,6 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement(&quot;br&quot;));
             };*/
-            function testAutoDetect2(id) {
-                var chd = new duxca.lib.Chord();
-                var actx = new AudioContext();
-                if (typeof id === &quot;string&quot;) {
-                    chd.join(id);
-                }
-                else {
-                    chd.create().then(function () {
-                        setTimeout(function () {
-                            Promise.resolve().then(function () {
-                                return chd.request(&quot;ping&quot;);
-                            }).then(function (token) {
-                                return chd.request(&quot;startRec&quot;);
-                            }).then(function (token) {
-                                return chd.request(&quot;pulse&quot;);
-                            }).then(function (token) {
-                                return chd.request(&quot;stopRec&quot;);
-                            }).then(function (token) {
-                                return chd.request(&quot;calc&quot;);
-                            }).then(function (token) {
-                                return chd.request(&quot;collect&quot;);
-                            }).then(function (token) {
-                                console.log(token.payload.event, token);
-                            });
-                        }, 15000);
-                    });
-                }
-                chd.on(&quot;ping&quot;, function (token, cb) {
-                    cb(token);
-                });
-                chd.on(&quot;startRec&quot;, function (token, cb) {
-                    cb(token);
-                });
-                chd.on(&quot;pulse&quot;, function (token, cb) {
-                    cb(token);
-                });
-                chd.on(&quot;stopRec&quot;, function (token, cb) {
-                    cb(token);
-                });
-                chd.on(&quot;calc&quot;, function (token, cb) {
-                    cb(token);
-                });
-                chd.on(&quot;collect&quot;, function (token, cb) {
-                    cb(token);
-                });
-            }
-            Sandbox.testAutoDetect2 = testAutoDetect2;
-            function testAutoDetect(id) {
-                var chd = new duxca.lib.Chord();
-                var actx = new AudioContext();
-                chd.on(&quot;tone&quot;, function (token, cb) {
-                    console.log(&quot;tone&quot;);
-                    (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination);
-                    setTimeout(function () {
-                        cb(token);
-                    }, 1000);
-                });
-                if (typeof id === &quot;string&quot;) {
-                    chd.join(id);
-                }
-                else {
-                    chd.create().then(function () {
-                        setInterval(function () {
-                            chd.request(&quot;tone&quot;).then(function (token) { console.log(token.payload.event, token); });
-                        }, 15000);
-                    });
-                }
-            }
-            Sandbox.testAutoDetect = testAutoDetect;
-            function testChord(id) {
-                var chd0 = new duxca.lib.Chord();
-                var a = function (token, cb) { cb(token); };
-                var chd1 = new duxca.lib.Chord();
-                var chd2 = new duxca.lib.Chord();
-                var chd3 = new duxca.lib.Chord();
-                var chd4 = new duxca.lib.Chord();
-                chd0.create().then(function () {
-                    return chd1.join(chd0.peer.id).then(function () {
-                        return chd2.join(chd0.peer.id).then(function () {
-                            return chd3.join(chd2.peer.id).then(function () {
-                                return chd4.join(chd3.peer.id).then(function () {
-                                    setInterval(function () {
-                                        chd1.request(&quot;ping&quot;).then(function (token) { console.log(&quot;PING&quot;, token); });
-                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
-                                            console.info(i, chd.predecessor &amp;&amp; chd.predecessor.open, chd.predecessor &amp;&amp; chd.predecessor.peer, chd.peer.id, chd.successor &amp;&amp; chd.successor.peer, chd.successor &amp;&amp; chd.successor.open, chd.successors);
-                                        });
-                                    }, 2000);
-                                    setTimeout(function () {
-                                        console.warn(&quot;chd4 destroied&quot;);
-                                        chd4.peer.destroy();
-                                    }, 20000);
-                                    setTimeout(function () {
-                                        console.warn(&quot;chd0 destroied&quot;);
-                                        chd0.peer.destroy();
-                                    }, 40000);
-                                });
-                            });
-                        });
-                    });
-                }).catch(function (err) { console.error(err); });
-            }
-            Sandbox.testChord = testChord;
             function testDetect3() {
                 var PULSE_BOOST_COUNT = 1;
                 var PULSE_INTERVAL_SEC = 0.5;
@@ -298,7 +196,6 @@ var duxca;
                     });
                 }).then(function (_c) {
                     var recbuf = _c[0], barkerChirp = _c[1];
-                    var render = new duxca.lib.CanvasRender(128, 128);
                     console.group(&quot;show record&quot;);
                     console.time(&quot;show record&quot;);
                     var pcm = recbuf.toPCM();
@@ -340,6 +237,7 @@ var duxca;
                     console.groupEnd();
                     console.group(&quot;show correlation and stdscores&quot;);
                     console.time(&quot;show correlation and stdscores&quot;);
+                    var render = new duxca.lib.CanvasRender(128, 128);
                     var splitsize = Math.pow(2, 10);
                     var _correlation = duxca.lib.Signal.normalize(correlation, 128);
                     var _stdscores = duxca.lib.Signal.normalize(stdscores, 128);
@@ -376,7 +274,7 @@ var duxca;
                         console.screenshot(render.cnv);
                         lastptr = i;
                     }
-                    console.timeEnd(&quot;calc stdscores&quot;);
+                    console.timeEnd(&quot;show correlation and stdscores&quot;);
                     console.groupEnd();
                     console.group(&quot;calc cycle&quot;);
                     console.time(&quot;calc cycle&quot;);
@@ -447,6 +345,61 @@ var duxca;
                 });
             }
             Sandbox.testDetect3 = testDetect3;
+            function testAutoDetect(id) {
+                var chd = new duxca.lib.Chord();
+                var actx = new AudioContext();
+                chd.on(&quot;tone&quot;, function (token, cb) {
+                    console.log(&quot;tone&quot;);
+                    (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination);
+                    setTimeout(function () {
+                        cb(token);
+                    }, 1000);
+                });
+                if (typeof id === &quot;string&quot;) {
+                    chd.join(id);
+                }
+                else {
+                    chd.create().then(function () {
+                        setInterval(function () {
+                            chd.request(&quot;tone&quot;).then(function (token) { console.log(token.payload.event, token); });
+                        }, 15000);
+                    });
+                }
+            }
+            Sandbox.testAutoDetect = testAutoDetect;
+            function testChord(id) {
+                var chd0 = new duxca.lib.Chord();
+                var a = function (token, cb) { cb(token); };
+                var chd1 = new duxca.lib.Chord();
+                var chd2 = new duxca.lib.Chord();
+                var chd3 = new duxca.lib.Chord();
+                var chd4 = new duxca.lib.Chord();
+                chd0.create().then(function () {
+                    return chd1.join(chd0.peer.id).then(function () {
+                        return chd2.join(chd0.peer.id).then(function () {
+                            return chd3.join(chd2.peer.id).then(function () {
+                                return chd4.join(chd3.peer.id).then(function () {
+                                    setInterval(function () {
+                                        chd1.request(&quot;ping&quot;).then(function (token) { console.log(&quot;PING&quot;, token); });
+                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
+                                            console.info(i, chd.predecessor &amp;&amp; chd.predecessor.open, chd.predecessor &amp;&amp; chd.predecessor.peer, chd.peer.id, chd.successor &amp;&amp; chd.successor.peer, chd.successor &amp;&amp; chd.successor.open, chd.successors);
+                                        });
+                                    }, 2000);
+                                    setTimeout(function () {
+                                        console.warn(&quot;chd4 destroied&quot;);
+                                        chd4.peer.destroy();
+                                    }, 20000);
+                                    setTimeout(function () {
+                                        console.warn(&quot;chd0 destroied&quot;);
+                                        chd0.peer.destroy();
+                                    }, 40000);
+                                });
+                            });
+                        });
+                    });
+                }).catch(function (err) { console.error(err); });
+            }
+            Sandbox.testChord = testChord;
             function testDetect2() {
                 console.group(&quot;testDetect2&quot;);
                 console.time(&quot;testDetect2&quot;);

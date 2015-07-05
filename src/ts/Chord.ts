@@ -27,6 +27,7 @@ module duxca.lib {
     listeners: {[event:string]: (token:Chord.Token, cb:(token:Chord.Token)=> void)=> void};
     requests: {[requestId:number]: ((token:Chord.Token)=> void)};
     lastRequestId: number;
+    STABILIZE_INTERVAL: number;
 
     constructor(){
       this.joined = false;
@@ -41,6 +42,7 @@ module duxca.lib {
       this.listeners = {};
       this.requests = {};
       this.lastRequestId = 0;
+      this.STABILIZE_INTERVAL = 5000;
     }
 
     _init(): Promise<void>{
@@ -83,7 +85,7 @@ module duxca.lib {
           if(this.debug) console.log(this.peer.id, "setInterval");
           this.stabilize();
         }
-      }, 3000);
+      }, this.STABILIZE_INTERVAL);
       return new Promise<void>((resolve, reject)=>{
         this.peer.on('error', _error);
         this.peer.on('open', _open);
@@ -96,17 +98,18 @@ module duxca.lib {
       });
     }
 
-    create(): Promise<void>{
+    create(): Promise<Chord>{
       return this._init().then(()=>{
         if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
         if(this.debug) console.log(this.peer.id, "create:done");
+        return this;
       });
     }
 
-    join(id: string): Promise<void>{
+    join(id: string): Promise<Chord>{
       return this._init().then(()=>{
         if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
-        if(typeof id !== "string") throw new Error("peer id is not string.");
+        if(typeof id !== "string") return Promise.reject(new Error("peer id is not string."));
         var conn = this.peer.connect(id);
         this._connectionHandler(conn);
         return new Promise<void>((resolve, reject)=>{
@@ -123,6 +126,7 @@ module duxca.lib {
           this.successor = conn;
           this.joined = true;
           setTimeout(()=>this.stabilize(), 0);
+          return this;
         });
       });
     }
@@ -166,7 +170,7 @@ module duxca.lib {
       }
     }
 
-    request(event: string, data?: any, timeout:number=5000): Promise<Chord.Token>{
+    request(event: string, data?: any, timeout?:number): Promise<Chord.Token>{
       return new Promise<Chord.Token>((resolve, reject)=>{
         if(!this.peer) throw new Error("this node does not join yet");
         if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
@@ -178,7 +182,9 @@ module duxca.lib {
           route: [this.peer.id],
           time: [Date.now()]
         };
-        setTimeout(()=> reject(new Error("timeout")), timeout);
+        if(typeof timeout === "number"){
+          setTimeout(()=> reject(new Error(this.peer.id + "request(" + event + "):timeout("+timeout+")")), timeout);
+        }
         this.requests[token.requestId] = (_token)=>{
           delete this.requests[token.requestId];
           resolve(Promise.resolve(_token));
@@ -197,7 +203,7 @@ module duxca.lib {
       delete this.listeners[event];
     }
 
-    _connectionHandler(conn: PeerJs.DataConnection){
+    _connectionHandler(conn: PeerJs.DataConnection): void{
       conn.on('open', ()=>{ if(this.debug) console.log(this.peer.id, "conn:open", "to", conn.peer); });
       conn.on('close', ()=>{
         // Emitted when either you or the remote peer closes the data connection.

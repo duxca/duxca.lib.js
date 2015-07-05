@@ -16,108 +16,6 @@ module duxca.lib.Sandbox {
     document.body.appendChild(document.createElement("br"));
   };*/
 
-  export function testAutoDetect2(id?:string): void{
-    var chd = new duxca.lib.Chord();
-    var actx = new AudioContext();
-    if(typeof id === "string"){
-      chd.join(id);
-    }else{
-      chd.create().then(()=>{
-        setTimeout(()=>{
-          Promise.resolve().then(()=>{
-            return chd.request("ping");
-          }).then((token)=>{
-            return chd.request("startRec");
-          }).then((token)=>{
-            return chd.request("pulse");
-          }).then((token)=>{
-            return chd.request("stopRec");
-          }).then((token)=>{
-            return chd.request("calc");
-          }).then((token)=>{
-            return chd.request("collect");
-          }).then((token)=>{
-            console.log(token.payload.event, token)
-          });
-        }, 15000);
-      });
-    }
-    chd.on("ping", (token, cb)=>{
-      cb(token);
-    });
-    chd.on("startRec", (token, cb)=>{
-      cb(token);
-    });
-    chd.on("pulse", (token, cb)=>{
-      cb(token);
-    });
-    chd.on("stopRec", (token, cb)=>{
-      cb(token);
-    });
-    chd.on("calc", (token, cb)=>{
-      cb(token);
-    });
-    chd.on("collect", (token, cb)=>{
-      cb(token);
-    });
-  }
-
-  export function testAutoDetect(id?:string): void{
-    var chd = new duxca.lib.Chord();
-    var actx = new AudioContext();
-    chd.on("tone", (token, cb)=>{
-      console.log("tone");
-      (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination)
-      setTimeout(()=>{
-        cb(token);
-      }, 1000);
-    });
-    if(typeof id === "string"){
-      chd.join(id);
-    }else{
-      chd.create().then(()=>{
-        setInterval(()=>{
-          chd.request("tone").then((token)=>{console.log(token.payload.event, token)});
-        }, 15000);
-      });
-    }
-  }
-
-  export function testChord(id?:string): void{
-    var chd0 = new duxca.lib.Chord();
-    var a = (token:Chord.Token, cb:(token:Chord.Token)=>void)=>{ cb(token); };
-    var chd1 = new duxca.lib.Chord();
-    var chd2 = new duxca.lib.Chord();
-    var chd3 = new duxca.lib.Chord();
-    var chd4 = new duxca.lib.Chord();
-    chd0.create().then(()=>{
-      return chd1.join(chd0.peer.id).then(()=>{
-        return chd2.join(chd0.peer.id).then(()=>{
-          return chd3.join(chd2.peer.id).then(()=>{
-            return chd4.join(chd3.peer.id).then(()=>{
-              setInterval(function(){
-                chd1.request("ping").then((token)=>{console.log("PING", token)});
-                [chd0, chd1, chd2, chd3, chd4].forEach(function(chd, i){
-                  console.info(i, chd.predecessor&&chd.predecessor.open, chd.predecessor&&chd.predecessor.peer, chd.peer.id, chd.successor&&chd.successor.peer, chd.successor&&chd.successor.open, chd.successors);
-                });
-              }, 2000);
-              setTimeout(function(){
-                console.warn("chd4 destroied");
-                chd4.peer.destroy();
-              }, 20000);
-              setTimeout(function(){
-                console.warn("chd0 destroied");
-                chd0.peer.destroy();
-              }, 40000);
-            });
-          });
-        });
-      });
-    }).catch((err)=>{console.error(err)});
-  }
-
-
-
   export function testDetect3(): void{
     var PULSE_BOOST_COUNT = 1;
     var PULSE_INTERVAL_SEC = 0.5;
@@ -217,8 +115,6 @@ module duxca.lib.Sandbox {
         }
       });
     }).then(([recbuf, barkerChirp])=>{
-      var render = new duxca.lib.CanvasRender(128, 128);
-
       console.group("show record");
       console.time("show record");
       var pcm = recbuf.toPCM();
@@ -267,6 +163,7 @@ module duxca.lib.Sandbox {
 
       console.group("show correlation and stdscores");
       console.time("show correlation and stdscores");
+      var render = new duxca.lib.CanvasRender(128, 128);
       var splitsize = Math.pow(2, 10);
       var _correlation = duxca.lib.Signal.normalize(correlation, 128);
       var _stdscores = duxca.lib.Signal.normalize(stdscores, 128);
@@ -308,7 +205,7 @@ module duxca.lib.Sandbox {
         console.screenshot(render.cnv);
         lastptr = i;
       }
-      console.timeEnd("calc stdscores");
+      console.timeEnd("show correlation and stdscores");
       console.groupEnd();
 
       console.group("calc cycle");
@@ -398,6 +295,64 @@ module duxca.lib.Sandbox {
       console.timeEnd("testDetect2");
       console.groupEnd();
     });
+  }
+
+
+
+  export function testAutoDetect(id?:string): void{
+    var chd = new duxca.lib.Chord();
+    var actx = new AudioContext();
+    chd.on("tone", (token, cb)=>{
+      console.log("tone");
+      (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination)
+      setTimeout(()=>{
+        cb(token);
+      }, 1000);
+    });
+    if(typeof id === "string"){
+      chd.join(id);
+    }else{
+      chd.create().then(()=>{
+        setInterval(()=>{
+          chd.request("tone").then((token)=>{console.log(token.payload.event, token)});
+        }, 15000);
+      });
+    }
+  }
+
+
+
+  export function testChord(id?:string): void{
+    var chd0 = new duxca.lib.Chord();
+    var a = (token:Chord.Token, cb:(token:Chord.Token)=>void)=>{ cb(token); };
+    var chd1 = new duxca.lib.Chord();
+    var chd2 = new duxca.lib.Chord();
+    var chd3 = new duxca.lib.Chord();
+    var chd4 = new duxca.lib.Chord();
+    chd0.create().then(()=>{
+      return chd1.join(chd0.peer.id).then(()=>{
+        return chd2.join(chd0.peer.id).then(()=>{
+          return chd3.join(chd2.peer.id).then(()=>{
+            return chd4.join(chd3.peer.id).then(()=>{
+              setInterval(function(){
+                chd1.request("ping").then((token)=>{console.log("PING", token)});
+                [chd0, chd1, chd2, chd3, chd4].forEach(function(chd, i){
+                  console.info(i, chd.predecessor&&chd.predecessor.open, chd.predecessor&&chd.predecessor.peer, chd.peer.id, chd.successor&&chd.successor.peer, chd.successor&&chd.successor.open, chd.successors);
+                });
+              }, 2000);
+              setTimeout(function(){
+                console.warn("chd4 destroied");
+                chd4.peer.destroy();
+              }, 20000);
+              setTimeout(function(){
+                console.warn("chd0 destroied");
+                chd0.peer.destroy();
+              }, 40000);
+            });
+          });
+        });
+      });
+    }).catch((err)=>{console.error(err)});
   }
 
 

@@ -17,108 +17,6 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement("br"));
             };*/
-            function testAutoDetect2(id) {
-                var chd = new duxca.lib.Chord();
-                var actx = new AudioContext();
-                if (typeof id === "string") {
-                    chd.join(id);
-                }
-                else {
-                    chd.create().then(function () {
-                        setTimeout(function () {
-                            Promise.resolve().then(function () {
-                                return chd.request("ping");
-                            }).then(function (token) {
-                                return chd.request("startRec");
-                            }).then(function (token) {
-                                return chd.request("pulse");
-                            }).then(function (token) {
-                                return chd.request("stopRec");
-                            }).then(function (token) {
-                                return chd.request("calc");
-                            }).then(function (token) {
-                                return chd.request("collect");
-                            }).then(function (token) {
-                                console.log(token.payload.event, token);
-                            });
-                        }, 15000);
-                    });
-                }
-                chd.on("ping", function (token, cb) {
-                    cb(token);
-                });
-                chd.on("startRec", function (token, cb) {
-                    cb(token);
-                });
-                chd.on("pulse", function (token, cb) {
-                    cb(token);
-                });
-                chd.on("stopRec", function (token, cb) {
-                    cb(token);
-                });
-                chd.on("calc", function (token, cb) {
-                    cb(token);
-                });
-                chd.on("collect", function (token, cb) {
-                    cb(token);
-                });
-            }
-            Sandbox.testAutoDetect2 = testAutoDetect2;
-            function testAutoDetect(id) {
-                var chd = new duxca.lib.Chord();
-                var actx = new AudioContext();
-                chd.on("tone", function (token, cb) {
-                    console.log("tone");
-                    (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination);
-                    setTimeout(function () {
-                        cb(token);
-                    }, 1000);
-                });
-                if (typeof id === "string") {
-                    chd.join(id);
-                }
-                else {
-                    chd.create().then(function () {
-                        setInterval(function () {
-                            chd.request("tone").then(function (token) { console.log(token.payload.event, token); });
-                        }, 15000);
-                    });
-                }
-            }
-            Sandbox.testAutoDetect = testAutoDetect;
-            function testChord(id) {
-                var chd0 = new duxca.lib.Chord();
-                var a = function (token, cb) { cb(token); };
-                var chd1 = new duxca.lib.Chord();
-                var chd2 = new duxca.lib.Chord();
-                var chd3 = new duxca.lib.Chord();
-                var chd4 = new duxca.lib.Chord();
-                chd0.create().then(function () {
-                    return chd1.join(chd0.peer.id).then(function () {
-                        return chd2.join(chd0.peer.id).then(function () {
-                            return chd3.join(chd2.peer.id).then(function () {
-                                return chd4.join(chd3.peer.id).then(function () {
-                                    setInterval(function () {
-                                        chd1.request("ping").then(function (token) { console.log("PING", token); });
-                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
-                                            console.info(i, chd.predecessor && chd.predecessor.open, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.successor && chd.successor.peer, chd.successor && chd.successor.open, chd.successors);
-                                        });
-                                    }, 2000);
-                                    setTimeout(function () {
-                                        console.warn("chd4 destroied");
-                                        chd4.peer.destroy();
-                                    }, 20000);
-                                    setTimeout(function () {
-                                        console.warn("chd0 destroied");
-                                        chd0.peer.destroy();
-                                    }, 40000);
-                                });
-                            });
-                        });
-                    });
-                }).catch(function (err) { console.error(err); });
-            }
-            Sandbox.testChord = testChord;
             function testDetect3() {
                 var PULSE_BOOST_COUNT = 1;
                 var PULSE_INTERVAL_SEC = 0.5;
@@ -207,7 +105,6 @@ var duxca;
                     });
                 }).then(function (_c) {
                     var recbuf = _c[0], barkerChirp = _c[1];
-                    var render = new duxca.lib.CanvasRender(128, 128);
                     console.group("show record");
                     console.time("show record");
                     var pcm = recbuf.toPCM();
@@ -249,6 +146,7 @@ var duxca;
                     console.groupEnd();
                     console.group("show correlation and stdscores");
                     console.time("show correlation and stdscores");
+                    var render = new duxca.lib.CanvasRender(128, 128);
                     var splitsize = Math.pow(2, 10);
                     var _correlation = duxca.lib.Signal.normalize(correlation, 128);
                     var _stdscores = duxca.lib.Signal.normalize(stdscores, 128);
@@ -285,7 +183,7 @@ var duxca;
                         console.screenshot(render.cnv);
                         lastptr = i;
                     }
-                    console.timeEnd("calc stdscores");
+                    console.timeEnd("show correlation and stdscores");
                     console.groupEnd();
                     console.group("calc cycle");
                     console.time("calc cycle");
@@ -356,6 +254,61 @@ var duxca;
                 });
             }
             Sandbox.testDetect3 = testDetect3;
+            function testAutoDetect(id) {
+                var chd = new duxca.lib.Chord();
+                var actx = new AudioContext();
+                chd.on("tone", function (token, cb) {
+                    console.log("tone");
+                    (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination);
+                    setTimeout(function () {
+                        cb(token);
+                    }, 1000);
+                });
+                if (typeof id === "string") {
+                    chd.join(id);
+                }
+                else {
+                    chd.create().then(function () {
+                        setInterval(function () {
+                            chd.request("tone").then(function (token) { console.log(token.payload.event, token); });
+                        }, 15000);
+                    });
+                }
+            }
+            Sandbox.testAutoDetect = testAutoDetect;
+            function testChord(id) {
+                var chd0 = new duxca.lib.Chord();
+                var a = function (token, cb) { cb(token); };
+                var chd1 = new duxca.lib.Chord();
+                var chd2 = new duxca.lib.Chord();
+                var chd3 = new duxca.lib.Chord();
+                var chd4 = new duxca.lib.Chord();
+                chd0.create().then(function () {
+                    return chd1.join(chd0.peer.id).then(function () {
+                        return chd2.join(chd0.peer.id).then(function () {
+                            return chd3.join(chd2.peer.id).then(function () {
+                                return chd4.join(chd3.peer.id).then(function () {
+                                    setInterval(function () {
+                                        chd1.request("ping").then(function (token) { console.log("PING", token); });
+                                        [chd0, chd1, chd2, chd3, chd4].forEach(function (chd, i) {
+                                            console.info(i, chd.predecessor && chd.predecessor.open, chd.predecessor && chd.predecessor.peer, chd.peer.id, chd.successor && chd.successor.peer, chd.successor && chd.successor.open, chd.successors);
+                                        });
+                                    }, 2000);
+                                    setTimeout(function () {
+                                        console.warn("chd4 destroied");
+                                        chd4.peer.destroy();
+                                    }, 20000);
+                                    setTimeout(function () {
+                                        console.warn("chd0 destroied");
+                                        chd0.peer.destroy();
+                                    }, 40000);
+                                });
+                            });
+                        });
+                    });
+                }).catch(function (err) { console.error(err); });
+            }
+            Sandbox.testChord = testChord;
             function testDetect2() {
                 console.group("testDetect2");
                 console.time("testDetect2");

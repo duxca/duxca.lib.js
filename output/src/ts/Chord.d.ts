@@ -28,10 +28,11 @@ declare module duxca.lib {
             [requestId: number]: ((token: Chord.Token) => void);
         };
         lastRequestId: number;
+        STABILIZE_INTERVAL: number;
         constructor();
         _init(): Promise<void>;
-        create(): Promise<void>;
-        join(id: string): Promise<void>;
+        create(): Promise<Chord>;
+        join(id: string): Promise<Chord>;
         stabilize(): void;
         request(event: string, data?: any, timeout?: number): Promise<Chord.Token>;
         on(event: string, listener: (token: Chord.Token, cb: (token: Chord.Token) => void) => void): void;

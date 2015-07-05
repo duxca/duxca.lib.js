@@ -60,6 +60,7 @@ module duxca.lib {
       for(var i=0; i<this.channel; i++){
         this.chsBuffers.push([]);
       }
+      this.sampleTimes = [];
       this.count = 0;
     }
 

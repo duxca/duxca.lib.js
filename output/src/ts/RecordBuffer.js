@@ -50,6 +50,7 @@ var duxca;
                 for (var i = 0; i < this.channel; i++) {
                     this.chsBuffers.push([]);
                 }
+                this.sampleTimes = [];
                 this.count = 0;
             };
             RecordBuffer.prototype.add = function (chsBuffer, currentTime) {
