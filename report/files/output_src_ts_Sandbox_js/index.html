@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">60.86</p>
+      <p class="stat">63.20</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">753</p>
+      <p class="stat">822</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">136.61</p>
+      <p class="stat">147.90</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">14.86</p>
+      <p class="stat">15.88</p>
     </div>
   </div>
 </div>
@@ -108,6 +108,75 @@ var duxca;
               document.body.appendChild(img);
               document.body.appendChild(document.createElement(&quot;br&quot;));
             };*/
+            function testAutoDetect2(id) {
+                var chd = new duxca.lib.Chord();
+                var actx = new AudioContext();
+                if (typeof id === &quot;string&quot;) {
+                    chd.join(id);
+                }
+                else {
+                    chd.create().then(function () {
+                        setTimeout(function () {
+                            Promise.resolve().then(function () {
+                                return chd.request(&quot;ping&quot;);
+                            }).then(function (token) {
+                                return chd.request(&quot;startRec&quot;);
+                            }).then(function (token) {
+                                return chd.request(&quot;pulse&quot;);
+                            }).then(function (token) {
+                                return chd.request(&quot;stopRec&quot;);
+                            }).then(function (token) {
+                                return chd.request(&quot;calc&quot;);
+                            }).then(function (token) {
+                                return chd.request(&quot;collect&quot;);
+                            }).then(function (token) {
+                                console.log(token.payload.event, token);
+                            });
+                        }, 15000);
+                    });
+                }
+                chd.on(&quot;ping&quot;, function (token, cb) {
+                    cb(token);
+                });
+                chd.on(&quot;startRec&quot;, function (token, cb) {
+                    cb(token);
+                });
+                chd.on(&quot;pulse&quot;, function (token, cb) {
+                    cb(token);
+                });
+                chd.on(&quot;stopRec&quot;, function (token, cb) {
+                    cb(token);
+                });
+                chd.on(&quot;calc&quot;, function (token, cb) {
+                    cb(token);
+                });
+                chd.on(&quot;collect&quot;, function (token, cb) {
+                    cb(token);
+                });
+            }
+            Sandbox.testAutoDetect2 = testAutoDetect2;
+            function testAutoDetect(id) {
+                var chd = new duxca.lib.Chord();
+                var actx = new AudioContext();
+                chd.on(&quot;tone&quot;, function (token, cb) {
+                    console.log(&quot;tone&quot;);
+                    (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination);
+                    setTimeout(function () {
+                        cb(token);
+                    }, 1000);
+                });
+                if (typeof id === &quot;string&quot;) {
+                    chd.join(id);
+                }
+                else {
+                    chd.create().then(function () {
+                        setInterval(function () {
+                            chd.request(&quot;tone&quot;).then(function (token) { console.log(token.payload.event, token); });
+                        }, 15000);
+                    });
+                }
+            }
+            Sandbox.testAutoDetect = testAutoDetect;
             function testChord(id) {
                 var chd0 = new duxca.lib.Chord();
                 var a = function (token, cb) { cb(token); };

@@ -16,7 +16,72 @@ module duxca.lib.Sandbox {
     document.body.appendChild(document.createElement("br"));
   };*/
 
+  export function testAutoDetect2(id?:string): void{
+    var chd = new duxca.lib.Chord();
+    var actx = new AudioContext();
+    if(typeof id === "string"){
+      chd.join(id);
+    }else{
+      chd.create().then(()=>{
+        setTimeout(()=>{
+          Promise.resolve().then(()=>{
+            return chd.request("ping");
+          }).then((token)=>{
+            return chd.request("startRec");
+          }).then((token)=>{
+            return chd.request("pulse");
+          }).then((token)=>{
+            return chd.request("stopRec");
+          }).then((token)=>{
+            return chd.request("calc");
+          }).then((token)=>{
+            return chd.request("collect");
+          }).then((token)=>{
+            console.log(token.payload.event, token)
+          });
+        }, 15000);
+      });
+    }
+    chd.on("ping", (token, cb)=>{
+      cb(token);
+    });
+    chd.on("startRec", (token, cb)=>{
+      cb(token);
+    });
+    chd.on("pulse", (token, cb)=>{
+      cb(token);
+    });
+    chd.on("stopRec", (token, cb)=>{
+      cb(token);
+    });
+    chd.on("calc", (token, cb)=>{
+      cb(token);
+    });
+    chd.on("collect", (token, cb)=>{
+      cb(token);
+    });
+  }
 
+  export function testAutoDetect(id?:string): void{
+    var chd = new duxca.lib.Chord();
+    var actx = new AudioContext();
+    chd.on("tone", (token, cb)=>{
+      console.log("tone");
+      (new duxca.lib.OSC(actx)).tone(100, actx.currentTime, 1).connect(actx.destination)
+      setTimeout(()=>{
+        cb(token);
+      }, 1000);
+    });
+    if(typeof id === "string"){
+      chd.join(id);
+    }else{
+      chd.create().then(()=>{
+        setInterval(()=>{
+          chd.request("tone").then((token)=>{console.log(token.payload.event, token)});
+        }, 15000);
+      });
+    }
+  }
 
   export function testChord(id?:string): void{
     var chd0 = new duxca.lib.Chord();

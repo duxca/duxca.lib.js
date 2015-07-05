@@ -3,6 +3,8 @@
 /// <reference path="../../../tsd/console.snapshot/console.snapshot.d.ts" />
 /// <reference path="../../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts" />
 declare module duxca.lib.Sandbox {
+    function testAutoDetect2(id?: string): void;
+    function testAutoDetect(id?: string): void;
     function testChord(id?: string): void;
     function testDetect3(): void;
     function testDetect2(): void;

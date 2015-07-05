@@ -7,7 +7,7 @@ module duxca.lib {
   }
   export declare module Chord{
     interface Token {
-      packet: {event: string, data: any};
+      payload: {event: string, data: any};
       requestId: number;
       route: string[];
       time: number[];
@@ -166,23 +166,26 @@ module duxca.lib {
       }
     }
 
-    request(event: string, data?: any): Promise<Chord.Token>{
+    request(event: string, data?: any, timeout:number=5000): Promise<Chord.Token>{
       return new Promise<Chord.Token>((resolve, reject)=>{
         if(!this.peer) throw new Error("this node does not join yet");
         if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
         if(!this.successor) throw new Error(this.peer.id+" does not have successor.");
         if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
         var token = {
-          packet: {event, data},
+          payload: {event, data},
           requestId: this.lastRequestId++,
           route: [this.peer.id],
           time: [Date.now()]
         };
+        setTimeout(()=> reject(new Error("timeout")), timeout);
         this.requests[token.requestId] = (_token)=>{
           delete this.requests[token.requestId];
           resolve(Promise.resolve(_token));
         };
-        this.successor.send({msg: "Token", token});
+        this.listeners[token.payload.event](token, (token)=>{
+          this.successor.send({msg: "Token", token: token});
+        });
       });
     }
 
@@ -241,8 +244,8 @@ module duxca.lib {
                 setTimeout(()=> tokenpassing(token), 1000);
               }
             };
-            if(this.listeners[data.token.packet.event] instanceof Function){
-              this.listeners[data.token.packet.event](data.token, (token)=>{
+            if(this.listeners[data.token.payload.event] instanceof Function){
+              this.listeners[data.token.payload.event](data.token, (token)=>{
                 tokenpassing(token);
               });
             }else{

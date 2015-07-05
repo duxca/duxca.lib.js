@@ -164,8 +164,9 @@ var duxca;
                     this.predecessor = null;
                 }
             };
-            Chord.prototype.request = function (event, data) {
+            Chord.prototype.request = function (event, data, timeout) {
                 var _this = this;
+                if (timeout === void 0) { timeout = 5000; }
                 return new Promise(function (resolve, reject) {
                     if (!_this.peer)
                         throw new Error("this node does not join yet");
@@ -176,16 +177,19 @@ var duxca;
                     if (!_this.successor.open)
                         throw new Error(_this.peer.id + " has successor, but not open.");
                     var token = {
-                        packet: { event: event, data: data },
+                        payload: { event: event, data: data },
                         requestId: _this.lastRequestId++,
                         route: [_this.peer.id],
                         time: [Date.now()]
                     };
+                    setTimeout(function () { return reject(new Error("timeout")); }, timeout);
                     _this.requests[token.requestId] = function (_token) {
                         delete _this.requests[token.requestId];
                         resolve(Promise.resolve(_token));
                     };
-                    _this.successor.send({ msg: "Token", token: token });
+                    _this.listeners[token.payload.event](token, function (token) {
+                        _this.successor.send({ msg: "Token", token: token });
+                    });
                 });
             };
             Chord.prototype.on = function (event, listener) {
@@ -245,8 +249,8 @@ var duxca;
                                     setTimeout(function () { return tokenpassing(token); }, 1000);
                                 }
                             };
-                            if (_this.listeners[data.token.packet.event] instanceof Function) {
-                                _this.listeners[data.token.packet.event](data.token, function (token) {
+                            if (_this.listeners[data.token.payload.event] instanceof Function) {
+                                _this.listeners[data.token.payload.event](data.token, function (token) {
                                     tokenpassing(token);
                                 });
                             }
