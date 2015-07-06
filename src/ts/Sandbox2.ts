@@ -14,8 +14,8 @@ module duxca.lib.Sandbox2 {
     var CUTOFF_STANDARDSCORE = 100;
 
     var actx = new AudioContext();
-    var codeA = duxca.lib.Signal.createBarkerCode(13);
-    var pulseA = createPulse(codeA, 8);
+    var codeA = duxca.lib.Signal.createBarkerCode(2);
+    var pulseA = createPulse(codeA, 12);
     console.log(actx.sampleRate, pulseA.length, pulseA.length/actx.sampleRate);
 
     var render = new duxca.lib.CanvasRender(128, 128);
@@ -38,7 +38,6 @@ module duxca.lib.Sandbox2 {
       if(typeof id !== "string"){
         // master node
         setTimeout(function recur(){
-          confirm(id);
           chd.request("ping")
           .then((token)=>{
             console.log(token.payload.event, token.route);
@@ -58,6 +57,13 @@ module duxca.lib.Sandbox2 {
           .then((token)=> chd.request("collect", []))
           .then((token)=>{
             console.log(token.payload.event, token.route, token.payload.data);
+            var data:{id:string, stdscoreResult:{[id:string]: number}}[] = token.payload.data;
+            data.forEach(({id:id1}, i)=>{
+              data.forEach(({id:id2}, j)=>{
+                console.log(id1, id2, Math.abs(Math.abs(data[i].stdscoreResult[id2])-Math.abs(data[j].stdscoreResult[id1])))
+              });
+            });
+            setTimeout(()=>recur(), 1000);
           })
           .catch((err)=> console.error(err));
         }, 20000);
@@ -104,13 +110,13 @@ module duxca.lib.Sandbox2 {
         console.log(token.payload.event);
         cb(token);
         stdscoreResult = null;
-        setTimeout(()=> stdscoreResult = calc(), 100);
+        setTimeout(()=> stdscoreResult = calc(chd.peer.id), 100);
       });
       chd.on("collect", (token, cb)=>{
         console.log(token.payload.event);
         (function recur(){
           if(stdscoreResult !== null){
-            token.payload.data.push({id: chd.peer.id, pulseStart, pulseStop, stdscoreResult});
+            token.payload.data.push({id: chd.peer.id, stdscoreResult});
             cb(token);
           }else setTimeout(recur, 500);
         })();
@@ -172,7 +178,7 @@ module duxca.lib.Sandbox2 {
       return stdscores;
     }
 
-    function calc(){
+    function calc(myId:string){
       var rawdata = recbuf.merge();
       var sampleTimes = recbuf.sampleTimes;
       recbuf.clear();
@@ -252,6 +258,8 @@ module duxca.lib.Sandbox2 {
           "stdev", duxca.lib.Statictics.stdev(offsets)
         );
         console.log("sum", "stdscore", max_score, "global_offset", startPtr + offset);
+        // global_offset this is bad. because startPtr is time of pulseStart event.
+        // i need pulseBeep event time. so this program does not work.
         results[id] = startPtr + offset;
         render.cnv.width = sumarr.length;
         render.ctx.strokeStyle = "red";
@@ -320,7 +328,11 @@ module duxca.lib.Sandbox2 {
         spectrums = [];
         lstptr = ptr;
       }
-      return results;
+      var _results = results;
+      Object.keys(results).forEach((id)=>{
+        _results[id] = results[myId] - results[id]
+      });
+      return _results;
     }
   }
 

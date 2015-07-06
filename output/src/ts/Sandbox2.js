@@ -16,8 +16,8 @@ var duxca;
                 var PULSE_REFRAIN = 10;
                 var CUTOFF_STANDARDSCORE = 100;
                 var actx = new AudioContext();
-                var codeA = duxca.lib.Signal.createBarkerCode(13);
-                var pulseA = createPulse(codeA, 8);
+                var codeA = duxca.lib.Signal.createBarkerCode(2);
+                var pulseA = createPulse(codeA, 12);
                 console.log(actx.sampleRate, pulseA.length, pulseA.length / actx.sampleRate);
                 var render = new duxca.lib.CanvasRender(128, 128);
                 render.cnv.width = pulseA.length;
@@ -37,7 +37,6 @@ var duxca;
                     if (typeof id !== "string") {
                         // master node
                         setTimeout(function recur() {
-                            confirm(id);
                             chd.request("ping")
                                 .then(function (token) {
                                 console.log(token.payload.event, token.route);
@@ -57,6 +56,15 @@ var duxca;
                                 .then(function (token) { return chd.request("collect", []); })
                                 .then(function (token) {
                                 console.log(token.payload.event, token.route, token.payload.data);
+                                var data = token.payload.data;
+                                data.forEach(function (_a, i) {
+                                    var id1 = _a.id;
+                                    data.forEach(function (_a, j) {
+                                        var id2 = _a.id;
+                                        console.log(id1, id2, Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1])));
+                                    });
+                                });
+                                setTimeout(function () { return recur(); }, 1000);
                             })
                                 .catch(function (err) { return console.error(err); });
                         }, 20000);
@@ -111,13 +119,13 @@ var duxca;
                         console.log(token.payload.event);
                         cb(token);
                         stdscoreResult = null;
-                        setTimeout(function () { return stdscoreResult = calc(); }, 100);
+                        setTimeout(function () { return stdscoreResult = calc(chd.peer.id); }, 100);
                     });
                     chd.on("collect", function (token, cb) {
                         console.log(token.payload.event);
                         (function recur() {
                             if (stdscoreResult !== null) {
-                                token.payload.data.push({ id: chd.peer.id, pulseStart: pulseStart, pulseStop: pulseStop, stdscoreResult: stdscoreResult });
+                                token.payload.data.push({ id: chd.peer.id, stdscoreResult: stdscoreResult });
                                 cb(token);
                             }
                             else
@@ -173,7 +181,7 @@ var duxca;
                     }
                     return stdscores;
                 }
-                function calc() {
+                function calc(myId) {
                     var rawdata = recbuf.merge();
                     var sampleTimes = recbuf.sampleTimes;
                     recbuf.clear();
@@ -236,6 +244,8 @@ var duxca;
                         var _b = duxca.lib.Statictics.findMax(sumarr), max_score = _b[0], offset = _b[1];
                         console.log("min", duxca.lib.Statictics.findMin(offsets)[0], "\n", "max", duxca.lib.Statictics.findMax(offsets)[0], "\n", "ave", ave, "red", "\n", "med", med, "green", "\n", "mode", mode, "blue", "\n", "sum", offset, "yellow", "\n", "stdev", duxca.lib.Statictics.stdev(offsets));
                         console.log("sum", "stdscore", max_score, "global_offset", startPtr + offset);
+                        // global_offset this is bad. because startPtr is time of pulseStart event.
+                        // i need pulseBeep event time. so this program does not work.
                         results[id] = startPtr + offset;
                         render.cnv.width = sumarr.length;
                         render.ctx.strokeStyle = "red";
@@ -292,7 +302,11 @@ var duxca;
                         spectrums = [];
                         lstptr = ptr;
                     }
-                    return results;
+                    var _results = results;
+                    Object.keys(results).forEach(function (id) {
+                        _results[id] = results[myId] - results[id];
+                    });
+                    return _results;
                 }
             }
             Sandbox2.testAutoDetect2 = testAutoDetect2;
