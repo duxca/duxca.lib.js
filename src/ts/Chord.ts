@@ -174,24 +174,30 @@ module duxca.lib {
       return new Promise<Chord.Token>((resolve, reject)=>{
         if(!this.peer) throw new Error("this node does not join yet");
         if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
-        if(!this.successor) throw new Error(this.peer.id+" does not have successor.");
-        if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
+        if(!this.successor && !!this.predecessor) throw new Error(this.peer.id+" does not have successor.");
         var token = {
           payload: {event, data},
           requestId: this.lastRequestId++,
           route: [this.peer.id],
           time: [Date.now()]
         };
-        if(typeof timeout === "number"){
-          setTimeout(()=> reject(new Error(this.peer.id + "request(" + event + "):timeout("+timeout+")")), timeout);
-        }
         this.requests[token.requestId] = (_token)=>{
           delete this.requests[token.requestId];
           resolve(Promise.resolve(_token));
         };
-        this.listeners[token.payload.event](token, (token)=>{
-          this.successor.send({msg: "Token", token: token});
-        });
+        if(typeof timeout === "number"){
+          setTimeout(()=> reject(new Error(this.peer.id + "request(" + event + "):timeout("+timeout+")")), timeout);
+        }
+        if(!this.successor && !this.predecessor){ // emulator
+          this.listeners[token.payload.event](token, (token)=>{
+            this.requests[token.requestId](token);
+          });
+        }else{
+          this.listeners[token.payload.event](token, (token)=>{
+            if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
+            this.successor.send({msg: "Token", token: token});
+          });
+        }
       });
     }
 

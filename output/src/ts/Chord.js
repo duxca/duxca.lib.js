@@ -174,26 +174,33 @@ var duxca;
                         throw new Error("this node does not join yet");
                     if (_this.peer.destroyed)
                         reject(new Error(_this.peer.id + " is already destroyed"));
-                    if (!_this.successor)
+                    if (!_this.successor && !!_this.predecessor)
                         throw new Error(_this.peer.id + " does not have successor.");
-                    if (!_this.successor.open)
-                        throw new Error(_this.peer.id + " has successor, but not open.");
                     var token = {
                         payload: { event: event, data: data },
                         requestId: _this.lastRequestId++,
                         route: [_this.peer.id],
                         time: [Date.now()]
                     };
-                    if (typeof timeout === "number") {
-                        setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
-                    }
                     _this.requests[token.requestId] = function (_token) {
                         delete _this.requests[token.requestId];
                         resolve(Promise.resolve(_token));
                     };
-                    _this.listeners[token.payload.event](token, function (token) {
-                        _this.successor.send({ msg: "Token", token: token });
-                    });
+                    if (typeof timeout === "number") {
+                        setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
+                    }
+                    if (!_this.successor && !_this.predecessor) {
+                        _this.listeners[token.payload.event](token, function (token) {
+                            _this.requests[token.requestId](token);
+                        });
+                    }
+                    else {
+                        _this.listeners[token.payload.event](token, function (token) {
+                            if (!_this.successor.open)
+                                throw new Error(_this.peer.id + " has successor, but not open.");
+                            _this.successor.send({ msg: "Token", token: token });
+                        });
+                    }
                 });
             };
             Chord.prototype.on = function (event, listener) {
