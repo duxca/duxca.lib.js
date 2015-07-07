@@ -5,6 +5,7 @@ declare module duxca.lib {
         interface Token {
             payload: {
                 event: string;
+                addressee: string[];
                 data: any;
             };
             requestId: number;
@@ -29,12 +30,12 @@ declare module duxca.lib {
         };
         lastRequestId: number;
         STABILIZE_INTERVAL: number;
-        constructor();
+        constructor(hostname?: string, port?: number);
         _init(): Promise<void>;
         create(): Promise<Chord>;
         join(id: string): Promise<Chord>;
         stabilize(): void;
-        request(event: string, data?: any, timeout?: number): Promise<Chord.Token>;
+        request(event: string, data?: any, addressee?: string[], timeout?: number): Promise<Chord.Token>;
         on(event: string, listener: (token: Chord.Token, cb: (token: Chord.Token) => void) => void): void;
         off(event: string, listener: (token: Chord.Token, cb: (token: Chord.Token) => void) => void): void;
         _connectionHandler(conn: PeerJs.DataConnection): void;

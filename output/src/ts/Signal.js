@@ -41,6 +41,22 @@ var duxca;
                 return inv_real;
             }
             Signal.correlation = correlation;
+            function overwarpCorr(pulse, rawdata) {
+                var windowsize = pulse.length;
+                var resized_pulse = new Float32Array(windowsize * 2); // for overwrap adding way correlation
+                resized_pulse.set(pulse, 0);
+                var buffer = new Float32Array(windowsize * 2); // for overwrap adding way correlation
+                var correlation = new Float32Array(rawdata.length);
+                for (var i = 0; rawdata.length - (i + windowsize) >= resized_pulse.length; i += windowsize) {
+                    buffer.set(rawdata.subarray(i, i + windowsize), 0);
+                    var corr = duxca.lib.Signal.correlation(buffer, resized_pulse);
+                    for (var j = 0; j < corr.length; j++) {
+                        correlation[i + j] = corr[j];
+                    }
+                }
+                return correlation;
+            }
+            Signal.overwarpCorr = overwarpCorr;
             function autocorr(arr) {
                 return crosscorr(arr, arr);
             }

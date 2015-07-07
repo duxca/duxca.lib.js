@@ -8,7 +8,7 @@ var duxca;
             return Math.sqrt(str.split("").map(function (char) { return char.charCodeAt(0); }).reduce(function (sum, val) { return sum + Math.pow(val, 2); }));
         }
         var Chord = (function () {
-            function Chord() {
+            function Chord(hostname, port) {
                 this.joined = false;
                 this.successor = null;
                 this.successors = [];
@@ -167,7 +167,7 @@ var duxca;
                     this.predecessor = null;
                 }
             };
-            Chord.prototype.request = function (event, data, timeout) {
+            Chord.prototype.request = function (event, data, addressee, timeout) {
                 var _this = this;
                 return new Promise(function (resolve, reject) {
                     if (!_this.peer)
@@ -177,7 +177,7 @@ var duxca;
                     if (!_this.successor && !!_this.predecessor)
                         throw new Error(_this.peer.id + " does not have successor.");
                     var token = {
-                        payload: { event: event, data: data },
+                        payload: { event: event, addressee: addressee, data: data },
                         requestId: _this.lastRequestId++,
                         route: [_this.peer.id],
                         time: [Date.now()]
@@ -189,10 +189,12 @@ var duxca;
                     if (typeof timeout === "number") {
                         setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
                     }
-                    if (!_this.successor && !_this.predecessor) {
-                        _this.listeners[token.payload.event](token, function (token) {
-                            _this.requests[token.requestId](token);
-                        });
+                    if (!_this.successor && !_this.predecessor && _this.listeners[token.payload.event] instanceof Function) {
+                        setTimeout(function () {
+                            _this.listeners[token.payload.event](token, function (token) {
+                                _this.requests[token.requestId](token);
+                            });
+                        }, 0);
                     }
                     else {
                         _this.listeners[token.payload.event](token, function (token) {
@@ -260,10 +262,10 @@ var duxca;
                                     setTimeout(function () { return tokenpassing(token); }, 1000);
                                 }
                             };
-                            if (_this.listeners[data.token.payload.event] instanceof Function) {
-                                _this.listeners[data.token.payload.event](data.token, function (token) {
-                                    tokenpassing(token);
-                                });
+                            if (_this.listeners[data.token.payload.event] instanceof Function
+                                || !Array.isArray(data.token.payload.addressee)
+                                || data.token.payload.addressee.indexOf(_this.peer.id) < 0) {
+                                _this.listeners[data.token.payload.event](data.token, tokenpassing);
                             }
                             else {
                                 tokenpassing(data.token);

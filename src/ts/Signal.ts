@@ -36,6 +36,22 @@ module duxca.lib.Signal {
     return inv_real;
   }
 
+  export function overwarpCorr(pulse:Float32Array, rawdata:Float32Array):Float32Array{
+    var windowsize = pulse.length;
+    var resized_pulse = new Float32Array(windowsize*2); // for overwrap adding way correlation
+    resized_pulse.set(pulse, 0);
+    var buffer = new Float32Array(windowsize*2); // for overwrap adding way correlation
+    var correlation = new Float32Array(rawdata.length);
+    for(var i=0; rawdata.length - (i+windowsize) >= resized_pulse.length; i+=windowsize){
+      buffer.set(rawdata.subarray(i, i+windowsize), 0);
+      var corr = duxca.lib.Signal.correlation(buffer, resized_pulse);
+      for(var j=0; j<corr.length; j++){
+        correlation[i+j] = corr[j];
+      }
+    }
+    return correlation;
+  }
+
   export function autocorr(arr: number[]): number[]{
     return crosscorr(arr, arr);
   }

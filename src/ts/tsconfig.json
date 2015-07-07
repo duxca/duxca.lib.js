@@ -26,6 +26,7 @@
         "./RecordBuffer.ts",
         "./Sandbox.ts",
         "./Sandbox2.ts",
+        "./Sandbox3.ts",
         "./Signal.ts",
         "./Statictics.ts",
         "./Util.ts",
