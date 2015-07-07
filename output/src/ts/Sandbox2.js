@@ -32,12 +32,13 @@ var duxca;
                 render.cnv.width = pulseA.length;
                 render.drawSignal(pulseA, true, true);
                 console.screenshot(render.element);
-                var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+                var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
                 var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
                 var isRecording = false;
                 var stdscoreResult = null;
                 var pulseReady = {};
                 var pulseFinish = {};
+                var results = {};
                 Promise.resolve()
                     .then(setupRecording)
                     .then(setupChord)
@@ -69,7 +70,14 @@ var duxca;
                                         var id1 = _a.id;
                                         data.forEach(function (_a, j) {
                                             var id2 = _a.id;
-                                            console.log(id1, id2, Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1])) / 2 * 340);
+                                            if (!Array.isArray(results[id1 + "-" + id2]))
+                                                results[id1 + "-" + id2] = [];
+                                            if (results[id1 + "-" + id2].length > 20)
+                                                results[id1 + "-" + id2].shift();
+                                            var tmp = Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1]));
+                                            if (isFinite(tmp))
+                                                results[id1 + "-" + id2].push(tmp);
+                                            console.log("__RES__", id1 + "-" + id2, duxca.lib.Statictics.median(results[id1 + "-" + id2]) * 170);
                                         });
                                     });
                                     setTimeout(function () { return recur(); }, 1000);
@@ -111,8 +119,8 @@ var duxca;
                             return cb(token);
                         var anodeA = osc.createAudioNodeFromAudioBuffer(abufA);
                         anodeA.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                        anodeA.start(actx.currentTime + 0.1);
-                        setTimeout(function () { return cb(token); }, 1 * 1000 + 100);
+                        anodeA.start(actx.currentTime + 0.05);
+                        setTimeout(function () { return cb(token); }, 300);
                     });
                     chd.on("pulseStop", function (token, cb) {
                         console.log(token.payload.data.member, token.payload.data.member.indexOf(chd.peer.id));
@@ -149,7 +157,7 @@ var duxca;
                                 cb(token);
                             }
                             else
-                                setTimeout(recur, 500);
+                                setTimeout(recur, 0);
                         })();
                     });
                     return (typeof id === "string") ? chd.join(id) : chd.create();
@@ -220,20 +228,35 @@ var duxca;
                     var recStartTime = sampleTimes[0] - recbuf.bufferSize / recbuf.sampleRate;
                     var recStopTime = sampleTimes[sampleTimes.length - 1];
                     var results = {};
+                    var render = new duxca.lib.CanvasRender(1024, 32);
                     Object.keys(pulseReady).forEach(function (id) {
                         var startTime = pulseReady[id];
                         var stopTime = pulseFinish[id];
                         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
                         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
-                        var sectionA = stdscoresA.subarray(startPtr, stopPtr);
+                        var sectionA = correlationA.subarray(startPtr, stopPtr);
                         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", sectionA.length);
-                        var _a = duxca.lib.Statictics.findMax(sectionA), max_score = _a[0], offset = _a[1];
-                        console.log(id, "offset", offset, "max_score", max_score, "globalOffset", startPtr + offset);
+                        var stdsectionA = calcStdscore(sectionA);
+                        var _a = duxca.lib.Statictics.findMax(stdsectionA), max_score = _a[0], max_offset = _a[1];
+                        for (var i = 0; i < 1024; i++) {
+                            if (stdsectionA[max_offset - 2048 / 2 + i] > 70) {
+                                var offset = max_offset - 2048 / 2 + i;
+                                break;
+                            }
+                        }
+                        console.log(id, "offset", offset, "max_offset", max_offset, "max_score", stdsectionA[offset], "globalOffset", startPtr + offset);
                         results[id] = startPtr + offset;
+                        render.clear();
+                        render.ctx.strokeStyle = "black";
+                        render.drawSignal(sectionA, true, true);
+                        render.ctx.strokeStyle = "red";
+                        render.drawColLine(offset * 1024 / sectionA.length);
+                        console.log(id, "section");
+                        console.screenshot(render.cnv);
                     });
-                    var render1 = new duxca.lib.CanvasRender(1024, 128);
-                    var render2 = new duxca.lib.CanvasRender(1024, 128);
-                    var render3 = new duxca.lib.CanvasRender(1024, 128);
+                    var render1 = new duxca.lib.CanvasRender(1024, 32);
+                    var render2 = new duxca.lib.CanvasRender(1024, 32);
+                    var render3 = new duxca.lib.CanvasRender(1024, 32);
                     render1.drawSignal(stdscoresA, true, true);
                     render2.drawSignal(rawdata, true, true);
                     var tmp = new Float32Array(rawdata.length);

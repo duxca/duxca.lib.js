@@ -33,12 +33,13 @@ module duxca.lib.Sandbox2 {
     render.drawSignal(pulseA, true, true);
     console.screenshot(render.element);
 
-    var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+    var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
     var isRecording = false;
     var stdscoreResult:{[id:string]: number} = null;
     var pulseReady:{[id:string]: number} = {};
     var pulseFinish:{[id:string]: number} = {};
+    var results:{[id:string]: number[]} = {};
 
     Promise.resolve()
     .then(setupRecording)
@@ -51,7 +52,7 @@ module duxca.lib.Sandbox2 {
           chd.request("ping")
           .then((token)=>{
             console.log(token.payload.event, token.route);
-            var member = token.route
+            var member = token.route;
             return chd.request("startRec", {member})
             .then((token)=>
               token.route.reduce((prm, id)=>
@@ -68,7 +69,11 @@ module duxca.lib.Sandbox2 {
               var data:{id:string, stdscoreResult:{[id:string]: number}}[] = token.payload.data.data;
               data.forEach(({id:id1}, i)=>{
                 data.forEach(({id:id2}, j)=>{
-                  console.log(id1, id2, Math.abs(Math.abs(data[i].stdscoreResult[id2])-Math.abs(data[j].stdscoreResult[id1]))/2*340);
+                  if(!Array.isArray(results[id1+"-"+id2])) results[id1+"-"+id2] = [];
+                  if(results[id1+"-"+id2].length > 20) results[id1+"-"+id2].shift();
+                  var tmp = Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1]));
+                  if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
+                  console.log("__RES__", id1+"-"+id2, duxca.lib.Statictics.median(results[id1+"-"+id2])*170);
                 });
               });
               setTimeout(()=>recur(), 1000);
@@ -104,8 +109,8 @@ module duxca.lib.Sandbox2 {
         if(token.payload.data.id !== chd.peer.id) return cb(token);
         var anodeA = osc.createAudioNodeFromAudioBuffer(abufA);
         anodeA.connect(TEST_INPUT_MYSELF?processor:actx.destination);
-        anodeA.start(actx.currentTime + 0.1);
-        setTimeout(()=> cb(token), 1 * 1000 + 100); });
+        anodeA.start(actx.currentTime + 0.05);
+        setTimeout(()=> cb(token), 300); });
       chd.on("pulseStop", (token, cb)=>{
         console.log(token.payload.data.member, token.payload.data.member.indexOf(chd.peer.id));
         if(token.payload.data.member.indexOf(chd.peer.id)<0) return cb(token);
@@ -133,7 +138,7 @@ module duxca.lib.Sandbox2 {
           if(stdscoreResult !== null){
             token.payload.data.data.push({id: chd.peer.id, stdscoreResult});
             cb(token);
-          }else setTimeout(recur, 500);
+          }else setTimeout(recur, 0);
         })();
       });
       return (typeof id === "string") ? chd.join(id) : chd.create();
@@ -212,21 +217,36 @@ module duxca.lib.Sandbox2 {
       var recStopTime = sampleTimes[sampleTimes.length-1];
       var results:{[id:string]: number} = {};
 
+      var render = new duxca.lib.CanvasRender(1024, 32);
       Object.keys(pulseReady).forEach((id)=>{
         var startTime = pulseReady[id];
         var stopTime = pulseFinish[id];
         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
-        var sectionA = stdscoresA.subarray(startPtr, stopPtr);
+        var sectionA = correlationA.subarray(startPtr, stopPtr);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", sectionA.length);
-        var [max_score, offset] = duxca.lib.Statictics.findMax(sectionA);
-        console.log(id, "offset", offset, "max_score", max_score, "globalOffset", startPtr + offset);
+        var stdsectionA = calcStdscore(sectionA);
+        var [max_score, max_offset] = duxca.lib.Statictics.findMax(stdsectionA);
+        for(var i=0; i<1024; i++){
+          if(stdsectionA[max_offset - 2048/2 + i]>70){
+            var offset = max_offset - 2048/2 + i;
+            break;
+          }
+        }
+        console.log(id, "offset", offset, "max_offset", max_offset, "max_score", stdsectionA[offset], "globalOffset", startPtr + offset);
         results[id] = startPtr + offset;
+        render.clear();
+        render.ctx.strokeStyle = "black";
+        render.drawSignal(sectionA, true, true);
+        render.ctx.strokeStyle = "red";
+        render.drawColLine(offset*1024/sectionA.length);
+        console.log(id, "section");
+        console.screenshot(render.cnv);
       });
 
-      var render1 = new duxca.lib.CanvasRender(1024, 128);
-      var render2 = new duxca.lib.CanvasRender(1024, 128);
-      var render3 = new duxca.lib.CanvasRender(1024, 128);
+      var render1 = new duxca.lib.CanvasRender(1024, 32);
+      var render2 = new duxca.lib.CanvasRender(1024, 32);
+      var render3 = new duxca.lib.CanvasRender(1024, 32);
       render1.drawSignal(stdscoresA, true, true);
       render2.drawSignal(rawdata, true, true);
       var tmp = new Float32Array(rawdata.length);
@@ -253,11 +273,11 @@ module duxca.lib.Sandbox2 {
         render2.drawColLine(results[id]*1024/stdscoresA.length);
         render3.drawColLine(results[id]*1024/stdscoresA.length);
       });
-      console.log("stdscores")
+      console.log("stdscores");
       console.screenshot(render1.cnv);
-      console.log("rawdata")
+      console.log("rawdata");
       console.screenshot(render2.cnv);
-      console.log("sim")
+      console.log("sim");
       console.screenshot(render3.cnv);
       console.log("results", results);
       var _results: {[id:string]: number} = {};
