@@ -189,19 +189,23 @@ var duxca;
                     if (typeof timeout === "number") {
                         setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
                     }
-                    if (!_this.successor && !_this.predecessor && _this.listeners[token.payload.event] instanceof Function) {
-                        setTimeout(function () {
+                    if (_this.listeners[token.payload.event] instanceof Function
+                        && (!Array.isArray(token.payload.addressee) // broadcast
+                            || token.payload.addressee.indexOf(_this.peer.id) >= 0)) {
+                        if (!_this.successor && !_this.predecessor) {
+                            setTimeout(function () {
+                                _this.listeners[token.payload.event](token, function (token) {
+                                    _this.requests[token.requestId](token);
+                                });
+                            }, 0);
+                        }
+                        else {
                             _this.listeners[token.payload.event](token, function (token) {
-                                _this.requests[token.requestId](token);
+                                if (!_this.successor.open)
+                                    throw new Error(_this.peer.id + " has successor, but not open.");
+                                _this.successor.send({ msg: "Token", token: token });
                             });
-                        }, 0);
-                    }
-                    else {
-                        _this.listeners[token.payload.event](token, function (token) {
-                            if (!_this.successor.open)
-                                throw new Error(_this.peer.id + " has successor, but not open.");
-                            _this.successor.send({ msg: "Token", token: token });
-                        });
+                        }
                     }
                 });
             };
@@ -263,8 +267,8 @@ var duxca;
                                 }
                             };
                             if (_this.listeners[data.token.payload.event] instanceof Function
-                                || !Array.isArray(data.token.payload.addressee)
-                                || data.token.payload.addressee.indexOf(_this.peer.id) < 0) {
+                                && (!Array.isArray(data.token.payload.addressee) // broadcast
+                                    || data.token.payload.addressee.indexOf(_this.peer.id) >= 0)) {
                                 _this.listeners[data.token.payload.event](data.token, tokenpassing);
                             }
                             else {

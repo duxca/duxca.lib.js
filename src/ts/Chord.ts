@@ -188,17 +188,22 @@ module duxca.lib {
         if(typeof timeout === "number"){
           setTimeout(()=> reject(new Error(this.peer.id + "request(" + event + "):timeout("+timeout+")")), timeout);
         }
-        if(!this.successor && !this.predecessor && this.listeners[token.payload.event] instanceof Function){ // emulator
-          setTimeout(()=>{
+        if(this.listeners[token.payload.event] instanceof Function
+          && (!Array.isArray(token.payload.addressee) // broadcast
+          || token.payload.addressee.indexOf(this.peer.id) >= 0)
+        ){
+          if(!this.successor && !this.predecessor){ // emulator
+            setTimeout(()=>{
+              this.listeners[token.payload.event](token, (token)=>{
+                this.requests[token.requestId](token);
+              });
+            }, 0)
+          }else{
             this.listeners[token.payload.event](token, (token)=>{
-              this.requests[token.requestId](token);
+              if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
+              this.successor.send({msg: "Token", token: token});
             });
-          }, 0)
-        }else{
-          this.listeners[token.payload.event](token, (token)=>{
-            if(!this.successor.open) throw new Error(this.peer.id+" has successor, but not open.");
-            this.successor.send({msg: "Token", token: token});
-          });
+          }
         }
       });
     }
@@ -259,8 +264,8 @@ module duxca.lib {
               }
             };
             if(this.listeners[data.token.payload.event] instanceof Function
-              || !Array.isArray(data.token.payload.addressee)
-              || data.token.payload.addressee.indexOf(this.peer.id) < 0){
+              && (!Array.isArray(data.token.payload.addressee) // broadcast
+              || data.token.payload.addressee.indexOf(this.peer.id) >= 0)){ //
               this.listeners[data.token.payload.event](data.token, tokenpassing);
             }else{
               tokenpassing(data.token);

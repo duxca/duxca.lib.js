@@ -15,14 +15,14 @@ module duxca.lib.Sandbox3 {
     var actx = new AudioContext;
     var osc = new OSC(actx);
     var isRecording = false;
-    var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+    var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
 
     osc.createBarkerCodedChirp(13, 6).then((pulse)=>{
       var render = new duxca.lib.CanvasRender(128, 128);
       render.cnv.width = pulse.length;
       render.drawSignal(pulse, true, true);
-      console.log(pulse.length);
+      console.log("length", pulse.length, "sec", pulse.length/actx.sampleRate);
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
@@ -41,30 +41,32 @@ module duxca.lib.Sandbox3 {
       chord.on("pulseStart", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var id = token.payload.data;
-        pulseStartTime[token.payload.data.id] = actx.currentTime;
+        pulseStartTime[token.payload.data] = actx.currentTime;
         cb(token);
       });
       var abuf = osc.createAudioBufferFromArrayBuffer(pulse, actx.sampleRate);
       chord.on("pulseBeep", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var id = token.payload.data;
+        if(chord.peer.id !== id) return cb(token);
         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
         anode.connect(TEST_INPUT_MYSELF?processor:actx.destination);
-        anode.start(actx.currentTime + 0.05);
-        setTimeout(()=> cb(token), pulse.length/actx.sampleRate * 1000 + 50);
+        anode.start(actx.currentTime);
+        setTimeout(()=> cb(token), pulse.length/actx.sampleRate * 1000 + 80);
       });
       var pulseStopTime:{[id:string]: number} = {};
       chord.on("pulseStop", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var id = token.payload.data;
-        pulseStopTime[token.payload.data.id] = actx.currentTime;
+        pulseStopTime[token.payload.data] = actx.currentTime;
         cb(token);
       });
       var calcResult:{[id:string]: number} = null;
       chord.on("stopRec", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
+        var tmp = recbuf.count;
         (function recur(){
-          if(recbuf.count < 1) return setTimeout(recur, 100);
+          if(recbuf.count === tmp) return setTimeout(recur, 100);
           isRecording = false;
           calcResult = null;
           setTimeout(()=>{
@@ -73,33 +75,33 @@ module duxca.lib.Sandbox3 {
           cb(token);
         })();
       });
-      var results:{[id:string]: number[]} = {};
-      var RESULT_HISTORY_SIZE = 20;
       chord.on("collect", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         (function recur(){
           if(calcResult === null) return setTimeout(recur, 100);
           token.payload.data[chord.peer.id] = calcResult;
-          /*
-          var data:{id:string, stdscoreResult:{[id:string]: number}}[] = token.payload.data;
-          data.forEach(({id:id1}, i)=>{
-            data.forEach(({id:id2}, j)=>{
-              if(!Array.isArray(results[id1+"-"+id2])) results[id1+"-"+id2] = [];
-              if(results[id1+"-"+id2].length > RESULT_HISTORY_SIZE) results[id1+"-"+id2].shift();
-              var tmp = Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1]));
-              if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
-              console.log("__RES__", id1+"-"+id2, "phaseShift", tmp, "med", duxca.lib.Statictics.median(results[id1+"-"+id2])*170);
-            });
-          });*/
           cb(token);
         })();
       });
+      var results:{[id:string]: number[]} = {};
+      var RESULT_HISTORY_SIZE = 20;
       chord.on("distribute", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
+        var data:{[id:string]: {[id:string]: number}} = token.payload.data;
+        Object.keys(data).forEach((id1)=>{
+          Object.keys(data).forEach((id2)=>{
+            if(!Array.isArray(results[id1+"-"+id2])) results[id1+"-"+id2] = [];
+            if(results[id1+"-"+id2].length > RESULT_HISTORY_SIZE) results[id1+"-"+id2].shift();
+            var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
+            if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
+            console.log("__RES__", id1+"-"+id2, "phaseShift", tmp, "med", duxca.lib.Statictics.mode(results[id1+"-"+id2])*170);
+          });
+        });
         cb(token);
       });
       return (typeof rootNodeId === "string") ? chord.join(rootNodeId) : chord.create();
     }).then((chord)=>{
+      console.log(chord.peer.id);
       return new Promise<MediaStream>((resolbe, reject)=> navigator.getUserMedia({video: false, audio: true}, resolbe, reject) )
       .then((stream)=>{
         var source = actx.createMediaStreamSource(stream);
@@ -111,22 +113,21 @@ module duxca.lib.Sandbox3 {
           }
         });
       }).then(()=> chord);
-    }).then( typeof rootNodeId === "string" ? (chord)=> void 0 :(chord)=>{
-      console.log(chord.peer.id);
+    }).then( typeof rootNodeId === "string" ? (chord)=> void 0 : function recur(chord){
       chord.request("ping")
       .then((token)=> chord.request("startRec", null, token.route) )
       .then((token)=>
         token.payload.addressee.reduce((prm, id)=>
           prm
           .then((token)=> chord.request("pulseStart", id, token.payload.addressee))
-          .then((token)=> chord.request("pulseBeep", id, [id]))
+          .then((token)=> chord.request("pulseBeep", id, token.payload.addressee))
           .then((token)=> chord.request("pulseStop", id, token.payload.addressee))
         , Promise.resolve(token) ) )
       .then((token)=> chord.request("stopRec", null, token.payload.addressee))
       .then((token)=> chord.request("collect", {}, token.payload.addressee))
       .then((token)=> chord.request("distribute", token.payload.data, token.payload.addressee))
       .then((token)=>{
-
+        setTimeout(recur.bind(null, chord), 0);
       });
       return chord;
     });
@@ -149,13 +150,13 @@ module duxca.lib.Sandbox3 {
 
       console.group("calc correlation");
       console.time("calc correlation");
-      var correlationA = duxca.lib.Signal.overwarpCorr(pulse, rawdata);
+      var correlation = duxca.lib.Signal.overwarpCorr(pulse, rawdata);
       console.timeEnd("calc correlation");
       console.groupEnd();
 
       console.group("calc stdscore");
       console.time("calc stdscore");
-      var stdscoresA = calcStdscore(correlationA);
+      var stdscores = calcStdscore(correlation);
       console.timeEnd("calc stdscore");
       console.groupEnd();
 
@@ -171,23 +172,25 @@ module duxca.lib.Sandbox3 {
         var stopTime = pulseStopTime[id];
         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
-        var sectionA = correlationA.subarray(startPtr, stopPtr);
-        console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", sectionA.length);
-        var stdsectionA = calcStdscore(sectionA);
-        var [max_score, max_offset] = duxca.lib.Statictics.findMax(stdsectionA);
-        for(var i=0; i<1024; i++){
-          if(stdsectionA[max_offset - 2048/2 + i]>70){
-            var offset = max_offset - 2048/2 + i;
+        var section = stdscores.subarray(startPtr, stopPtr);
+        console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
+        var [max_score, max_offset] = duxca.lib.Statictics.findMax(section);
+        for(var i=0; i<pulse.length; i++){
+          if(section[max_offset - pulse.length/2 + i]>70){
+            var offset = max_offset - pulse.length/2 + i;
             break;
           }
         }
-        console.log(id, "offset", offset, "max_offset", max_offset, "max_score", stdsectionA[offset], "globalOffset", startPtr + offset);
-        results[id] = startPtr + offset;
+        results[id] = startPtr + (offset || max_offset);
+        results[id] = results[id] > 0 ? results[id] : 0;
+        console.log(id, "offset", offset, "max_offset", max_offset, "max_score", max_score, "globalOffset", startPtr + offset);
         render.clear();
         render.ctx.strokeStyle = "black";
-        render.drawSignal(sectionA, true, true);
+        render.drawSignal(section, true, true);
+        render.ctx.strokeStyle = "blue";
+        render.drawColLine(offset*1024/section.length);
         render.ctx.strokeStyle = "red";
-        render.drawColLine(offset*1024/sectionA.length);
+        render.drawColLine(max_offset*1024/section.length);
         console.log(id, "section");
         console.screenshot(render.cnv);
       });
@@ -195,11 +198,11 @@ module duxca.lib.Sandbox3 {
       var render1 = new duxca.lib.CanvasRender(1024, 32);
       var render2 = new duxca.lib.CanvasRender(1024, 32);
       var render3 = new duxca.lib.CanvasRender(1024, 32);
-      render1.drawSignal(stdscoresA, true, true);
+      render1.drawSignal(stdscores, true, true);
       render2.drawSignal(rawdata, true, true);
-      var tmp = new Float32Array(rawdata.length);
-      Object.keys(results).forEach((id)=>{ tmp.set(pulse, results[id]); });
-      render3.drawSignal(tmp, true, true);
+      var sim = new Float32Array(rawdata.length);
+      Object.keys(results).forEach((id)=>{ sim.set(pulse, results[id]); });
+      render3.drawSignal(sim, true, true);
       Object.keys(results).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
@@ -208,18 +211,18 @@ module duxca.lib.Sandbox3 {
         render1.ctx.strokeStyle = "blue";
         render2.ctx.strokeStyle = "blue";
         render3.ctx.strokeStyle = "blue";
-        render1.drawColLine(startPtr*1024/stdscoresA.length);
-        render1.drawColLine(stopPtr*1024/stdscoresA.length);
-        render2.drawColLine(startPtr*1024/stdscoresA.length);
-        render2.drawColLine(stopPtr*1024/stdscoresA.length);
-        render3.drawColLine(startPtr*1024/stdscoresA.length);
-        render3.drawColLine(stopPtr*1024/stdscoresA.length);
+        render1.drawColLine(startPtr*1024/stdscores.length);
+        render1.drawColLine(stopPtr*1024/stdscores.length);
+        render2.drawColLine(startPtr*1024/rawdata.length);
+        render2.drawColLine(stopPtr*1024/rawdata.length);
+        render3.drawColLine(startPtr*1024/sim.length);
+        render3.drawColLine(stopPtr*1024/sim.length);
         render1.ctx.strokeStyle = "red";
         render2.ctx.strokeStyle = "red";
         render3.ctx.strokeStyle = "red";
-        render1.drawColLine(results[id]*1024/stdscoresA.length);
-        render2.drawColLine(results[id]*1024/stdscoresA.length);
-        render3.drawColLine(results[id]*1024/stdscoresA.length);
+        render1.drawColLine(results[id]*1024/stdscores.length);
+        render2.drawColLine(results[id]*1024/rawdata.length);
+        render3.drawColLine(results[id]*1024/sim.length);
       });
       console.log("stdscores");
       console.screenshot(render1.cnv);
@@ -271,7 +274,7 @@ module duxca.lib.Sandbox3 {
       console.timeEnd("show spectrogram");
       console.groupEnd();
 
-      return {};
+      return _results;
     }
   }
 }
