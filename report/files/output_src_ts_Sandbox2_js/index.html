@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">65.02</p>
+      <p class="stat">64.56</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">617</p>
+      <p class="stat">640</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">142.71</p>
+      <p class="stat">140.12</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">13.24</p>
+      <p class="stat">13.89</p>
     </div>
   </div>
 </div>
@@ -123,12 +123,13 @@ var duxca;
                 render.cnv.width = pulseA.length;
                 render.drawSignal(pulseA, true, true);
                 console.screenshot(render.element);
-                var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+                var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
                 var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
                 var isRecording = false;
                 var stdscoreResult = null;
                 var pulseReady = {};
                 var pulseFinish = {};
+                var results = {};
                 Promise.resolve()
                     .then(setupRecording)
                     .then(setupChord)
@@ -160,7 +161,14 @@ var duxca;
                                         var id1 = _a.id;
                                         data.forEach(function (_a, j) {
                                             var id2 = _a.id;
-                                            console.log(id1, id2, Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1])));
+                                            if (!Array.isArray(results[id1 + &quot;-&quot; + id2]))
+                                                results[id1 + &quot;-&quot; + id2] = [];
+                                            if (results[id1 + &quot;-&quot; + id2].length &gt; 20)
+                                                results[id1 + &quot;-&quot; + id2].shift();
+                                            var tmp = Math.abs(Math.abs(data[i].stdscoreResult[id2]) - Math.abs(data[j].stdscoreResult[id1]));
+                                            if (isFinite(tmp))
+                                                results[id1 + &quot;-&quot; + id2].push(tmp);
+                                            console.log(&quot;__RES__&quot;, id1 + &quot;-&quot; + id2, duxca.lib.Statictics.median(results[id1 + &quot;-&quot; + id2]) * 170);
                                         });
                                     });
                                     setTimeout(function () { return recur(); }, 1000);
@@ -202,8 +210,8 @@ var duxca;
                             return cb(token);
                         var anodeA = osc.createAudioNodeFromAudioBuffer(abufA);
                         anodeA.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                        anodeA.start(actx.currentTime + 0.1);
-                        setTimeout(function () { return cb(token); }, 1 * 1000 + 100);
+                        anodeA.start(actx.currentTime + 0.05);
+                        setTimeout(function () { return cb(token); }, 300);
                     });
                     chd.on(&quot;pulseStop&quot;, function (token, cb) {
                         console.log(token.payload.data.member, token.payload.data.member.indexOf(chd.peer.id));
@@ -240,7 +248,7 @@ var duxca;
                                 cb(token);
                             }
                             else
-                                setTimeout(recur, 500);
+                                setTimeout(recur, 0);
                         })();
                     });
                     return (typeof id === &quot;string&quot;) ? chd.join(id) : chd.create();
@@ -311,20 +319,35 @@ var duxca;
                     var recStartTime = sampleTimes[0] - recbuf.bufferSize / recbuf.sampleRate;
                     var recStopTime = sampleTimes[sampleTimes.length - 1];
                     var results = {};
+                    var render = new duxca.lib.CanvasRender(1024, 32);
                     Object.keys(pulseReady).forEach(function (id) {
                         var startTime = pulseReady[id];
                         var stopTime = pulseFinish[id];
                         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
                         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
-                        var sectionA = stdscoresA.subarray(startPtr, stopPtr);
+                        var sectionA = correlationA.subarray(startPtr, stopPtr);
                         console.log(id, &quot;recStartTime&quot;, recStartTime, &quot;recStopTime&quot;, recStopTime, &quot;startTime&quot;, startTime, &quot;stopTime&quot;, stopTime, &quot;startPtr&quot;, startPtr, &quot;stopPtr&quot;, stopPtr, &quot;length&quot;, sectionA.length);
-                        var _a = duxca.lib.Statictics.findMax(sectionA), max_score = _a[0], offset = _a[1];
-                        console.log(id, &quot;offset&quot;, offset, &quot;max_score&quot;, max_score, &quot;globalOffset&quot;, startPtr + offset);
+                        var stdsectionA = calcStdscore(sectionA);
+                        var _a = duxca.lib.Statictics.findMax(stdsectionA), max_score = _a[0], max_offset = _a[1];
+                        for (var i = 0; i &lt; 1024; i++) {
+                            if (stdsectionA[max_offset - 2048 / 2 + i] &gt; 70) {
+                                var offset = max_offset - 2048 / 2 + i;
+                                break;
+                            }
+                        }
+                        console.log(id, &quot;offset&quot;, offset, &quot;max_offset&quot;, max_offset, &quot;max_score&quot;, stdsectionA[offset], &quot;globalOffset&quot;, startPtr + offset);
                         results[id] = startPtr + offset;
+                        render.clear();
+                        render.ctx.strokeStyle = &quot;black&quot;;
+                        render.drawSignal(sectionA, true, true);
+                        render.ctx.strokeStyle = &quot;red&quot;;
+                        render.drawColLine(offset * 1024 / sectionA.length);
+                        console.log(id, &quot;section&quot;);
+                        console.screenshot(render.cnv);
                     });
-                    var render1 = new duxca.lib.CanvasRender(1024, 128);
-                    var render2 = new duxca.lib.CanvasRender(1024, 128);
-                    var render3 = new duxca.lib.CanvasRender(1024, 128);
+                    var render1 = new duxca.lib.CanvasRender(1024, 32);
+                    var render2 = new duxca.lib.CanvasRender(1024, 32);
+                    var render3 = new duxca.lib.CanvasRender(1024, 32);
                     render1.drawSignal(stdscoresA, true, true);
                     render2.drawSignal(rawdata, true, true);
                     var tmp = new Float32Array(rawdata.length);
@@ -360,7 +383,7 @@ var duxca;
                     console.log(&quot;results&quot;, results);
                     var _results = {};
                     Object.keys(results).forEach(function (id) {
-                        _results[id] = results[id] - results[myId];
+                        _results[id] = (results[id] - results[myId]) / recbuf.sampleRate;
                     });
                     console.log(&quot;results&quot;, _results);
                     console.timeEnd(&quot;calc cycle&quot;);

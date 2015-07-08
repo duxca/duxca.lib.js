@@ -9,5 +9,6 @@ declare module duxca.lib {
         drawColLine(x: number): void;
         drawRowLine(y: number): void;
         drawSpectrogram(spectrogram: Float32Array[], max?: number): void;
+        _drawSpectrogram(rawdata: Float32Array, sampleRate: number): void;
     }
 }

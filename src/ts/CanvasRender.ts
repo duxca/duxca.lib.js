@@ -91,5 +91,35 @@ module duxca.lib {
       }
       this.ctx.putImageData(imgdata, 0, 0)
     }
+
+    _drawSpectrogram(rawdata: Float32Array, sampleRate:number){
+      var windowsize = Math.pow(2, 8); // spectrgram height
+      var slidewidth = Math.pow(2, 5); // spectrgram width rate
+      console.log(
+        "sampleRate:", sampleRate, "\n",
+        "windowsize:", windowsize, "\n",
+        "slidewidth:", slidewidth, "\n",
+        "windowsize(ms):", windowsize/sampleRate*1000, "\n",
+        "slidewidth(ms):", slidewidth/sampleRate*1000, "\n"
+      );
+      var spectrums: Float32Array[] = [];
+      for(var ptr=0; ptr+windowsize < rawdata.length; ptr += slidewidth){
+        var buffer = rawdata.subarray(ptr, ptr+windowsize);
+        if(buffer.length!==windowsize) break;
+        var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
+        for(var i=0; i<spectrum.length;i++){
+          spectrum[i] = spectrum[i]*20000;
+        }
+        spectrums.push(spectrum);
+      }
+      console.log(
+        "ptr", 0+"-"+(ptr-1)+"/"+rawdata.length,
+        "ms", 0/sampleRate*1000+"-"+(ptr-1)/sampleRate*1000+"/"+rawdata.length*1000/sampleRate,
+        spectrums.length+"x"+spectrums[0].length
+      );
+      this.cnv.width = spectrums.length;
+      this.cnv.height = spectrums[0].length;
+      this.drawSpectrogram(spectrums);
+    }
   }
 }

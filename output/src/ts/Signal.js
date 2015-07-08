@@ -41,15 +41,28 @@ var duxca;
                 return inv_real;
             }
             Signal.correlation = correlation;
-            function overwarpCorr(pulse, rawdata) {
-                var windowsize = pulse.length;
-                var resized_pulse = new Float32Array(windowsize * 2); // for overwrap adding way correlation
-                resized_pulse.set(pulse, 0);
-                var buffer = new Float32Array(windowsize * 2); // for overwrap adding way correlation
-                var correlation = new Float32Array(rawdata.length);
-                for (var i = 0; rawdata.length - (i + windowsize) >= resized_pulse.length; i += windowsize) {
-                    buffer.set(rawdata.subarray(i, i + windowsize), 0);
-                    var corr = duxca.lib.Signal.correlation(buffer, resized_pulse);
+            function smartCorrelation(short, long, sampleRate) {
+                for (var pow = 8; short.length + long.length > Math.pow(2, pow); pow++)
+                    ;
+                var tmpA = new Float32Array(Math.pow(2, pow));
+                var tmpB = new Float32Array(Math.pow(2, pow));
+                tmpA.set(short, 0);
+                tmpB.set(long, 0);
+                return correlation(tmpA, tmpB, sampleRate);
+            }
+            Signal.smartCorrelation = smartCorrelation;
+            function overwarpCorr(short, long) {
+                for (var pow = 8; short.length > Math.pow(2, pow); pow++)
+                    ; // ajasting power of two for FFT
+                var resized_short = new Float32Array(Math.pow(2, pow)); // for overwrap adding way correlation
+                resized_short.set(short, 0);
+                var buffer = new Float32Array(Math.pow(2, pow)); // for overwrap adding way correlation
+                var correlation = new Float32Array(long.length);
+                var windowsize = Math.pow(2, pow - 1);
+                //console.log(long.length, windowsize, resized_short.length, buffer.length, correlation.length)
+                for (var i = 0; long.length - (i + windowsize) >= resized_short.length; i += windowsize) {
+                    buffer.set(long.subarray(i, i + windowsize), 0);
+                    var corr = Signal.correlation(buffer, resized_short);
                     for (var j = 0; j < corr.length; j++) {
                         correlation[i + j] = corr[j];
                     }

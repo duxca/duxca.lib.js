@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">64.39</p>
+      <p class="stat">64.12</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">345</p>
+      <p class="stat">351</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">98.69</p>
+      <p class="stat">103.86</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">4.94</p>
+      <p class="stat">5.15</p>
     </div>
   </div>
 </div>
@@ -99,7 +99,7 @@ var duxca;
             return Math.sqrt(str.split(&quot;&quot;).map(function (char) { return char.charCodeAt(0); }).reduce(function (sum, val) { return sum + Math.pow(val, 2); }));
         }
         var Chord = (function () {
-            function Chord() {
+            function Chord(hostname, port) {
                 this.joined = false;
                 this.successor = null;
                 this.successors = [];
@@ -258,7 +258,7 @@ var duxca;
                     this.predecessor = null;
                 }
             };
-            Chord.prototype.request = function (event, data, timeout) {
+            Chord.prototype.request = function (event, data, addressee, timeout) {
                 var _this = this;
                 return new Promise(function (resolve, reject) {
                     if (!_this.peer)
@@ -268,7 +268,7 @@ var duxca;
                     if (!_this.successor &amp;&amp; !!_this.predecessor)
                         throw new Error(_this.peer.id + &quot; does not have successor.&quot;);
                     var token = {
-                        payload: { event: event, data: data },
+                        payload: { event: event, addressee: addressee, data: data },
                         requestId: _this.lastRequestId++,
                         route: [_this.peer.id],
                         time: [Date.now()]
@@ -280,17 +280,23 @@ var duxca;
                     if (typeof timeout === &quot;number&quot;) {
                         setTimeout(function () { return reject(new Error(_this.peer.id + &quot;request(&quot; + event + &quot;):timeout(&quot; + timeout + &quot;)&quot;)); }, timeout);
                     }
-                    if (!_this.successor &amp;&amp; !_this.predecessor) {
-                        _this.listeners[token.payload.event](token, function (token) {
-                            _this.requests[token.requestId](token);
-                        });
-                    }
-                    else {
-                        _this.listeners[token.payload.event](token, function (token) {
-                            if (!_this.successor.open)
-                                throw new Error(_this.peer.id + &quot; has successor, but not open.&quot;);
-                            _this.successor.send({ msg: &quot;Token&quot;, token: token });
-                        });
+                    if (_this.listeners[token.payload.event] instanceof Function
+                        &amp;&amp; (!Array.isArray(token.payload.addressee) // broadcast
+                            || token.payload.addressee.indexOf(_this.peer.id) &gt;= 0)) {
+                        if (!_this.successor &amp;&amp; !_this.predecessor) {
+                            setTimeout(function () {
+                                _this.listeners[token.payload.event](token, function (token) {
+                                    _this.requests[token.requestId](token);
+                                });
+                            }, 0);
+                        }
+                        else {
+                            _this.listeners[token.payload.event](token, function (token) {
+                                if (!_this.successor.open)
+                                    throw new Error(_this.peer.id + &quot; has successor, but not open.&quot;);
+                                _this.successor.send({ msg: &quot;Token&quot;, token: token });
+                            });
+                        }
                     }
                 });
             };
@@ -351,10 +357,10 @@ var duxca;
                                     setTimeout(function () { return tokenpassing(token); }, 1000);
                                 }
                             };
-                            if (_this.listeners[data.token.payload.event] instanceof Function) {
-                                _this.listeners[data.token.payload.event](data.token, function (token) {
-                                    tokenpassing(token);
-                                });
+                            if (_this.listeners[data.token.payload.event] instanceof Function
+                                &amp;&amp; (!Array.isArray(data.token.payload.addressee) // broadcast
+                                    || data.token.payload.addressee.indexOf(_this.peer.id) &gt;= 0)) {
+                                _this.listeners[data.token.payload.event](data.token, tokenpassing);
                             }
                             else {
                                 tokenpassing(data.token);

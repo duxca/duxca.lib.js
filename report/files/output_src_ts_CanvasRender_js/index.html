@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">62.63</p>
+      <p class="stat">61.12</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">102</p>
+      <p class="stat">122</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">73.96</p>
+      <p class="stat">73.23</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">1.51</p>
+      <p class="stat">2.10</p>
     </div>
   </div>
 </div>
@@ -185,6 +185,26 @@
                     }
                 }
                 this.ctx.putImageData(imgdata, 0, 0);
+            };
+            CanvasRender.prototype._drawSpectrogram = function (rawdata, sampleRate) {
+                var windowsize = Math.pow(2, 8); // spectrgram height
+                var slidewidth = Math.pow(2, 5); // spectrgram width rate
+                console.log(&quot;sampleRate:&quot;, sampleRate, &quot;\n&quot;, &quot;windowsize:&quot;, windowsize, &quot;\n&quot;, &quot;slidewidth:&quot;, slidewidth, &quot;\n&quot;, &quot;windowsize(ms):&quot;, windowsize / sampleRate * 1000, &quot;\n&quot;, &quot;slidewidth(ms):&quot;, slidewidth / sampleRate * 1000, &quot;\n&quot;);
+                var spectrums = [];
+                for (var ptr = 0; ptr + windowsize &lt; rawdata.length; ptr += slidewidth) {
+                    var buffer = rawdata.subarray(ptr, ptr + windowsize);
+                    if (buffer.length !== windowsize)
+                        break;
+                    var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
+                    for (var i = 0; i &lt; spectrum.length; i++) {
+                        spectrum[i] = spectrum[i] * 20000;
+                    }
+                    spectrums.push(spectrum);
+                }
+                console.log(&quot;ptr&quot;, 0 + &quot;-&quot; + (ptr - 1) + &quot;/&quot; + rawdata.length, &quot;ms&quot;, 0 / sampleRate * 1000 + &quot;-&quot; + (ptr - 1) / sampleRate * 1000 + &quot;/&quot; + rawdata.length * 1000 / sampleRate, spectrums.length + &quot;x&quot; + spectrums[0].length);
+                this.cnv.width = spectrums.length;
+                this.cnv.height = spectrums[0].length;
+                this.drawSpectrogram(spectrums);
             };
             return CanvasRender;
         })();

@@ -6,125 +6,23 @@ var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        var Sandbox3;
-        (function (Sandbox3) {
+        var Sandbox4;
+        (function (Sandbox4) {
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
-            function inpulseResponce() {
-                var actx = new AudioContext();
-                var osc = new lib.OSC(actx);
-                osc.inpulseResponce();
-            }
-            Sandbox3.inpulseResponce = inpulseResponce;
-            function _() {
-                var TEST_INPUT_MYSELF = false;
-                var up = lib.Signal.createChirpSignal(Math.pow(2, 17), false);
-                var down = lib.Signal.createChirpSignal(Math.pow(2, 17), true);
-                up = up.subarray(up.length * 1 / 4 | 0, up.length * 3 / 4 | 0);
-                down = up.subarray(up.length * 1 / 4 | 0, up.length * 3 / 4 | 0);
-                var render = new duxca.lib.CanvasRender(128, 128);
-                var actx = new AudioContext();
-                var osc = new lib.OSC(actx);
-                Promise.all([
-                    osc.resampling(up, 12),
-                    osc.resampling(down, 12),
-                ]).then(function (_a) {
-                    var up = _a[0], down = _a[1];
-                    console.log("up", up.length, up.length / 44100);
-                    return new Promise(function (resolbe, reject) { return navigator.getUserMedia({ video: false, audio: true }, resolbe, reject); })
-                        .then(function (stream) { return { up: up, down: down, stream: stream }; });
-                }).then(function (_a) {
-                    var up = _a.up, down = _a.down, stream = _a.stream;
-                    var source = actx.createMediaStreamSource(stream);
-                    var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
-                    var abuf = osc.createAudioBufferFromArrayBuffer(up, actx.sampleRate); // fix rate
-                    var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-                    var anode1 = osc.createAudioNodeFromAudioBuffer(abuf);
-                    var anode2 = osc.createAudioNodeFromAudioBuffer(abuf);
-                    var anode3 = osc.createAudioNodeFromAudioBuffer(abuf);
-                    anode.start(actx.currentTime + 0);
-                    anode1.start(actx.currentTime + 1);
-                    anode2.start(actx.currentTime + 2);
-                    anode3.start(actx.currentTime + 3);
-                    anode.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                    anode1.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                    anode2.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                    anode3.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
-                    !TEST_INPUT_MYSELF && source.connect(processor);
-                    processor.connect(actx.destination);
-                    var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, 1);
-                    processor.addEventListener("audioprocess", function handler(ev) {
-                        recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
-                        console.log(recbuf.count);
-                        if (recbuf.count * recbuf.bufferSize > up.length * 10) {
-                            processor.removeEventListener("audioprocess", handler);
-                            processor.disconnect();
-                            next();
-                        }
-                    });
-                    function next() {
-                        var rawdata = recbuf.merge();
-                        for (var pow = 0; rawdata.length + up.length > Math.pow(2, pow); pow++)
-                            ; // ajasting power of two for FFT
-                        var tmp = new Float32Array(Math.pow(2, pow));
-                        var tmp2 = new Float32Array(Math.pow(2, pow));
-                        tmp.set(down, 0);
-                        tmp2.set(rawdata, 0);
-                        console.log(rawdata.length, up.length, down.length, tmp2.length);
-                        var corr = lib.Signal.overwarpCorr(up, rawdata);
-                        var render = new duxca.lib.CanvasRender(128, 128);
-                        console.log("raw", rawdata.length);
-                        render.cnv.width = rawdata.length / 256;
-                        render.drawSignal(rawdata, true, true);
-                        console.screenshot(render.element);
-                        console.log("corr", corr.length);
-                        render.cnv.width = corr.length / 256;
-                        render.drawSignal(corr, true, true);
-                        console.screenshot(render.element);
-                        console.log("up", up.length);
-                        render.cnv.width = up.length / 256;
-                        render.drawSignal(up, true, true);
-                        console.screenshot(render.element);
-                        console.group("show spectrogram");
-                        console.time("show spectrogram");
-                        var render = new duxca.lib.CanvasRender(128, 128);
-                        var windowsize = Math.pow(2, 8); // spectrgram height
-                        var slidewidth = Math.pow(2, 5); // spectrgram width rate
-                        var sampleRate = recbuf.sampleRate;
-                        console.log("sampleRate:", sampleRate, "\n", "windowsize:", windowsize, "\n", "slidewidth:", slidewidth, "\n", "windowsize(ms):", windowsize / sampleRate * 1000, "\n", "slidewidth(ms):", slidewidth / sampleRate * 1000, "\n");
-                        var spectrums = [];
-                        for (var ptr = 0; ptr + windowsize < rawdata.length; ptr += slidewidth) {
-                            var buffer = rawdata.subarray(ptr, ptr + windowsize);
-                            if (buffer.length !== windowsize)
-                                break;
-                            var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
-                            for (var i = 0; i < spectrum.length; i++) {
-                                spectrum[i] = spectrum[i] * 20000;
-                            }
-                            spectrums.push(spectrum);
-                        }
-                        console.log("ptr", 0 + "-" + (ptr - 1) + "/" + rawdata.length, "ms", 0 / sampleRate * 1000 + "-" + (ptr - 1) / sampleRate * 1000 + "/" + rawdata.length * 1000 / sampleRate, spectrums.length + "x" + spectrums[0].length);
-                        render.cnv.width = spectrums.length;
-                        render.cnv.height = spectrums[0].length;
-                        render.drawSpectrogram(spectrums);
-                        console.screenshot(render.cnv);
-                        console.timeEnd("show spectrogram");
-                        console.groupEnd();
-                    }
-                });
-            }
-            Sandbox3._ = _;
             function test(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
                 var actx = new AudioContext;
                 var osc = new lib.OSC(actx);
                 var isRecording = false;
-                var processor = actx.createScriptProcessor(Math.pow(2, 12), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+                var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
                 var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
-                osc.createBarkerCodedChirp(13, 6).then(function (pulse) {
-                    var render = new duxca.lib.CanvasRender(128, 128);
-                    render.cnv.width = pulse.length;
+                var render = new duxca.lib.CanvasRender(128, 128);
+                var up = lib.Signal.createChirpSignal(Math.pow(2, 17), false);
+                up = up.subarray(up.length * 1 / 6 | 0, up.length * 5 / 6 | 0);
+                osc.resampling(up, 12).then(function (pulse) {
+                    render.cnv.width = 1024;
                     render.drawSignal(pulse, true, true);
                     console.log("length", pulse.length, "sec", pulse.length / actx.sampleRate);
                     console.screenshot(render.element);
@@ -155,9 +53,10 @@ var duxca;
                         if (chord.peer.id !== id)
                             return cb(token);
                         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+                        var anode1 = osc.createAudioNodeFromAudioBuffer(abuf);
                         anode.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
                         anode.start(actx.currentTime);
-                        setTimeout(function () { return cb(token); }, pulse.length / actx.sampleRate * 1000 + 80);
+                        setTimeout(function () { return cb(token); }, pulse.length / actx.sampleRate * 1000);
                     });
                     var pulseStopTime = {};
                     chord.on("pulseStop", function (token, cb) {
@@ -191,7 +90,7 @@ var duxca;
                         })();
                     });
                     var results = {};
-                    var RESULT_HISTORY_SIZE = 20;
+                    var RESULT_HISTORY_SIZE = 10;
                     chord.on("distribute", function (token, cb) {
                         console.log(token.payload.event, token.payload.data);
                         var data = token.payload.data;
@@ -204,7 +103,7 @@ var duxca;
                                 var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
                                 if (isFinite(tmp))
                                     results[id1 + "-" + id2].push(tmp);
-                                console.log("__RES__", id1 + "-" + id2, "phaseShift", tmp, "med", duxca.lib.Statictics.mode(results[id1 + "-" + id2]) * 170);
+                                console.log("__RES__", id1 + "-" + id2, "phaseShift", tmp, "ave", duxca.lib.Statictics.average(results[id1 + "-" + id2]), "mode", duxca.lib.Statictics.mode(results[id1 + "-" + id2]), "med", duxca.lib.Statictics.median(results[id1 + "-" + id2]), "stdev", duxca.lib.Statictics.stdev(results[id1 + "-" + id2]));
                             });
                         });
                         cb(token);
@@ -256,19 +155,11 @@ var duxca;
                     var rawdata = recbuf.merge();
                     var sampleTimes = recbuf.sampleTimes;
                     recbuf.clear();
-                    console.group("calc correlation");
-                    console.time("calc correlation");
-                    var correlation = duxca.lib.Signal.overwarpCorr(pulse, rawdata);
-                    console.timeEnd("calc correlation");
-                    console.groupEnd();
-                    console.group("calc stdscore");
-                    console.time("calc stdscore");
+                    var correlation = duxca.lib.Signal.smartCorrelation(pulse, rawdata);
+                    console.log(rawdata.length, pulse.length, correlation.length);
+                    correlation = correlation.subarray(0, rawdata.length);
                     var stdscores = calcStdscore(correlation);
-                    console.timeEnd("calc stdscore");
-                    console.groupEnd();
-                    console.group("calc cycle");
-                    console.time("calc cycle");
-                    var recStartTime = sampleTimes[0] - recbuf.bufferSize / recbuf.sampleRate;
+                    var recStartTime = sampleTimes[0] - (recbuf.bufferSize / recbuf.sampleRate);
                     var recStopTime = sampleTimes[sampleTimes.length - 1];
                     var results = {};
                     var render = new duxca.lib.CanvasRender(1024, 32);
@@ -289,7 +180,6 @@ var duxca;
                         results[id] = startPtr + (offset || max_offset);
                         results[id] = results[id] > 0 ? results[id] : 0;
                         console.log(id, "offset", offset, "max_offset", max_offset, "max_score", max_score, "globalOffset", startPtr + offset);
-                        render.clear();
                         render.ctx.strokeStyle = "black";
                         render.drawSignal(section, true, true);
                         render.ctx.strokeStyle = "blue";
@@ -340,37 +230,12 @@ var duxca;
                         _results[id] = (results[id] - results[myId]) / recbuf.sampleRate;
                     });
                     console.log("results", _results);
-                    console.timeEnd("calc cycle");
-                    console.groupEnd();
-                    console.group("show spectrogram");
-                    console.time("show spectrogram");
-                    var render = new duxca.lib.CanvasRender(128, 128);
-                    var windowsize = Math.pow(2, 8); // spectrgram height
-                    var slidewidth = Math.pow(2, 5); // spectrgram width rate
-                    var sampleRate = recbuf.sampleRate;
-                    console.log("sampleRate:", sampleRate, "\n", "windowsize:", windowsize, "\n", "slidewidth:", slidewidth, "\n", "windowsize(ms):", windowsize / sampleRate * 1000, "\n", "slidewidth(ms):", slidewidth / sampleRate * 1000, "\n");
-                    var spectrums = [];
-                    for (var ptr = 0; ptr + windowsize < rawdata.length; ptr += slidewidth) {
-                        var buffer = rawdata.subarray(ptr, ptr + windowsize);
-                        if (buffer.length !== windowsize)
-                            break;
-                        var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
-                        for (var i = 0; i < spectrum.length; i++) {
-                            spectrum[i] = spectrum[i] * 20000;
-                        }
-                        spectrums.push(spectrum);
-                    }
-                    console.log("ptr", 0 + "-" + (ptr - 1) + "/" + rawdata.length, "ms", 0 / sampleRate * 1000 + "-" + (ptr - 1) / sampleRate * 1000 + "/" + rawdata.length * 1000 / sampleRate, spectrums.length + "x" + spectrums[0].length);
-                    render.cnv.width = spectrums.length;
-                    render.cnv.height = spectrums[0].length;
-                    render.drawSpectrogram(spectrums);
+                    render._drawSpectrogram(rawdata, recbuf.sampleRate);
                     console.screenshot(render.cnv);
-                    console.timeEnd("show spectrogram");
-                    console.groupEnd();
                     return _results;
                 }
             }
-            Sandbox3.test = test;
-        })(Sandbox3 = lib.Sandbox3 || (lib.Sandbox3 = {}));
+            Sandbox4.test = test;
+        })(Sandbox4 = lib.Sandbox4 || (lib.Sandbox4 = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

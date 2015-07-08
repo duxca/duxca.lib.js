@@ -1,3 +1,4 @@
+
 module duxca.lib {
 
 
@@ -59,6 +60,88 @@ module duxca.lib {
           processor.disconnect();
           resolve(Promise.resolve(new Float32Array(ev.inputBuffer.getChannelData(0))));
         });
+      });
+    }
+
+    resampling(sig: Float32Array, pow=14, sampleRate=44100): Promise<Float32Array>{
+      return new Promise<Float32Array>((resolve, reject)=>{
+        var abuf = this.createAudioBufferFromArrayBuffer(sig, sampleRate);// fix rate
+        var anode = this.createAudioNodeFromAudioBuffer(abuf);
+        var processor = this.actx.createScriptProcessor(Math.pow(2, pow), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+        var recbuf = new RecordBuffer(this.actx.sampleRate, processor.bufferSize, processor.channelCount);
+
+        anode.start(this.actx.currentTime);
+        anode.connect(processor);
+        processor.connect(this.actx.destination);
+
+        var actx = this.actx;
+        processor.addEventListener("audioprocess", function handler(ev: AudioProcessingEvent){
+          recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+          if(recbuf.count*recbuf.bufferSize > sig.length){
+            processor.removeEventListener("audioprocess", handler);
+            processor.disconnect();
+            next();
+          }
+        });
+
+        function next(){
+          var rawdata = recbuf.merge();
+          recbuf.clear();
+          resolve(Promise.resolve(rawdata));
+        }
+      });
+    }
+
+
+
+    inpulseResponce(TEST_INPUT_MYSELF=false): void{
+      var up = Signal.createChirpSignal(Math.pow(2, 17), false);
+      var down = Signal.createChirpSignal(Math.pow(2, 17), true);
+      //up = up.subarray(up.length*1/4|0, up.length*3/4|0);
+      //down = up.subarray(up.length*1/4|0, up.length*3/4|0);
+
+      new Promise<MediaStream>((resolbe, reject)=> navigator.getUserMedia({video: false, audio: true}, resolbe, reject) )
+      .then((stream)=>{
+        var source = this.actx.createMediaStreamSource(stream);
+        var processor = this.actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+        var abuf = this.createAudioBufferFromArrayBuffer(up, this.actx.sampleRate);// fix rate
+        var anode = this.createAudioNodeFromAudioBuffer(abuf);
+        anode.start(this.actx.currentTime+0);
+        anode.connect(TEST_INPUT_MYSELF?processor:this.actx.destination);
+        !TEST_INPUT_MYSELF && source.connect(processor);
+        processor.connect(this.actx.destination);
+        var recbuf = new RecordBuffer(this.actx.sampleRate, processor.bufferSize, 1);
+        var actx = this.actx;
+        processor.addEventListener("audioprocess", function handler(ev: AudioProcessingEvent){
+          recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+          console.log(recbuf.count);
+          if(recbuf.count*recbuf.bufferSize > up.length*2){
+            console.log("done");
+            processor.removeEventListener("audioprocess", handler);
+            processor.disconnect();
+            stream.stop();
+            next();
+          }
+        });
+        function next(){
+          var rawdata = recbuf.merge();
+          var corr = Signal.overwarpCorr(down, rawdata);
+          var render = new duxca.lib.CanvasRender(128, 128);
+          console.log("raw", rawdata.length);
+          render.cnv.width = rawdata.length/256;
+          render.drawSignal(rawdata, true, true);
+          console.screenshot(render.element);
+          console.log("corr", corr.length);
+          render.cnv.width = corr.length/256;
+          render.drawSignal(corr, true, true);
+          console.screenshot(render.element);
+          console.log("up", up.length);
+          render.cnv.width = up.length/256;
+          render.drawSignal(up, true, true);
+          console.screenshot(render.element);
+          render._drawSpectrogram(rawdata, recbuf.sampleRate);
+          console.screenshot(render.cnv);
+        }
       });
     }
   }

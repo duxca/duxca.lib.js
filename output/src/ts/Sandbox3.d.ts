@@ -3,5 +3,7 @@
 /// <reference path="../../../tsd/console.snapshot/console.snapshot.d.ts" />
 /// <reference path="../../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts" />
 declare module duxca.lib.Sandbox3 {
+    function inpulseResponce(): void;
+    function _(): void;
     function test(rootNodeId: string): void;
 }

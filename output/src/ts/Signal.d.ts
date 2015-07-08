@@ -2,7 +2,8 @@
 declare module duxca.lib.Signal {
     function normalize(arr: Float32Array, max_val?: number): Float32Array;
     function correlation(signalA: Float32Array | number[], signalB: Float32Array | number[], sampleRate?: number): Float32Array;
-    function overwarpCorr(pulse: Float32Array, rawdata: Float32Array): Float32Array;
+    function smartCorrelation(short: Float32Array, long: Float32Array, sampleRate?: number): Float32Array;
+    function overwarpCorr(short: Float32Array, long: Float32Array): Float32Array;
     function autocorr(arr: number[]): number[];
     function crosscorr(arrA: number[], arrB: number[]): number[];
     function fft(signal: Float32Array, sampleRate?: number): [Float32Array, Float32Array, Float32Array];
