@@ -92,6 +92,7 @@ module duxca.lib.Sandbox {
         var data:{[id:string]: {[id:string]: number}} = token.payload.data;
         Object.keys(data).forEach((id1)=>{
           Object.keys(data).forEach((id2)=>{
+            if(Array.isArray(results[id2+"-"+id1])) return;
             if(!Array.isArray(results[id1+"-"+id2])) results[id1+"-"+id2] = [];
             if(results[id1+"-"+id2].length > RESULT_HISTORY_SIZE) results[id1+"-"+id2].shift();
             var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
