@@ -13,7 +13,7 @@ module duxca.lib.Sandbox {
   export function testDetect6(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
 
-    var actx = new AudioContext;
+    var actx = new AudioContext();
     var osc = new OSC(actx);
     var isRecording = false;
     var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).

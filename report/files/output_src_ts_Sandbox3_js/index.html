@@ -97,8 +97,8 @@ var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        var Sandbox3;
-        (function (Sandbox3) {
+        var Sandbox;
+        (function (Sandbox) {
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
@@ -107,8 +107,8 @@ var duxca;
                 var osc = new lib.OSC(actx);
                 osc.inpulseResponce();
             }
-            Sandbox3.inpulseResponce = inpulseResponce;
-            function _() {
+            Sandbox.inpulseResponce = inpulseResponce;
+            function _something() {
                 var TEST_INPUT_MYSELF = false;
                 var up = lib.Signal.createChirpSignal(Math.pow(2, 17), false);
                 var down = lib.Signal.createChirpSignal(Math.pow(2, 17), true);
@@ -205,8 +205,8 @@ var duxca;
                     }
                 });
             }
-            Sandbox3._ = _;
-            function test(rootNodeId) {
+            Sandbox._something = _something;
+            function testDetect4(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
                 var actx = new AudioContext;
                 var osc = new lib.OSC(actx);
@@ -461,8 +461,8 @@ var duxca;
                     return _results;
                 }
             }
-            Sandbox3.test = test;
-        })(Sandbox3 = lib.Sandbox3 || (lib.Sandbox3 = {}));
+            Sandbox.testDetect4 = testDetect4;
+        })(Sandbox = lib.Sandbox || (lib.Sandbox = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));</textarea>
   </div>
