@@ -3,6 +3,5 @@
 /// <reference path="../../../tsd/console.snapshot/console.snapshot.d.ts" />
 /// <reference path="../../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts" />
 declare module duxca.lib.Sandbox {
-    function gnuplot(): void;
-    function testDetect5(rootNodeId: string): void;
+    function testDetect6(rootNodeId: string): void;
 }

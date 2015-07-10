@@ -3,7 +3,7 @@
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
 /// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
 
-module duxca.lib.Sandbox3 {
+module duxca.lib.Sandbox {
 
   navigator.getUserMedia = (navigator.getUserMedia ||
                             navigator.webkitGetUserMedia ||
@@ -15,7 +15,9 @@ module duxca.lib.Sandbox3 {
     osc.inpulseResponce();
   }
 
-  export function _(){
+  
+
+  export function _something(){
     var TEST_INPUT_MYSELF = false;
     var up = Signal.createChirpSignal(Math.pow(2, 17), false);
     var down = Signal.createChirpSignal(Math.pow(2, 17), true);
@@ -122,7 +124,9 @@ module duxca.lib.Sandbox3 {
     });
   }
 
-  export function test(rootNodeId: string){
+
+
+  export function testDetect4(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
 
     var actx = new AudioContext;

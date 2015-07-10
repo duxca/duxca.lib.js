@@ -9,16 +9,8 @@ module duxca.lib.Sandbox {
                             navigator.webkitGetUserMedia ||
                             navigator.mozGetUserMedia);
 
-  export function gnuplot(){
-    var up = Signal.createChirpSignal(Math.pow(2, 17), false);
-    var text = "";
-    for(var i=0; i<up.length; i++){
-      text += i/44100 + "\t" + up[i] + "\n";
-    }
-    console.log(text);
-  }
 
-  export function testDetect5(rootNodeId: string){
+  export function testDetect6(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
 
     var actx = new AudioContext;
@@ -28,9 +20,7 @@ module duxca.lib.Sandbox {
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
     var render = new duxca.lib.CanvasRender(128, 128);
 
-    var up = Signal.createChirpSignal(Math.pow(2, 20), false);
-    up = up.subarray(up.length*1/6|0, up.length*5/6|0);
-    osc.resampling(up, 12).then((pulse)=>{
+    osc.createBarkerCodedChirp(13, 8).then((pulse)=>{
       render.cnv.width = 1024;
       render.drawSignal(pulse, true, true);
       console.log("length", pulse.length, "sec", pulse.length/actx.sampleRate);
@@ -164,53 +154,57 @@ module duxca.lib.Sandbox {
       var sampleTimes = recbuf.sampleTimes;
       recbuf.clear();
 
-      var correlation = duxca.lib.Signal.smartCorrelation(pulse, rawdata);
-      console.log(rawdata.length, pulse.length, correlation.length);
-      correlation = correlation.subarray(0, rawdata.length);
-      var stdscores = calcStdscore(correlation);
-
-
       var recStartTime = sampleTimes[0] - (recbuf.bufferSize / recbuf.sampleRate);
       var recStopTime = sampleTimes[sampleTimes.length-1];
       var results:{[id:string]: number} = {};
 
-      var render = new duxca.lib.CanvasRender(1024, 32);
+      render.cnv.width = 1024;
+      render.cnv.height = 32;
       Object.keys(pulseStartTime).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
-        var section = stdscores.subarray(startPtr, stopPtr);
+        var section = rawdata.subarray(startPtr, stopPtr);
+        var corrsec = Signal.smartCorrelation(pulse, section);
+        corrsec = corrsec.subarray(0, section.length);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
-        var [max_score, max_offset] = duxca.lib.Statictics.findMax(section);
-        /*for(var i=0; i<pulse.length; i++){
-          if(section[max_offset - pulse.length/2 + i]>70){
-            var offset = max_offset - pulse.length/2 + i;
+        var [max_score, max_offset] = duxca.lib.Statictics.findMax(corrsec);
+        for(var i=0; i<corrsec.length; i++){
+          if(max_score/2 < corrsec[i]){
+            var offset = i;
             break;
           }
-        }*/var offset = max_offset;
+        }
         results[id] = startPtr + (offset || max_offset);
         results[id] = results[id] > 0 ? results[id] : 0;
         console.log(id, "offset", offset, "max_offset", max_offset, "max_score", max_score, "globalOffset", startPtr + offset);
-        render.cnv.width = render.cnv.width;
+        render.clear();
         render.ctx.strokeStyle = "black";
-        render.drawSignal(section, true, true);
+        render.drawSignal(corrsec, true, true);
         render.ctx.strokeStyle = "blue";
-        render.drawColLine(offset*1024/section.length);
+        render.drawColLine(offset*1024/corrsec.length);
         render.ctx.strokeStyle = "red";
-        render.drawColLine(max_offset*1024/section.length);
-        console.log(id, "section");
+        render.drawColLine(max_offset*1024/corrsec.length);
+        console.log(id, "corrsec");
         console.screenshot(render.cnv);
       });
 
       var render1 = new duxca.lib.CanvasRender(1024, 32);
       var render2 = new duxca.lib.CanvasRender(1024, 32);
-      //var render3 = new duxca.lib.CanvasRender(1024, 32);
-      render1.drawSignal(stdscores, true, true);
+      var render3 = new duxca.lib.CanvasRender(1024, 32);
       render2.drawSignal(rawdata, true, true);
-      //var sim = new Float32Array(rawdata.length);
-      //Object.keys(results).forEach((id)=>{ sim.set(pulse, results[id]); });
-      //render3.drawSignal(sim, true, true);
+      var sim = new Float32Array(rawdata.length);
+      Object.keys(results).forEach((id)=>{
+        if(sim.length < results[id] + pulse.length){
+          sim.set(pulse.subarray(0, (results[id] + pulse.length) - sim.length));
+        }else{
+          sim.set(pulse, results[id]);
+        }
+      });
+      render3.drawSignal(sim, true, true);
+      var correlation = duxca.lib.Signal.smartCorrelation(pulse, rawdata);
+      correlation = correlation.subarray(0, rawdata.length);
       Object.keys(results).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
@@ -218,26 +212,26 @@ module duxca.lib.Sandbox {
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
         render1.ctx.strokeStyle = "blue";
         render2.ctx.strokeStyle = "blue";
-        //render3.ctx.strokeStyle = "blue";
-        render1.drawColLine(startPtr*1024/stdscores.length);
-        render1.drawColLine(stopPtr*1024/stdscores.length);
+        render3.ctx.strokeStyle = "blue";
+        render1.drawColLine(startPtr*1024/correlation.length);
+        render1.drawColLine(stopPtr*1024/correlation.length);
         render2.drawColLine(startPtr*1024/rawdata.length);
         render2.drawColLine(stopPtr*1024/rawdata.length);
-        //render3.drawColLine(startPtr*1024/sim.length);
-        //render3.drawColLine(stopPtr*1024/sim.length);
+        render3.drawColLine(startPtr*1024/sim.length);
+        render3.drawColLine(stopPtr*1024/sim.length);
         render1.ctx.strokeStyle = "red";
         render2.ctx.strokeStyle = "red";
-        //render3.ctx.strokeStyle = "red";
-        render1.drawColLine(results[id]*1024/stdscores.length);
+        render3.ctx.strokeStyle = "red";
+        render1.drawColLine(results[id]*1024/correlation.length);
         render2.drawColLine(results[id]*1024/rawdata.length);
-        //render3.drawColLine(results[id]*1024/sim.length);
+        render3.drawColLine(results[id]*1024/sim.length);
       });
-      console.log("stdscores");
+      console.log("correlation");
       console.screenshot(render1.cnv);
       console.log("rawdata");
       console.screenshot(render2.cnv);
-      //console.log("sim");
-      //console.screenshot(render3.cnv);
+      console.log("sim");
+      console.screenshot(render3.cnv);
       console.log("results", results);
       var _results: {[id:string]: number} = {};
       Object.keys(results).forEach((id)=>{

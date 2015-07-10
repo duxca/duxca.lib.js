@@ -6,12 +6,21 @@ var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        var Sandbox4;
-        (function (Sandbox4) {
+        var Sandbox;
+        (function (Sandbox) {
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
-            function test(rootNodeId) {
+            function gnuplot() {
+                var up = lib.Signal.createChirpSignal(Math.pow(2, 17), false);
+                var text = "";
+                for (var i = 0; i < up.length; i++) {
+                    text += i / 44100 + "\t" + up[i] + "\n";
+                }
+                console.log(text);
+            }
+            Sandbox.gnuplot = gnuplot;
+            function testDetect5(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
                 var actx = new AudioContext;
                 var osc = new lib.OSC(actx);
@@ -19,7 +28,7 @@ var duxca;
                 var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
                 var recbuf = new lib.RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
                 var render = new duxca.lib.CanvasRender(128, 128);
-                var up = lib.Signal.createChirpSignal(Math.pow(2, 17), false);
+                var up = lib.Signal.createChirpSignal(Math.pow(2, 20), false);
                 up = up.subarray(up.length * 1 / 6 | 0, up.length * 5 / 6 | 0);
                 osc.resampling(up, 12).then(function (pulse) {
                     render.cnv.width = 1024;
@@ -171,15 +180,16 @@ var duxca;
                         var section = stdscores.subarray(startPtr, stopPtr);
                         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
                         var _a = duxca.lib.Statictics.findMax(section), max_score = _a[0], max_offset = _a[1];
-                        for (var i = 0; i < pulse.length; i++) {
-                            if (section[max_offset - pulse.length / 2 + i] > 70) {
-                                var offset = max_offset - pulse.length / 2 + i;
-                                break;
-                            }
-                        }
+                        /*for(var i=0; i<pulse.length; i++){
+                          if(section[max_offset - pulse.length/2 + i]>70){
+                            var offset = max_offset - pulse.length/2 + i;
+                            break;
+                          }
+                        }*/ var offset = max_offset;
                         results[id] = startPtr + (offset || max_offset);
                         results[id] = results[id] > 0 ? results[id] : 0;
                         console.log(id, "offset", offset, "max_offset", max_offset, "max_score", max_score, "globalOffset", startPtr + offset);
+                        render.cnv.width = render.cnv.width;
                         render.ctx.strokeStyle = "black";
                         render.drawSignal(section, true, true);
                         render.ctx.strokeStyle = "blue";
@@ -191,12 +201,12 @@ var duxca;
                     });
                     var render1 = new duxca.lib.CanvasRender(1024, 32);
                     var render2 = new duxca.lib.CanvasRender(1024, 32);
-                    var render3 = new duxca.lib.CanvasRender(1024, 32);
+                    //var render3 = new duxca.lib.CanvasRender(1024, 32);
                     render1.drawSignal(stdscores, true, true);
                     render2.drawSignal(rawdata, true, true);
-                    var sim = new Float32Array(rawdata.length);
-                    Object.keys(results).forEach(function (id) { sim.set(pulse, results[id]); });
-                    render3.drawSignal(sim, true, true);
+                    //var sim = new Float32Array(rawdata.length);
+                    //Object.keys(results).forEach((id)=>{ sim.set(pulse, results[id]); });
+                    //render3.drawSignal(sim, true, true);
                     Object.keys(results).forEach(function (id) {
                         var startTime = pulseStartTime[id];
                         var stopTime = pulseStopTime[id];
@@ -204,26 +214,26 @@ var duxca;
                         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
                         render1.ctx.strokeStyle = "blue";
                         render2.ctx.strokeStyle = "blue";
-                        render3.ctx.strokeStyle = "blue";
+                        //render3.ctx.strokeStyle = "blue";
                         render1.drawColLine(startPtr * 1024 / stdscores.length);
                         render1.drawColLine(stopPtr * 1024 / stdscores.length);
                         render2.drawColLine(startPtr * 1024 / rawdata.length);
                         render2.drawColLine(stopPtr * 1024 / rawdata.length);
-                        render3.drawColLine(startPtr * 1024 / sim.length);
-                        render3.drawColLine(stopPtr * 1024 / sim.length);
+                        //render3.drawColLine(startPtr*1024/sim.length);
+                        //render3.drawColLine(stopPtr*1024/sim.length);
                         render1.ctx.strokeStyle = "red";
                         render2.ctx.strokeStyle = "red";
-                        render3.ctx.strokeStyle = "red";
+                        //render3.ctx.strokeStyle = "red";
                         render1.drawColLine(results[id] * 1024 / stdscores.length);
                         render2.drawColLine(results[id] * 1024 / rawdata.length);
-                        render3.drawColLine(results[id] * 1024 / sim.length);
+                        //render3.drawColLine(results[id]*1024/sim.length);
                     });
                     console.log("stdscores");
                     console.screenshot(render1.cnv);
                     console.log("rawdata");
                     console.screenshot(render2.cnv);
-                    console.log("sim");
-                    console.screenshot(render3.cnv);
+                    //console.log("sim");
+                    //console.screenshot(render3.cnv);
                     console.log("results", results);
                     var _results = {};
                     Object.keys(results).forEach(function (id) {
@@ -235,7 +245,7 @@ var duxca;
                     return _results;
                 }
             }
-            Sandbox4.test = test;
-        })(Sandbox4 = lib.Sandbox4 || (lib.Sandbox4 = {}));
+            Sandbox.testDetect5 = testDetect5;
+        })(Sandbox = lib.Sandbox || (lib.Sandbox = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

@@ -6,28 +6,28 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "qunit/qunit.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "es6-promise/es6-promise.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "webaudioapi/waa.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "webrtc/MediaStream.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "webrtc/RTCPeerConnection.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "bluebird/bluebird.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "zepto/zepto.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     },
     "peerjs/peerjs.d.ts": {
-      "commit": "ab3cc82066805007cbf0db233ddb5879f42be4d2"
+      "commit": "286c198898978cb6045076c3e47f823a02217b41"
     }
   }
 }

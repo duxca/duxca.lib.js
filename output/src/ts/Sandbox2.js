@@ -6,8 +6,8 @@ var duxca;
 (function (duxca) {
     var lib;
     (function (lib) {
-        var Sandbox2;
-        (function (Sandbox2) {
+        var Sandbox;
+        (function (Sandbox) {
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
@@ -21,7 +21,7 @@ var duxca;
                     for (var j = i + 1; j < 3; j++)
                         console.log(i, j, i + "[" + i + "~" + j + "]");
             }
-            Sandbox2._ = _;
+            Sandbox._ = _;
             function testAutoDetect3(id) {
                 var TEST_INPUT_MYSELF = false;
                 var actx = new AudioContext();
@@ -325,7 +325,7 @@ var duxca;
                     return _results;
                 }
             }
-            Sandbox2.testAutoDetect3 = testAutoDetect3;
+            Sandbox.testAutoDetect3 = testAutoDetect3;
             function testAutoDetect2(id) {
                 var PULSE_INTERVAL_SEC = 0.5;
                 var PULSE_REFRAIN = 1;
@@ -638,7 +638,7 @@ var duxca;
                     return _results;
                 }
             }
-            Sandbox2.testAutoDetect2 = testAutoDetect2;
-        })(Sandbox2 = lib.Sandbox2 || (lib.Sandbox2 = {}));
+            Sandbox.testAutoDetect2 = testAutoDetect2;
+        })(Sandbox = lib.Sandbox || (lib.Sandbox = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

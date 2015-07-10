@@ -37,30 +37,13 @@ module duxca.lib {
       return asrc;
     }
 
-    createBarkerCodedChirp(barkerCodeN: number, powN: number): Promise<Float32Array>{
-      return new Promise<Float32Array>((resolve, reject)=>{
-        var actx = this.actx;
-        var osc = this;
+    createBarkerCodedChirp(barkerCodeN: number, powN: number, powL=14): Promise<Float32Array>{
+      var actx = this.actx;
+      var osc = this;
 
-        var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
-        var chirp = duxca.lib.Signal.createCodedChirp(code, powN);
-
-        var abuf = osc.createAudioBufferFromArrayBuffer(chirp, 44100);// fix rate
-        var anode = osc.createAudioNodeFromAudioBuffer(abuf);
-        for(var pow=8; chirp.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
-        var processor = actx.createScriptProcessor(Math.pow(2, pow), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
-        var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
-
-        anode.start(actx.currentTime);
-        anode.connect(processor);
-        processor.connect(actx.destination);
-
-        processor.addEventListener("audioprocess", function handler(ev: AudioProcessingEvent){
-          processor.removeEventListener("audioprocess", handler);
-          processor.disconnect();
-          resolve(Promise.resolve(new Float32Array(ev.inputBuffer.getChannelData(0))));
-        });
-      });
+      var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
+      var chirp = duxca.lib.Signal.createCodedChirp(code, powN);
+      return this.resampling(chirp, powL);
     }
 
     resampling(sig: Float32Array, pow=14, sampleRate=44100): Promise<Float32Array>{
