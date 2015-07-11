@@ -29,8 +29,14 @@ module duxca.lib.Sandbox {
     }).then((pulse)=>{
       var chord = new duxca.lib.Chord();
       chord.debug = false;
-      chord.on("ping", (token, cb)=>{ console.log(token.payload.event, token.payload.data); cb(token); });
-      chord.on("startRec", (token, cb)=>{ console.log(token.payload.event, token.payload.data); isRecording = true; cb(token); });
+      chord.on("ping", (token, cb)=>{
+        console.log(token.payload.event, token.payload.data);
+        cb(token);
+      });
+      chord.on("recStart", (token, cb)=>{
+        console.log(token.payload.event, token.payload.data);
+        isRecording = true; cb(token);
+      });
       var pulseStartTime:{[id:string]: number} = {};
       chord.on("pulseStart", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
@@ -56,7 +62,7 @@ module duxca.lib.Sandbox {
         cb(token);
       });
       var pulseTime:{[id:string]: number} = null;
-      chord.on("stopRec", (token, cb)=>{
+      chord.on("recStop", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var tmp = recbuf.count;
         (function recur(){
@@ -115,12 +121,13 @@ module duxca.lib.Sandbox {
         var wait = token.payload.data;
         var id1 = token.route[0];
         var id2 = chord.peer.id;
-        var delay = duxca.lib.Statictics.mode(delayTimesLog[id1][id2]);
+        var delay = duxca.lib.Statictics.median(delayTimesLog[id1][id2]);
         var offsetTime = pulseTimes[id2][id1] + wait + delay;
         console.log(id1, id2, "delay", delay, wait, offsetTime, pulseTimes, delayTimesLog);
         osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then((abuf)=>{
           var node = osc.createAudioNodeFromAudioBuffer(abuf);
           node.start(offsetTime);
+          node.loop = true;
           node.connect(actx.destination);
         });
         cb(token);
@@ -137,10 +144,13 @@ module duxca.lib.Sandbox {
           if(isRecording)
             recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
         });
+        return new Promise<Chord>((resolve, reject)=>{ setTimeout(()=>{
+          resolve(Promise.resolve(chord));
+        }, 1000); });
       }).then(()=> chord);
     }).then( typeof rootNodeId === "string" ? (chord)=> void 0 : function recur(chord){
       chord.request("ping")
-      .then((token)=> chord.request("startRec", null, token.route) )
+      .then((token)=> chord.request("recStart", null, token.route) )
       .then((token)=>
         token.payload.addressee.reduce((prm, id)=>
           prm
@@ -148,12 +158,15 @@ module duxca.lib.Sandbox {
           .then((token)=> chord.request("pulseBeep", id, token.payload.addressee))
           .then((token)=> chord.request("pulseStop", id, token.payload.addressee))
         , Promise.resolve(token) ) )
-      .then((token)=> chord.request("stopRec", null, token.payload.addressee))
+      .then((token)=> chord.request("recStop", null, token.payload.addressee))
       .then((token)=> chord.request("collect", {}, token.payload.addressee))
       .then((token)=> chord.request("distribute", token.payload.data, token.payload.addressee))
       .then((token)=>{
-        if(count++ > 10){
-          chord.request("play", (Date.now()-token.time[0])*1.5/1000+1, token.payload.addressee);
+        console.log(count, Date.now());
+        if(++count === 2){
+          chord.request("play", (Date.now()-token.time[0])*1.5/1000+1, token.payload.addressee).then((token)=>{
+            //setTimeout(recur.bind(null, chord), 0);
+          });
         }else setTimeout(recur.bind(null, chord), 0);
       });
       return chord;

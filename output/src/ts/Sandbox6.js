@@ -29,8 +29,15 @@ var duxca;
                 }).then(function (pulse) {
                     var chord = new duxca.lib.Chord();
                     chord.debug = false;
-                    chord.on("ping", function (token, cb) { console.log(token.payload.event, token.payload.data); cb(token); });
-                    chord.on("startRec", function (token, cb) { console.log(token.payload.event, token.payload.data); isRecording = true; cb(token); });
+                    chord.on("ping", function (token, cb) {
+                        console.log(token.payload.event, token.payload.data);
+                        cb(token);
+                    });
+                    chord.on("recStart", function (token, cb) {
+                        console.log(token.payload.event, token.payload.data);
+                        isRecording = true;
+                        cb(token);
+                    });
                     var pulseStartTime = {};
                     chord.on("pulseStart", function (token, cb) {
                         console.log(token.payload.event, token.payload.data);
@@ -57,7 +64,7 @@ var duxca;
                         cb(token);
                     });
                     var pulseTime = null;
-                    chord.on("stopRec", function (token, cb) {
+                    chord.on("recStop", function (token, cb) {
                         console.log(token.payload.event, token.payload.data);
                         var tmp = recbuf.count;
                         (function recur() {
@@ -114,12 +121,13 @@ var duxca;
                         var wait = token.payload.data;
                         var id1 = token.route[0];
                         var id2 = chord.peer.id;
-                        var delay = duxca.lib.Statictics.mode(delayTimesLog[id1][id2]);
+                        var delay = duxca.lib.Statictics.median(delayTimesLog[id1][id2]);
                         var offsetTime = pulseTimes[id2][id1] + wait + delay;
                         console.log(id1, id2, "delay", delay, wait, offsetTime, pulseTimes, delayTimesLog);
                         osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then(function (abuf) {
                             var node = osc.createAudioNodeFromAudioBuffer(abuf);
                             node.start(offsetTime);
+                            node.loop = true;
                             node.connect(actx.destination);
                         });
                         cb(token);
@@ -136,10 +144,15 @@ var duxca;
                             if (isRecording)
                                 recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
                         });
+                        return new Promise(function (resolve, reject) {
+                            setTimeout(function () {
+                                resolve(Promise.resolve(chord));
+                            }, 1000);
+                        });
                     }).then(function () { return chord; });
                 }).then(typeof rootNodeId === "string" ? function (chord) { return void 0; } : function recur(chord) {
                     chord.request("ping")
-                        .then(function (token) { return chord.request("startRec", null, token.route); })
+                        .then(function (token) { return chord.request("recStart", null, token.route); })
                         .then(function (token) {
                         return token.payload.addressee.reduce(function (prm, id) {
                             return prm
@@ -148,12 +161,15 @@ var duxca;
                                 .then(function (token) { return chord.request("pulseStop", id, token.payload.addressee); });
                         }, Promise.resolve(token));
                     })
-                        .then(function (token) { return chord.request("stopRec", null, token.payload.addressee); })
+                        .then(function (token) { return chord.request("recStop", null, token.payload.addressee); })
                         .then(function (token) { return chord.request("collect", {}, token.payload.addressee); })
                         .then(function (token) { return chord.request("distribute", token.payload.data, token.payload.addressee); })
                         .then(function (token) {
-                        if (count++ > 10) {
-                            chord.request("play", (Date.now() - token.time[0]) * 1.5 / 1000 + 1, token.payload.addressee);
+                        console.log(count, Date.now());
+                        if (++count === 2) {
+                            chord.request("play", (Date.now() - token.time[0]) * 1.5 / 1000 + 1, token.payload.addressee).then(function (token) {
+                                //setTimeout(recur.bind(null, chord), 0);
+                            });
                         }
                         else
                             setTimeout(recur.bind(null, chord), 0);
