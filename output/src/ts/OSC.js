@@ -38,6 +38,21 @@ var duxca;
                 var chirp = duxca.lib.Signal.createCodedChirp(code, powN);
                 return this.resampling(chirp, powL);
             };
+            // todo: https://developer.mozilla.org/ja/docs/Web/API/AudioBuffer
+            // sync resampling
+            OSC.prototype.createAudioBufferFromURL = function (url) {
+                var _this = this;
+                return new Promise(function (resolve, reject) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.responseType = 'arraybuffer';
+                    xhr.addEventListener("load", function () {
+                        var buf = xhr.response;
+                        _this.actx.decodeAudioData(buf, function (abuf) { return resolve(Promise.resolve(abuf)); }, function () { return console.error("decode error"); });
+                    });
+                    xhr.send();
+                });
+            };
             OSC.prototype.resampling = function (sig, pow, sampleRate) {
                 var _this = this;
                 if (pow === void 0) { pow = 14; }

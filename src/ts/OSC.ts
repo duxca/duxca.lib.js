@@ -1,4 +1,3 @@
-
 module duxca.lib {
 
 
@@ -44,6 +43,24 @@ module duxca.lib {
       var code = duxca.lib.Signal.createBarkerCode(barkerCodeN);
       var chirp = duxca.lib.Signal.createCodedChirp(code, powN);
       return this.resampling(chirp, powL);
+    }
+
+    // todo: https://developer.mozilla.org/ja/docs/Web/API/AudioBuffer
+    // sync resampling
+
+
+
+    createAudioBufferFromURL(url: string): Promise<AudioBuffer>{
+      return new Promise<AudioBuffer>((resolve, reject)=>{
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.addEventListener("load", ()=>{
+          var buf = <ArrayBuffer>xhr.response;
+          this.actx.decodeAudioData(buf, (abuf)=> resolve(Promise.resolve(abuf)), ()=> console.error("decode error"));
+        });
+        xhr.send();
+      });
     }
 
     resampling(sig: Float32Array, pow=14, sampleRate=44100): Promise<Float32Array>{

@@ -11,8 +11,20 @@ var duxca;
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
+            function testAudioDownload() {
+                var actx = new AudioContext();
+                var osc = new lib.OSC(actx);
+                osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then(function (abuf) {
+                    var node = osc.createAudioNodeFromAudioBuffer(abuf);
+                    node.start(actx.currentTime);
+                    node.connect(actx.destination);
+                });
+            }
+            Sandbox.testAudioDownload = testAudioDownload;
             function testDetect6(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
+                var lastTime = 0;
+                var count = 0;
                 var actx = new AudioContext();
                 var osc = new lib.OSC(actx);
                 var isRecording = false;
@@ -53,6 +65,7 @@ var duxca;
                         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
                         var anode1 = osc.createAudioNodeFromAudioBuffer(abuf);
                         anode.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
+                        lastTime = actx.currentTime;
                         anode.start(actx.currentTime);
                         setTimeout(function () { return cb(token); }, pulse.length / actx.sampleRate * 1000);
                     });
@@ -94,8 +107,10 @@ var duxca;
                         var data = token.payload.data;
                         Object.keys(data).forEach(function (id1) {
                             Object.keys(data).forEach(function (id2) {
-                                if (Array.isArray(results[id2 + "-" + id1]))
+                                if (Array.isArray(results[id2 + "-" + id1])) {
+                                    results[id1 + "-" + id2] = results[id2 + "-" + id1];
                                     return;
+                                }
                                 if (!Array.isArray(results[id1 + "-" + id2]))
                                     results[id1 + "-" + id2] = [];
                                 if (results[id1 + "-" + id2].length > RESULT_HISTORY_SIZE)
@@ -106,6 +121,15 @@ var duxca;
                                 console.log("__RES__", id1 + "-" + id2, "phaseShift", tmp, "ave", duxca.lib.Statictics.average(results[id1 + "-" + id2]), "mode", duxca.lib.Statictics.mode(results[id1 + "-" + id2]), "med", duxca.lib.Statictics.median(results[id1 + "-" + id2]), "stdev", duxca.lib.Statictics.stdev(results[id1 + "-" + id2]));
                             });
                         });
+                        cb(token);
+                    });
+                    chord.on("play", function (token, cb) {
+                        console.log(token.payload.event, token.payload.data);
+                        var masterNodeLastTime = token.payload.data;
+                        var id1 = token.route[0];
+                        var id2 = chord.peer.id;
+                        var delay = results[id1 + "-" + id2].pop();
+                        console.log(id1, id2, "delay", delay);
                         cb(token);
                     });
                     return (typeof rootNodeId === "string") ? chord.join(rootNodeId) : chord.create();
@@ -137,7 +161,12 @@ var duxca;
                         .then(function (token) { return chord.request("collect", {}, token.payload.addressee); })
                         .then(function (token) { return chord.request("distribute", token.payload.data, token.payload.addressee); })
                         .then(function (token) {
-                        setTimeout(recur.bind(null, chord), 0);
+                        if (count++ > 10) {
+                            console.log("play", token.payload.data, token.payload.addressee);
+                            chord.request("play", lastTime, token.payload.addressee);
+                        }
+                        else
+                            setTimeout(recur.bind(null, chord), 0);
                     });
                     return chord;
                 });
