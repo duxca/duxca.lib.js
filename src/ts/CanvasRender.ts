@@ -76,6 +76,21 @@ module duxca.lib {
       this.ctx.stroke();
     }
 
+    cross(x: number, y: number, size: number): void{
+      this.ctx.beginPath();
+      this.ctx.moveTo(x+size, y+size);
+      this.ctx.lineTo(x-size, y-size);
+      this.ctx.moveTo(x-size, y+size);
+      this.ctx.lineTo(x+size, y-size);
+      this.ctx.stroke();
+    }
+
+    arc(x: number, y: number, size: number): void{
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, size, 0, 2*Math.PI, false);
+      this.ctx.stroke();
+    }
+
     drawSpectrogram(spectrogram:Float32Array[], max=255):void {
       var imgdata = this.ctx.createImageData(spectrogram.length, spectrogram[0].length);
       for (var i = 0; i < spectrogram.length; i++) {

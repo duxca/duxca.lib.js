@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">69.09</p>
+      <p class="stat">68.73</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">245</p>
+      <p class="stat">274</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">77.45</p>
+      <p class="stat">80.71</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">5.09</p>
+      <p class="stat">5.61</p>
     </div>
   </div>
 </div>
@@ -102,8 +102,20 @@ var duxca;
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
+            function testAudioDownload() {
+                var actx = new AudioContext();
+                var osc = new lib.OSC(actx);
+                osc.createAudioBufferFromURL(&quot;./TellYourWorld1min.mp3&quot;).then(function (abuf) {
+                    var node = osc.createAudioNodeFromAudioBuffer(abuf);
+                    node.start(actx.currentTime);
+                    node.connect(actx.destination);
+                });
+            }
+            Sandbox.testAudioDownload = testAudioDownload;
             function testDetect6(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
+                var lastTime = 0;
+                var count = 0;
                 var actx = new AudioContext();
                 var osc = new lib.OSC(actx);
                 var isRecording = false;
@@ -144,6 +156,7 @@ var duxca;
                         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
                         var anode1 = osc.createAudioNodeFromAudioBuffer(abuf);
                         anode.connect(TEST_INPUT_MYSELF ? processor : actx.destination);
+                        lastTime = actx.currentTime;
                         anode.start(actx.currentTime);
                         setTimeout(function () { return cb(token); }, pulse.length / actx.sampleRate * 1000);
                     });
@@ -185,8 +198,10 @@ var duxca;
                         var data = token.payload.data;
                         Object.keys(data).forEach(function (id1) {
                             Object.keys(data).forEach(function (id2) {
-                                if (Array.isArray(results[id2 + &quot;-&quot; + id1]))
+                                if (Array.isArray(results[id2 + &quot;-&quot; + id1])) {
+                                    results[id1 + &quot;-&quot; + id2] = results[id2 + &quot;-&quot; + id1];
                                     return;
+                                }
                                 if (!Array.isArray(results[id1 + &quot;-&quot; + id2]))
                                     results[id1 + &quot;-&quot; + id2] = [];
                                 if (results[id1 + &quot;-&quot; + id2].length &gt; RESULT_HISTORY_SIZE)
@@ -197,6 +212,15 @@ var duxca;
                                 console.log(&quot;__RES__&quot;, id1 + &quot;-&quot; + id2, &quot;phaseShift&quot;, tmp, &quot;ave&quot;, duxca.lib.Statictics.average(results[id1 + &quot;-&quot; + id2]), &quot;mode&quot;, duxca.lib.Statictics.mode(results[id1 + &quot;-&quot; + id2]), &quot;med&quot;, duxca.lib.Statictics.median(results[id1 + &quot;-&quot; + id2]), &quot;stdev&quot;, duxca.lib.Statictics.stdev(results[id1 + &quot;-&quot; + id2]));
                             });
                         });
+                        cb(token);
+                    });
+                    chord.on(&quot;play&quot;, function (token, cb) {
+                        console.log(token.payload.event, token.payload.data);
+                        var masterNodeLastTime = token.payload.data;
+                        var id1 = token.route[0];
+                        var id2 = chord.peer.id;
+                        var delay = results[id1 + &quot;-&quot; + id2].pop();
+                        console.log(id1, id2, &quot;delay&quot;, delay);
                         cb(token);
                     });
                     return (typeof rootNodeId === &quot;string&quot;) ? chord.join(rootNodeId) : chord.create();
@@ -228,7 +252,12 @@ var duxca;
                         .then(function (token) { return chord.request(&quot;collect&quot;, {}, token.payload.addressee); })
                         .then(function (token) { return chord.request(&quot;distribute&quot;, token.payload.data, token.payload.addressee); })
                         .then(function (token) {
-                        setTimeout(recur.bind(null, chord), 0);
+                        if (count++ &gt; 10) {
+                            console.log(&quot;play&quot;, token.payload.data, token.payload.addressee);
+                            chord.request(&quot;play&quot;, lastTime, token.payload.addressee);
+                        }
+                        else
+                            setTimeout(recur.bind(null, chord), 0);
                     });
                     return chord;
                 });

@@ -79,6 +79,19 @@ var duxca;
                 this.ctx.lineTo(this.cnv.width, y);
                 this.ctx.stroke();
             };
+            CanvasRender.prototype.cross = function (x, y, size) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + size, y + size);
+                this.ctx.lineTo(x - size, y - size);
+                this.ctx.moveTo(x - size, y + size);
+                this.ctx.lineTo(x + size, y - size);
+                this.ctx.stroke();
+            };
+            CanvasRender.prototype.arc = function (x, y, size) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size, 0, 2 * Math.PI, false);
+                this.ctx.stroke();
+            };
             CanvasRender.prototype.drawSpectrogram = function (spectrogram, max) {
                 if (max === void 0) { max = 255; }
                 var imgdata = this.ctx.createImageData(spectrogram.length, spectrogram[0].length);

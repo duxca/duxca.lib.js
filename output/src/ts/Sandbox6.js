@@ -11,6 +11,26 @@ var duxca;
             navigator.getUserMedia = (navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia);
+            function relpos() {
+                var K = 0;
+                var pseudoPts = [0, 1, 2].map(function (i) { return new lib.Point(Math.random() * 10, Math.random() * 10); });
+                var ds = [
+                    [0, 1, 1],
+                    [1, 0, 1],
+                    [1, 1, 0]
+                ];
+                var sdm = new lib.SDM(pseudoPts, ds);
+                (function recur() {
+                    if (K++ < 200) {
+                        sdm.step();
+                        requestAnimationFrame(recur);
+                    }
+                    else {
+                        console.log("fin", sdm.det(), sdm.points);
+                    }
+                }());
+            }
+            Sandbox.relpos = relpos;
             function testDetect7(rootNodeId) {
                 var TEST_INPUT_MYSELF = false;
                 var count = 0;

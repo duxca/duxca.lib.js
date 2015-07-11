@@ -9,6 +9,29 @@ module duxca.lib.Sandbox {
                             navigator.webkitGetUserMedia ||
                             navigator.mozGetUserMedia);
 
+
+
+  export function relpos(){
+    var K = 0;
+    var pseudoPts: Point[] = [0,1,2].map((i)=> new Point(Math.random()*10, Math.random()*10));
+    var ds: number[][] = [
+      [0, 1, 1],
+      [1, 0, 1],
+      [1, 1, 0]
+    ];
+    var sdm = new SDM(pseudoPts, ds);
+    (function recur(){
+      if(K++ < 200){
+        sdm.step();
+        requestAnimationFrame(recur);
+      }else{
+        console.log("fin", sdm.det(), sdm.points);
+      }
+    }());
+  }
+
+
+
   export function testDetect7(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
     var count = 0;
