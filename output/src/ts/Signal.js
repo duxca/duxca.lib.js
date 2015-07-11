@@ -48,7 +48,8 @@ var duxca;
                 var tmpB = new Float32Array(Math.pow(2, pow));
                 tmpA.set(short, 0);
                 tmpB.set(long, 0);
-                return correlation(tmpA, tmpB, sampleRate);
+                var corrsec = correlation(tmpA, tmpB, sampleRate);
+                return corrsec.subarray(0, long.length > short.length ? long.length : short.length);
             }
             Signal.smartCorrelation = smartCorrelation;
             function overwarpCorr(short, long) {

@@ -29,6 +29,7 @@
         "./Sandbox3.ts",
         "./Sandbox4.ts",
         "./Sandbox5.ts",
+        "./Sandbox6.ts",
         "./Signal.ts",
         "./Statictics.ts",
         "./Util.ts",
