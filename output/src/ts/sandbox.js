@@ -556,6 +556,9 @@ var duxca;
                 render.cnv.width = pulse.length;
                 render.drawSignal(pulse, true, true);
                 console.screenshot(render.element);
+                render.cnv.width = 1024;
+                render.drawSignal(pulse, true, true);
+                console.screenshot(render.element);
             }
             Sandbox.showChirp = showChirp;
             function testDetect() {

@@ -146,4 +146,26 @@ module duxca.lib.Signal {
   export function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower=10): Float32Array{
     return createCodedChirp(createBarkerCode(barkerCodeN));
   }
+
+  // duxca.lib.Signal.createM([3, 1], 7, [0,0,1])
+  // = [0, 0, 1, 1, 1, 0, 1, 0, 0, 1]
+  // duxca.lib.Signal.createM([4, 1], 15, [1,0,0,0])
+  // = [1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0]
+  export function createM(polynomial:number[], shiftN:number, seed?:number[]):number[]{
+    if(!Array.isArray(seed)){
+      seed = []
+      for(var i=0; i<polynomial[0]; i++) seed[i] = Math.round(Math.random());
+    }else if(seed.length !==　polynomial[0]){
+      throw new Error("polynomial[0] !== seed.length");
+    }
+    var arr = seed.slice(0);
+    for(var i=0; i<shiftN; i++){
+      var tmp = arr[arr.length-polynomial[0]];
+      for(var j=1; j<polynomial.length; j++){
+        tmp = tmp ^ arr[arr.length-polynomial[j]];
+      }
+      arr.push(tmp);
+    }
+    return arr;
+  }
 }

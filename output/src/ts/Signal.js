@@ -160,6 +160,30 @@ var duxca;
                 return createCodedChirp(createBarkerCode(barkerCodeN));
             }
             Signal.createBarkerCodedChirp = createBarkerCodedChirp;
+            // duxca.lib.Signal.createM([3, 1], 7, [0,0,1])
+            // = [0, 0, 1, 1, 1, 0, 1, 0, 0, 1]
+            // duxca.lib.Signal.createM([4, 1], 15, [1,0,0,0])
+            // = [1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0]
+            function createM(polynomial, shiftN, seed) {
+                if (!Array.isArray(seed)) {
+                    seed = [];
+                    for (var i = 0; i < polynomial[0]; i++)
+                        seed[i] = Math.round(Math.random());
+                }
+                else if (seed.length !== polynomial[0]) {
+                    throw new Error("polynomial[0] !== seed.length");
+                }
+                var arr = seed.slice(0);
+                for (var i = 0; i < shiftN; i++) {
+                    var tmp = arr[arr.length - polynomial[0]];
+                    for (var j = 1; j < polynomial.length; j++) {
+                        tmp = tmp ^ arr[arr.length - polynomial[j]];
+                    }
+                    arr.push(tmp);
+                }
+                return arr;
+            }
+            Signal.createM = createM;
         })(Signal = lib.Signal || (lib.Signal = {}));
     })(lib = duxca.lib || (duxca.lib = {}));
 })(duxca || (duxca = {}));

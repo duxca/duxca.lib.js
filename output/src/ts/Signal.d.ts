@@ -12,4 +12,5 @@ declare module duxca.lib.Signal {
     function createComplementaryCode(pow2: number): number[][];
     function createCodedChirp(code: number[], bitWithBinaryPower?: number): Float32Array;
     function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower?: number): Float32Array;
+    function createM(polynomial: number[], shiftN: number, seed?: number[]): number[];
 }
