@@ -21,11 +21,11 @@ module duxca.lib.Sandbox {
   }
 
   export function testAutoDetect3(id?:string): void{
-    var TEST_INPUT_MYSELF = false;
+    var TEST_INPUT_MYSELF = true;
 
     var actx = new AudioContext();
     var codeA = duxca.lib.Signal.createBarkerCode(13);
-    var pulseA = createPulse(codeA, 6);
+    var pulseA = createPulse(codeA, 8);
     console.log(actx.sampleRate, pulseA.length, pulseA.length/actx.sampleRate);
 
     var render = new duxca.lib.CanvasRender(128, 128);

@@ -42,6 +42,7 @@ var duxca;
             }
             return [r * 255, g * 255, b * 255];
         }
+        lib.hslToRgb = hslToRgb;
         var CanvasRender = (function () {
             function CanvasRender(width, height) {
                 this.element = this.cnv = document.createElement("canvas");
@@ -102,7 +103,7 @@ var duxca;
                         var index = x + y * imgdata.width;
                         imgdata.data[index * 4 + 0] = b | 0;
                         imgdata.data[index * 4 + 1] = g | 0;
-                        imgdata.data[index * 4 + 2] = r | 0;
+                        imgdata.data[index * 4 + 2] = r | 0; // is this bug?
                         imgdata.data[index * 4 + 3] = 255;
                     }
                 }

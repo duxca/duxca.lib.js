@@ -1,4 +1,5 @@
 declare module duxca.lib {
+    function hslToRgb(h: number, s: number, l: number): [number, number, number];
     class CanvasRender {
         element: HTMLCanvasElement;
         cnv: HTMLCanvasElement;

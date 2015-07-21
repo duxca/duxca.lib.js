@@ -9,7 +9,7 @@ module duxca.lib {
     return p;
   }
 
-  function hslToRgb(h:number, s:number, l:number):[number, number, number] {
+  export function hslToRgb(h:number, s:number, l:number):[number, number, number] {
     // h, s, l: 0~1
     h *= 5 / 6;
     if (h < 0) {
@@ -100,7 +100,7 @@ module duxca.lib {
           var index = x + y * imgdata.width;
           imgdata.data[index * 4 + 0] = b | 0;
           imgdata.data[index * 4 + 1] = g | 0;
-          imgdata.data[index * 4 + 2] = r | 0;
+          imgdata.data[index * 4 + 2] = r | 0; // is this bug?
           imgdata.data[index * 4 + 3] = 255;
         }
       }

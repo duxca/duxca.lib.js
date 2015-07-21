@@ -36,9 +36,9 @@ var duxca;
                     processor.connect(actx.destination);
                     console.group("create barker coded chirp signal");
                     console.time("create barker coded chirp signal");
-                    var _c = duxca.lib.Signal.createComplementaryCode(5), a = _c[0], b = _c[1];
+                    var a = duxca.lib.Signal.createBarkerCode(1);
                     console.log(a.length);
-                    var pulse = duxca.lib.Signal.createCodedChirp(a, 6); //var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
+                    var pulse = duxca.lib.Signal.createCodedChirp(a, 12); //var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
                     for (var pow = 0; pulse.length * PULSE_BOOST_COUNT > Math.pow(2, pow); pow++)
                         ; //for(var pow=0; pulse.length > Math.pow(2, pow); pow++); // ajasting power of two for FFT
                     var barkerChirp = new Float32Array(Math.pow(2, pow));
