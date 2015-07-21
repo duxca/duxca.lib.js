@@ -44,11 +44,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
-      <p class="stat">61.52</p>
+      <p class="stat">61.51</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
-      <p class="stat">775</p>
+      <p class="stat">778</p>
     </div>
   </div>
   <div class="row historical">
@@ -62,11 +62,11 @@
   <div class="row">
     <div class="col-md-6">
       <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
-      <p class="stat">144.63</p>
+      <p class="stat">144.17</p>
     </div>
     <div class="col-md-6">
       <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
-      <p class="stat">15.24</p>
+      <p class="stat">15.29</p>
     </div>
   </div>
 </div>
@@ -127,9 +127,9 @@ var duxca;
                     processor.connect(actx.destination);
                     console.group(&quot;create barker coded chirp signal&quot;);
                     console.time(&quot;create barker coded chirp signal&quot;);
-                    var _c = duxca.lib.Signal.createComplementaryCode(5), a = _c[0], b = _c[1];
+                    var a = duxca.lib.Signal.createBarkerCode(1);
                     console.log(a.length);
-                    var pulse = duxca.lib.Signal.createCodedChirp(a, 6); //var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
+                    var pulse = duxca.lib.Signal.createCodedChirp(a, 12); //var pulse = duxca.lib.Signal.createBarkerCodedChirp(11, 8);
                     for (var pow = 0; pulse.length * PULSE_BOOST_COUNT &gt; Math.pow(2, pow); pow++)
                         ; //for(var pow=0; pulse.length &gt; Math.pow(2, pow); pow++); // ajasting power of two for FFT
                     var barkerChirp = new Float32Array(Math.pow(2, pow));
@@ -645,6 +645,9 @@ var duxca;
                 }*/
                 var pulse = duxca.lib.Signal.createBarkerCodedChirp(13);
                 render.cnv.width = pulse.length;
+                render.drawSignal(pulse, true, true);
+                console.screenshot(render.element);
+                render.cnv.width = 1024;
                 render.drawSignal(pulse, true, true);
                 console.screenshot(render.element);
             }
