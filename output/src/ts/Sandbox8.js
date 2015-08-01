@@ -11,9 +11,7 @@ var duxca;
         var Sandbox;
         (function (Sandbox) {
             function testQRCodeWrite() {
-                var div = document.createElement("div");
-                var code = new QRCode(div, "hoge");
-                console.screenshot(div.children[0]);
+                console.screenshot(duxca.lib.QRcode.writer("hoge"));
             }
             Sandbox.testQRCodeWrite = testQRCodeWrite;
             function testQRCodeRead() {
@@ -26,23 +24,19 @@ var duxca;
                     var render = new duxca.lib.CanvasRender(0, 0);
                     return new Promise(function (resolve, reject) {
                         tid = setInterval(function () {
-                            qrcode.width = render.cnv.width = video.videoWidth;
-                            qrcode.height = render.cnv.height = video.videoHeight;
+                            render.cnv.width = video.videoWidth;
+                            render.cnv.height = video.videoHeight;
                             render.ctx.drawImage(video, 0, 0);
-                            qrcode.imagedata = render.ctx.getImageData(0, 0, qrcode.width, qrcode.height);
                             console.clear();
                             console.screenshot(render.cnv);
-                            try {
-                                var result = qrcode.process(render.ctx);
-                                console.log(result);
+                            duxca.lib.QRcode.reader(render.cnv, render.ctx).then(function (result) {
                                 stream.stop();
                                 video.pause();
                                 clearInterval(tid);
                                 resolve(Promise.resolve(result));
-                            }
-                            catch (e) {
+                            }).catch(function (err) {
                                 console.log("failed");
-                            }
+                            });
                         }, 1000);
                     });
                 })

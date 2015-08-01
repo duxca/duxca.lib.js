@@ -8,9 +8,7 @@
 module duxca.lib.Sandbox {
 
   export function testQRCodeWrite(){
-    var div = document.createElement("div");
-    var code = new QRCode(div, "hoge");
-    console.screenshot(<HTMLCanvasElement>div.children[0]);
+    console.screenshot(duxca.lib.QRcode.writer("hoge"));
   }
 
   export function testQRCodeRead(){
@@ -23,22 +21,19 @@ module duxca.lib.Sandbox {
       var render = new duxca.lib.CanvasRender(0, 0);
       return new Promise<string>((resolve, reject)=>{
         tid = setInterval(()=>{
-          qrcode.width  = render.cnv.width  = video.videoWidth;
-          qrcode.height = render.cnv.height = video.videoHeight;
+          render.cnv.width  = video.videoWidth;
+          render.cnv.height = video.videoHeight;
           render.ctx.drawImage(video, 0, 0);
-          qrcode.imagedata = render.ctx.getImageData(0, 0, qrcode.width, qrcode.height);
           console.clear();
           console.screenshot(render.cnv);
-          try {
-            var result = qrcode.process(render.ctx);
-            console.log(result);
+          duxca.lib.QRcode.reader(render.cnv, render.ctx).then((result)=>{
             stream.stop();
             video.pause();
             clearInterval(tid);
             resolve(Promise.resolve(result));
-          } catch (e) {
+          }).catch((err)=>{
             console.log("failed");
-          }
+          });
         }, 1000);
       });
     })
