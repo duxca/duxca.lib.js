@@ -1,4 +1,4 @@
-/// <reference path="../../tsd/DataView/DataView.d.ts"/>
+/// <!--reference path="../../tsd/DataView/DataView.d.ts"/>
 var duxca;
 (function (duxca) {
     var lib;

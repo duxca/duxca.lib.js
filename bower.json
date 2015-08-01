@@ -17,7 +17,9 @@
   "dependencies": {
     "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
     "console.snapshot": "git://github.com/adriancooney/console.snapshot.git",
-    "peerjs": "~0.3.14"
+    "qrcodejs": "git://github.com/davidshimjs/qrcodejs.git",
+    "peerjs": "~0.3.14",
+    "qrcode-decoder-js": "git://github.com/umbrella-web/qrcode-decoder-js.git#feature/cleanup"
   },
   "devDependencies": {
     "qunit": "~1.17.1",
