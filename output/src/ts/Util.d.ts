@@ -1,5 +1,6 @@
-declare module duxca.lib.Util {
+declare module Util {
     function importObject(hash: {
         [key: string]: any;
     }): void;
 }
+export = Util;

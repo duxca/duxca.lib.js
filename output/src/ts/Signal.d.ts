@@ -1,5 +1,5 @@
 /// <reference path="../../../tsd/dsp/dsp.d.ts" />
-declare module duxca.lib.Signal {
+declare module Signal {
     function normalize(arr: Float32Array, max_val?: number): Float32Array;
     function correlation(signalA: Float32Array | number[], signalB: Float32Array | number[], sampleRate?: number): Float32Array;
     function smartCorrelation(short: Float32Array, long: Float32Array, sampleRate?: number): Float32Array;
@@ -14,3 +14,4 @@ declare module duxca.lib.Signal {
     function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower?: number): Float32Array;
     function createM(polynomial: number[], shiftN: number, seed?: number[]): number[];
 }
+export = Signal;

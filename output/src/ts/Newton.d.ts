@@ -1,21 +1,14 @@
-declare module duxca.lib {
-    class Newton {
-        theta: number;
-        points: Point[];
-        _pts: Point[];
-        constructor(theta: number, pts: Point[], _pts: Point[]);
-        step(): void;
-        det(theta: number): number;
-        der(theta: number): number;
-    }
-    class SDM {
-        points: Point[];
-        distance: number[][];
-        a: number;
-        constructor(pts: Point[], ds: number[][], a?: number);
-        step(): void;
-        det(): number;
-    }
+import Point = Newton.Point;
+declare class Newton {
+    theta: number;
+    points: Point[];
+    _pts: Point[];
+    constructor(theta: number, pts: Point[], _pts: Point[]);
+    step(): void;
+    det(theta: number): number;
+    der(theta: number): number;
+}
+declare module Newton {
     class Point {
         x: number;
         y: number;
@@ -25,4 +18,13 @@ declare module duxca.lib {
         times(num: number): Point;
         distance(pt: Point): number;
     }
+    class SDM {
+        points: Point[];
+        distance: number[][];
+        a: number;
+        constructor(pts: Point[], ds: number[][], a?: number);
+        step(): void;
+        det(): number;
+    }
 }
+export = Newton;

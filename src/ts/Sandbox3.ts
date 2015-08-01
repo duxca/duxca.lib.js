@@ -1,13 +1,18 @@
 /// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
 /// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
 
-module duxca.lib.Sandbox {
+import CanvasRender = require("./CanvasRender");
+import Signal = require("./Signal");
+import RecordBuffer = require("./RecordBuffer");
+import OSC = require("./OSC");
+import FPS = require("./FPS");
+import Wave = require("./Wave");
+import Metronome = require("./Metronome");
+import Statictics = require("./Statictics");
+import Chord = require("./Chord");
 
-  navigator.getUserMedia = (navigator.getUserMedia ||
-                            navigator.webkitGetUserMedia ||
-                            navigator.mozGetUserMedia);
+namespace Sandbox {
 
   export function inpulseResponce(){
     var actx = new AudioContext();
@@ -15,7 +20,7 @@ module duxca.lib.Sandbox {
     osc.inpulseResponce();
   }
 
-  
+
 
   export function _something(){
     var TEST_INPUT_MYSELF = false;
@@ -24,7 +29,7 @@ module duxca.lib.Sandbox {
     up = up.subarray(up.length*1/4|0, up.length*3/4|0);
     down = up.subarray(up.length*1/4|0, up.length*3/4|0);
 
-    var render = new duxca.lib.CanvasRender(128, 128);
+    var render = new CanvasRender(128, 128);
     var actx = new AudioContext();
     var osc = new OSC(actx);
     Promise.all([
@@ -72,7 +77,7 @@ module duxca.lib.Sandbox {
         console.log(rawdata.length, up.length, down.length, tmp2.length);
         var corr = Signal.overwarpCorr(up, rawdata);
 
-        var render = new duxca.lib.CanvasRender(128, 128);
+        var render = new CanvasRender(128, 128);
         console.log("raw", rawdata.length);
         render.cnv.width = rawdata.length/256;
         render.drawSignal(rawdata, true, true);
@@ -88,7 +93,7 @@ module duxca.lib.Sandbox {
 
         console.group("show spectrogram");
         console.time("show spectrogram");
-        var render = new duxca.lib.CanvasRender(128, 128);
+        var render = new CanvasRender(128, 128);
         var windowsize = Math.pow(2, 8); // spectrgram height
         var slidewidth = Math.pow(2, 5); // spectrgram width rate
         var sampleRate = recbuf.sampleRate;
@@ -103,7 +108,7 @@ module duxca.lib.Sandbox {
         for(var ptr=0; ptr+windowsize < rawdata.length; ptr += slidewidth){
           var buffer = rawdata.subarray(ptr, ptr+windowsize);
           if(buffer.length!==windowsize) break;
-          var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
+          var spectrum = Signal.fft(buffer, sampleRate)[2];
           for(var i=0; i<spectrum.length;i++){
             spectrum[i] = spectrum[i]*20000;
           }
@@ -136,14 +141,14 @@ module duxca.lib.Sandbox {
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
 
     osc.createBarkerCodedChirp(13, 6).then((pulse)=>{
-      var render = new duxca.lib.CanvasRender(128, 128);
+      var render = new CanvasRender(128, 128);
       render.cnv.width = pulse.length;
       render.drawSignal(pulse, true, true);
       console.log("length", pulse.length, "sec", pulse.length/actx.sampleRate);
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
-      var chord = new duxca.lib.Chord();
+      var chord = new Chord();
       chord.debug = false;
       chord.on("ping", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
@@ -211,7 +216,7 @@ module duxca.lib.Sandbox {
             if(results[id1+"-"+id2].length > RESULT_HISTORY_SIZE) results[id1+"-"+id2].shift();
             var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
             if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
-            console.log("__RES__", id1+"-"+id2, "phaseShift", tmp, "med", duxca.lib.Statictics.mode(results[id1+"-"+id2])*170);
+            console.log("__RES__", id1+"-"+id2, "phaseShift", tmp, "med", Statictics.mode(results[id1+"-"+id2])*170);
           });
         });
         cb(token);
@@ -250,9 +255,9 @@ module duxca.lib.Sandbox {
     });
 
     function calcStdscore(correlation: Float32Array):Float32Array{
-      var _correlation = duxca.lib.Signal.normalize(correlation, 100);
-      var ave = duxca.lib.Statictics.average(_correlation);
-      var vari = duxca.lib.Statictics.variance(_correlation);
+      var _correlation = Signal.normalize(correlation, 100);
+      var ave = Statictics.average(_correlation);
+      var vari = Statictics.variance(_correlation);
       var stdscores = new Float32Array(_correlation.length);
       for(var i=0; i<_correlation.length; i++){
         stdscores[i] = 10*(_correlation[i] - ave)/vari+50;
@@ -267,7 +272,7 @@ module duxca.lib.Sandbox {
 
       console.group("calc correlation");
       console.time("calc correlation");
-      var correlation = duxca.lib.Signal.overwarpCorr(pulse, rawdata);
+      var correlation = Signal.overwarpCorr(pulse, rawdata);
       console.timeEnd("calc correlation");
       console.groupEnd();
 
@@ -283,7 +288,7 @@ module duxca.lib.Sandbox {
       var recStopTime = sampleTimes[sampleTimes.length-1];
       var results:{[id:string]: number} = {};
 
-      var render = new duxca.lib.CanvasRender(1024, 32);
+      var render = new CanvasRender(1024, 32);
       Object.keys(pulseStartTime).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
@@ -291,7 +296,7 @@ module duxca.lib.Sandbox {
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
         var section = stdscores.subarray(startPtr, stopPtr);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
-        var [max_score, max_offset] = duxca.lib.Statictics.findMax(section);
+        var [max_score, max_offset] = Statictics.findMax(section);
         for(var i=0; i<pulse.length; i++){
           if(section[max_offset - pulse.length/2 + i]>70){
             var offset = max_offset - pulse.length/2 + i;
@@ -312,9 +317,9 @@ module duxca.lib.Sandbox {
         console.screenshot(render.cnv);
       });
 
-      var render1 = new duxca.lib.CanvasRender(1024, 32);
-      var render2 = new duxca.lib.CanvasRender(1024, 32);
-      var render3 = new duxca.lib.CanvasRender(1024, 32);
+      var render1 = new CanvasRender(1024, 32);
+      var render2 = new CanvasRender(1024, 32);
+      var render3 = new CanvasRender(1024, 32);
       render1.drawSignal(stdscores, true, true);
       render2.drawSignal(rawdata, true, true);
       var sim = new Float32Array(rawdata.length);
@@ -358,7 +363,7 @@ module duxca.lib.Sandbox {
 
       console.group("show spectrogram");
       console.time("show spectrogram");
-      var render = new duxca.lib.CanvasRender(128, 128);
+      var render = new CanvasRender(128, 128);
       var windowsize = Math.pow(2, 8); // spectrgram height
       var slidewidth = Math.pow(2, 5); // spectrgram width rate
       var sampleRate = recbuf.sampleRate;
@@ -373,7 +378,7 @@ module duxca.lib.Sandbox {
       for(var ptr=0; ptr+windowsize < rawdata.length; ptr += slidewidth){
         var buffer = rawdata.subarray(ptr, ptr+windowsize);
         if(buffer.length!==windowsize) break;
-        var spectrum = duxca.lib.Signal.fft(buffer, sampleRate)[2];
+        var spectrum = Signal.fft(buffer, sampleRate)[2];
         for(var i=0; i<spectrum.length;i++){
           spectrum[i] = spectrum[i]*20000;
         }
@@ -395,3 +400,5 @@ module duxca.lib.Sandbox {
     }
   }
 }
+
+export = Sandbox;

@@ -1,5 +1,5 @@
 
-module duxca.lib.Statictics {
+namespace Statictics {
   export function summation(arr:number[]|Float32Array):number {
     var sum = 0;
     for (var j = 0; j < arr.length; j++) {
@@ -143,7 +143,7 @@ module duxca.lib.Statictics {
       }
       var aves:number[] = [];
       for(var j=0; j<k; j++){
-        aves[j] = duxca.lib.Statictics.average(sums[j]);
+        aves[j] = average(sums[j]);
       }
       for(var i=0; i<data.length; i++){
         for(var j=0; j<aves.length; j++){
@@ -161,3 +161,5 @@ module duxca.lib.Statictics {
     }
   }
 }
+
+export = Statictics;

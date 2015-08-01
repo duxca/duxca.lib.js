@@ -1,14 +1,26 @@
 /// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
 /// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
-/// <reference path="../../tsd/qrcode-decoder-js/qrcode.d.ts"/>
-/// <reference path="../../tsd/qrcodejs/qrcode.d.ts"/>
 
-module duxca.lib.Sandbox {
+import CanvasRender = require("./CanvasRender");
+import Signal = require("./Signal");
+import RecordBuffer = require("./RecordBuffer");
+import OSC = require("./OSC");
+import FPS = require("./FPS");
+import Wave = require("./Wave");
+import Metronome = require("./Metronome");
+import Statictics = require("./Statictics");
+import Chord = require("./Chord");
+import Newton = require("./Newton");
+import Point = Newton.Point;
+import SDM = Newton.SDM;
+import QRcode = require("./QRcode");
+import FDTD = require("./FDTD");
+
+namespace Sandbox {
 
   export function testQRCodeWrite(){
-    console.screenshot(duxca.lib.QRcode.writer("hoge"));
+    console.screenshot(QRcode.writer("hoge"));
   }
 
   export function testQRCodeRead(){
@@ -18,7 +30,7 @@ module duxca.lib.Sandbox {
       video.src = window.URL.createObjectURL(stream);
       video.autoplay = true;
       var tid = 0;
-      var render = new duxca.lib.CanvasRender(0, 0);
+      var render = new CanvasRender(0, 0);
       return new Promise<string>((resolve, reject)=>{
         tid = setInterval(()=>{
           render.cnv.width  = video.videoWidth;
@@ -26,7 +38,7 @@ module duxca.lib.Sandbox {
           render.ctx.drawImage(video, 0, 0);
           console.clear();
           console.screenshot(render.cnv);
-          duxca.lib.QRcode.reader(render.cnv, render.ctx).then((result)=>{
+          QRcode.reader(render.cnv, render.ctx).then((result)=>{
             stream.stop();
             video.pause();
             clearInterval(tid);
@@ -61,3 +73,5 @@ module duxca.lib.Sandbox {
     recur();
   }
 }
+
+export = Sandbox;

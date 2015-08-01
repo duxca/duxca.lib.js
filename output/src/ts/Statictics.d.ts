@@ -1,4 +1,4 @@
-declare module duxca.lib.Statictics {
+declare module Statictics {
     function summation(arr: number[] | Float32Array): number;
     function average(arr: number[] | Float32Array): number;
     function variance(arr: number[] | Float32Array): number;
@@ -15,3 +15,4 @@ declare module duxca.lib.Statictics {
     function all(arr: number[] | Float32Array): void;
     function k_means1D(data: number[], k: number): number[];
 }
+export = Statictics;
