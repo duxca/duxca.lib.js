@@ -1,4 +1,4 @@
-/// <reference path="../../../tsd/dsp/dsp.d.ts" />
+/// <reference path="../../tsd/dsp/dsp.d.ts" />
 declare module Signal {
     function normalize(arr: Float32Array, max_val?: number): Float32Array;
     function correlation(signalA: Float32Array | number[], signalB: Float32Array | number[], sampleRate?: number): Float32Array;

@@ -8,10 +8,10 @@
     "update": "npm update; bower update; tsd update --save --overwrite",
     "build": "npm run build-rm; npm run build-purs; npm run build-ts; npm run build-coffee; npm run concat",
     "build-rm": "rm -rf output/*; rm -rf lib/*",
-    "build-purs": "pulp build",
-    "build-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration --module commonjs ts/*.ts;",
+    "build-purs": "pulp build; pulp browserify > lib/purs.js",
+    "build-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./src/ --outdir output --declaration --module commonjs src/ts/*.ts;",
     "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
-    "concat": "pulp browserify > lib/purs.js; cd output/src/ts; cat CanvasRender.js Chord.js FDTD.js FPS.js Metronome.js OSC.js QRCode.js RecordBuffer.js Sandbox2.js Sandbox3.js Sandbox4.js Sandbox5.js Sandbox6.js Sandbox7.js Sandbox.js Signal.js Statictics.js Util.js Wave.js > ../../../lib/duxca.lib.js ",
+    "concat": "node node_modules/browserify/bin/cmd.js output/coffee/duxca.lib.js --standalone duxca --outfile lib/duxca.lib.js ",
     "espower": "for i in `find output/test -name test*.js`; do node node_modules/espower-cli/bin/cmd.js $i > $i.esp.js; done",
     "report": "node node_modules/plato/bin/plato --title duxca.lib.js --jshint .jshintrc --recurse --dir report --exclude output/test/ output; open http://localhost:8000/report/",
     "demo": "open http://localhost:8000/demo/",
@@ -35,6 +35,7 @@
     "typescript": "^1.5.0-beta"
   },
   "dependencies": {
+    "browserify": "^11.0.1",
     "peer": "^0.2.8"
   }
 }

@@ -1,5 +1,5 @@
-/// <reference path="../../../tsd/peerjs/peerjs.d.ts" />
-/// <reference path="../../../typings/bluebird/bluebird.d.ts" />
+/// <reference path="../../tsd/peerjs/peerjs.d.ts" />
+/// <reference path="../../typings/bluebird/bluebird.d.ts" />
 declare class Chord {
     successor: PeerJs.DataConnection;
     predecessor: PeerJs.DataConnection;
