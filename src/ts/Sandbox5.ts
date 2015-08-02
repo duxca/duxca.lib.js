@@ -1,13 +1,18 @@
 /// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
 /// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
 
-module duxca.lib.Sandbox {
+import CanvasRender = require("./CanvasRender");
+import Signal = require("./Signal");
+import RecordBuffer = require("./RecordBuffer");
+import OSC = require("./OSC");
+import FPS = require("./FPS");
+import Wave = require("./Wave");
+import Metronome = require("./Metronome");
+import Statictics = require("./Statictics");
+import Chord = require("./Chord");
 
-  navigator.getUserMedia = (navigator.getUserMedia ||
-                            navigator.webkitGetUserMedia ||
-                            navigator.mozGetUserMedia);
+namespace Sandbox {
 
   export function testAudioDownload(){
     var actx = new AudioContext();
@@ -20,7 +25,7 @@ module duxca.lib.Sandbox {
   }
 
 
-  
+
   export function testDetect6(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
     var lastTime = 0;
@@ -31,7 +36,7 @@ module duxca.lib.Sandbox {
     var isRecording = false;
     var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
-    var render = new duxca.lib.CanvasRender(128, 128);
+    var render = new CanvasRender(128, 128);
 
     osc.createBarkerCodedChirp(13, 8).then((pulse)=>{
       render.cnv.width = 1024;
@@ -40,7 +45,7 @@ module duxca.lib.Sandbox {
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
-      var chord = new duxca.lib.Chord();
+      var chord = new Chord();
       chord.debug = false;
       chord.on("ping", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
@@ -115,10 +120,10 @@ module duxca.lib.Sandbox {
             var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
             if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
             console.log("__RES__", id1+"-"+id2, "phaseShift", tmp,
-              "ave", duxca.lib.Statictics.average(results[id1+"-"+id2]),
-              "mode", duxca.lib.Statictics.mode(results[id1+"-"+id2]),
-              "med", duxca.lib.Statictics.median(results[id1+"-"+id2]),
-              "stdev", duxca.lib.Statictics.stdev(results[id1+"-"+id2]));
+              "ave", Statictics.average(results[id1+"-"+id2]),
+              "mode", Statictics.mode(results[id1+"-"+id2]),
+              "med", Statictics.median(results[id1+"-"+id2]),
+              "stdev", Statictics.stdev(results[id1+"-"+id2]));
           });
         });
         cb(token);
@@ -169,9 +174,9 @@ module duxca.lib.Sandbox {
     });
 
     function calcStdscore(correlation: Float32Array):Float32Array{
-      var _correlation = duxca.lib.Signal.normalize(correlation, 100);
-      var ave = duxca.lib.Statictics.average(_correlation);
-      var vari = duxca.lib.Statictics.variance(_correlation);
+      var _correlation = Signal.normalize(correlation, 100);
+      var ave = Statictics.average(_correlation);
+      var vari = Statictics.variance(_correlation);
       var stdscores = new Float32Array(_correlation.length);
       for(var i=0; i<_correlation.length; i++){
         stdscores[i] = 10*(_correlation[i] - ave)/vari+50;
@@ -199,7 +204,7 @@ module duxca.lib.Sandbox {
         var corrsec = Signal.smartCorrelation(pulse, section);
         corrsec = corrsec.subarray(0, section.length);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
-        var [max_score, max_offset] = duxca.lib.Statictics.findMax(corrsec);
+        var [max_score, max_offset] = Statictics.findMax(corrsec);
         for(var i=0; i<corrsec.length; i++){
           if(max_score/2 < corrsec[i]){
             var offset = i;
@@ -220,9 +225,9 @@ module duxca.lib.Sandbox {
         console.screenshot(render.cnv);
       });
 
-      var render1 = new duxca.lib.CanvasRender(1024, 32);
-      var render2 = new duxca.lib.CanvasRender(1024, 32);
-      var render3 = new duxca.lib.CanvasRender(1024, 32);
+      var render1 = new CanvasRender(1024, 32);
+      var render2 = new CanvasRender(1024, 32);
+      var render3 = new CanvasRender(1024, 32);
       render2.drawSignal(rawdata, true, true);
       var sim = new Float32Array(rawdata.length);
       Object.keys(results).forEach((id)=>{
@@ -233,7 +238,7 @@ module duxca.lib.Sandbox {
         }
       });
       render3.drawSignal(sim, true, true);
-      var correlation = duxca.lib.Signal.smartCorrelation(pulse, rawdata);
+      var correlation = Signal.smartCorrelation(pulse, rawdata);
       correlation = correlation.subarray(0, rawdata.length);
       Object.keys(results).forEach((id)=>{
         var startTime = pulseStartTime[id];
@@ -276,3 +281,5 @@ module duxca.lib.Sandbox {
     }
   }
 }
+
+export = Sandbox;

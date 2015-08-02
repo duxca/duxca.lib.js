@@ -1,0 +1,11 @@
+:load src/Main.purs
+:load bower_components/purescript-console/src/Control/Monad/Eff/Console.purs
+:load bower_components/purescript-eff/src/Control/Monad/Eff.purs
+:load bower_components/purescript-eff/src/Control/Monad/Eff/Class.purs
+:load bower_components/purescript-eff/src/Control/Monad/Eff/Unsafe.purs
+:load bower_components/purescript-prelude/src/Prelude.purs
+:load test/Main.purs
+:foreign bower_components/purescript-console/src/Control/Monad/Eff/Console.js
+:foreign bower_components/purescript-eff/src/Control/Monad/Eff.js
+:foreign bower_components/purescript-eff/src/Control/Monad/Eff/Unsafe.js
+:foreign bower_components/purescript-prelude/src/Prelude.js
