@@ -1,7 +1,7 @@
 {
   "name": "duxca.lib.js",
   "description": "duxca algorithm and code sandbox",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "moduleType": [
     "browser"
   ],
@@ -16,6 +16,7 @@
     "node_modules",
     "bower_components",
     "output",
+    "report",
     "test",
     "tests"
   ],

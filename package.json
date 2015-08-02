@@ -1,6 +1,6 @@
 {
   "name": "duxca.lib.js",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "duxca algorithm and language sandbox",
   "main": "duxca.lib.js",
   "scripts": {
