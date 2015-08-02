@@ -14,7 +14,7 @@
     "watch-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./src/ --outdir output --declaration --module commonjs --watch src/ts/*.ts;",
     "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
     "watch-coffee": "node node_modules/coffee-script/bin/coffee --watch --output output/coffee src/coffee/*.coffee",
-    "concat": "env NODE_PATH=./output node node_modules/browserify/bin/cmd.js output/coffee/duxca.lib.js --standalone duxca --outfile lib/duxca.lib.js ",
+    "concat": "env NODE_PATH=./output node node_modules/browserify/bin/cmd.js output/coffee/duxca.lib.js --standalone duxca --outfile lib/duxca.lib.js --full-paths=false",
     "espower": "for i in `find output/test -name test*.js`; do node node_modules/espower-cli/bin/cmd.js $i > $i.esp.js; done",
     "report": "node node_modules/plato/bin/plato --title duxca.lib.js --jshint .jshintrc --recurse --dir report --exclude output/test/ output; open http://localhost:8000/report/",
     "demo": "open http://localhost:8000/demo/",
