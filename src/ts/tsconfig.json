@@ -1,5 +1,5 @@
 {
-    "version": "1.5.0-alpha",
+    "version": "1.5.3",
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
@@ -25,7 +25,7 @@
         "./Metronome.ts",
         "./Newton.ts",
         "./OSC.ts",
-        "./QRCode.ts",
+        "./QRcode.ts",
         "./RecordBuffer.ts",
         "./Sandbox1.ts",
         "./Sandbox2.ts",
@@ -38,18 +38,6 @@
         "./Sandbox9.ts",
         "./Signal.ts",
         "./Statictics.ts",
-        "./Wave.ts",
-        "./old/duxca.lib.Ajax.ts",
-        "./old/duxca.lib.Canvas.ts",
-        "./old/duxca.lib.FPS.ts",
-        "./old/duxca.lib.Math.ts",
-        "./old/duxca.lib.Metronome.ts",
-        "./old/duxca.lib.OSC.ts",
-        "./old/duxca.lib.RecordBuffer.ts",
-        "./old/duxca.lib.SGSmooth.ts",
-        "./old/duxca.lib.ServerWorker.ts",
-        "./old/duxca.lib.Signal.ts",
-        "./old/duxca.lib.Wave.ts",
-        "./old/duxca.lib.ts"
+        "./Wave.ts"
     ]
 }

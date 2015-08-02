@@ -19,9 +19,15 @@ import FDTD = require("./FDTD");
 
 namespace Sandbox {
 
+
+  export function testNext(){
+
+  }
+
   export function testQRCodeWrite(){
     console.screenshot(QRcode.writer("hoge"));
   }
+
 
   export function testQRCodeRead(){
     new Promise<MediaStream>((resolbe, reject)=> navigator.getUserMedia({video: true, audio: false}, resolbe, reject) )

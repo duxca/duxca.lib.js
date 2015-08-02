@@ -2,6 +2,7 @@
 (function() {
   module.exports = {
     lib: {
+      Main: require("Main"),
       CanvasRender: require("../ts/CanvasRender"),
       Chord: require("../ts/Chord"),
       FDTD: require("../ts/FDTD"),

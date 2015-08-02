@@ -624,6 +624,7 @@ var Sandbox;
             var count = 0;
             processor.addEventListener("audioprocess", handler);
             function handler(ev) {
+                console.log(ev);
                 if (++count > 100) {
                     processor.removeEventListener("audioprocess", handler);
                     stream.stop();

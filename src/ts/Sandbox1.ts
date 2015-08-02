@@ -752,6 +752,7 @@ namespace Sandbox {
       processor.addEventListener("audioprocess", handler);
 
       function handler(ev: AudioProcessingEvent){
+        console.log(ev)
         if(++count > 100) {
           processor.removeEventListener("audioprocess", handler);
           stream.stop();

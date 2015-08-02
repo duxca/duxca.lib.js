@@ -6,6 +6,9 @@ var QRcode = require("./QRcode");
 var FDTD = require("./FDTD");
 var Sandbox;
 (function (Sandbox) {
+    function testNext() {
+    }
+    Sandbox.testNext = testNext;
     function testQRCodeWrite() {
         console.screenshot(QRcode.writer("hoge"));
     }
