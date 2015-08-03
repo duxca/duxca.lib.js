@@ -1,0 +1,10 @@
+module Huga where
+
+import Prelude
+import Control.Monad.Eff.Console
+import Timer
+
+--huga:: forall a. Control.Monad.Eff.Eff (timer :: Timer, console :: Control.Monad.Eff.Console.CONSOLE | a) Prelude.Unit
+huga =
+  (timeout 1000.0) >>= \_ ->
+    print 0

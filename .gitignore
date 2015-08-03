@@ -4,6 +4,7 @@ typings
 report
 output
 npm-debug.log
+.psci_modules
 
 #################
 ## Eclipse
