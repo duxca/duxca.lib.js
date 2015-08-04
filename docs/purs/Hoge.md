@@ -124,4 +124,27 @@ usage:
 "NOPQRSTUVWXYZABCDEFGHIJKLZnopqrstuvwxyzabcdefghijklm"
 ```
 
+#### `bsort`
+
+``` purescript
+bsort :: Array Number -> Array Number
+```
+
+bubble sort
+```purescript
+> Hoge.bsort [5.0,1.0,3.0,2.0,4.0,0.0]
+[0.0,1.0,2.0,3.0,4.0,5.0]
+```
+
+#### `bswap`
+
+``` purescript
+bswap :: Array Number -> Array Number
+```
+
+```purescript
+Hoge.bswap [5.0,1.0,3.0,2.0,4.0,0.0]
+[0.0,5.0,1.0,3.0,2.0,4.0]
+```
+
 
