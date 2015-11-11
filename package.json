@@ -1,0 +1,29 @@
+{
+  "name": "p2p-ring-net.js",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./lib/index.js",
+  "scripts": {
+    "init": "make init",
+    "start": "make start",
+    "stop": "make stop"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.10.0",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.2.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-typescript": "^2.9.2",
+    "typescript": "^1.6.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/legokichi/P2PRingNet.js.git"
+  },
+  "author": "legokichi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/legokichi/P2PRingNet.js/issues"
+  },
+  "homepage": "https://github.com/legokichi/P2PRingNet.js#readme"
+}

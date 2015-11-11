@@ -1,0 +1,11 @@
+{
+  "name": "p2p-ring-net.js",
+  "version": "0.0.0",
+  "description": "",
+  "license": "MIT",
+  "dependencies": {
+    "peerjs": "~0.3.14"
+  },
+  "devDependencies": {},
+  "main": "./dist/P2PRingNet.js"
+}
