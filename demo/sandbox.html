@@ -25,7 +25,7 @@ function main(rootNodeId){
         console.log(chord.peer.id, "fin", token.route);
       }).catch(function(err){
         console.warn(err);
-      }).then(function(){ // finaly
+      }).then(function(){ // finally
         console.timeEnd("ping");
         console.groupEnd();
         setTimeout(function(){recur(chord);}, 5000);
