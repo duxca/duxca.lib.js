@@ -5,7 +5,7 @@ console.log("open console and run `main()` or `main(peerid)`");
 
 function main(rootNodeId){
   var Chord = P2PRingNet.Chord;
-  var chord = new Chord();
+  var chord = new Chord(/*{host:"duxca.com", port:9000}*/);
   chord.debug = false;
   chord.on("ping", function(token, cb){
     console.log(token.payload.event, token);

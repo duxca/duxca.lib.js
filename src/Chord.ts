@@ -12,10 +12,14 @@ export class Chord {
   tid: number;
   listeners: {[event:string]: (token:Token, cb:(token:Token)=> void)=> void};
   requests: {[requestId:number]: ((token:Token)=> void)};
+  host: string;
+  port: number;
   lastRequestId: number;
   STABILIZE_INTERVAL: number;
 
-  constructor(hostname?:string, port?:number){
+  constructor(opt: {host: string, port: number}){
+    this.host = opt.host || location.hostname;
+    this.port = opt.port || 9000;
     this.joined = false;
     this.successor = null;
     this.successors = [];
@@ -33,7 +37,7 @@ export class Chord {
 
   _init(): Promise<void>{
     if(!!this.peer) return Promise.resolve();
-    this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
+    this.peer = new Peer({host: this.host, port: this.port, debug: 2});
     this.peer.on('open', (id)=>{ if(this.debug) console.log(this.peer.id, "peer:open", id); });
     // open
     // Emitted when a connection to the PeerServer is established.

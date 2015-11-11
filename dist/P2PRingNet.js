@@ -13,9 +13,11 @@ exports.distance = distance;
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var Chord = (function () {
-    function Chord(hostname, port) {
+    function Chord(opt) {
         _classCallCheck(this, Chord);
 
+        this.host = opt.host || location.hostname;
+        this.port = opt.port || 9000;
         this.joined = false;
         this.successor = null;
         this.successors = [];
@@ -37,7 +39,7 @@ var Chord = (function () {
             var _this = this;
 
             if (!!this.peer) return Promise.resolve();
-            this.peer = new Peer({ host: location.hostname, port: 9000, debug: 2 });
+            this.peer = new Peer({ host: this.host, port: this.port, debug: 2 });
             this.peer.on('open', function (id) {
                 if (_this.debug) console.log(_this.peer.id, "peer:open", id);
             });
