@@ -1,5 +1,5 @@
 {
-    "version": "1.5.0-alpha",
+    "version": "1.5.3",
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
@@ -11,7 +11,7 @@
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
         "outDir": "../../output",
-        "rootDir": "../../"
+        "rootDir": "../"
     },
     "filesGlob": [
         "./**/*.ts",
@@ -25,9 +25,12 @@
         "./Metronome.ts",
         "./Newton.ts",
         "./OSC.ts",
-        "./QRCode.ts",
+        "./QRcode.ts",
         "./RecordBuffer.ts",
-        "./Sandbox.ts",
+<<<<<<< HEAD
+=======
+        "./Sandbox1.ts",
+>>>>>>> typescript1.5
         "./Sandbox2.ts",
         "./Sandbox3.ts",
         "./Sandbox4.ts",
@@ -38,7 +41,12 @@
         "./Sandbox9.ts",
         "./Signal.ts",
         "./Statictics.ts",
+<<<<<<< HEAD
         "./Util.ts",
+        "./Wave.ts",
+        "./sandbox.ts"
+=======
         "./Wave.ts"
+>>>>>>> typescript1.5
     ]
 }

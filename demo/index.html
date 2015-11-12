@@ -4,27 +4,39 @@
 <script src="../bower_components/console.snapshot/console.snapshot.js"></script>
 <script src="../bower_components/dsp.js/dsp.js"></script>
 <script src="../bower_components/peerjs/peer.js"></script>
-<script src="../output/src/ts/CanvasRender.js"></script>
-<script src="../output/src/ts/FPS.js"></script>
-<script src="../output/src/ts/FDTD.js"></script>
-<script src="../output/src/ts/Metronome.js"></script>
-<script src="../output/src/ts/Newton.js"></script>
-<script src="../output/src/ts/OSC.js"></script>
-<script src="../output/src/ts/QRCode.js"></script>
-<script src="../output/src/ts/Chord.js"></script>
-<script src="../output/src/ts/RecordBuffer.js"></script>
-<script src="../output/src/ts/Sandbox2.js"></script>
-<script src="../output/src/ts/Sandbox3.js"></script>
-<script src="../output/src/ts/Sandbox4.js"></script>
-<script src="../output/src/ts/Sandbox5.js"></script>
-<script src="../output/src/ts/Sandbox6.js"></script>
-<script src="../output/src/ts/Sandbox7.js"></script>
-<script src="../output/src/ts/Sandbox8.js"></script>
-<script src="../output/src/ts/Sandbox.js"></script>
-<script src="../output/src/ts/Signal.js"></script>
-<script src="../output/src/ts/Statictics.js"></script>
-<script src="../output/src/ts/Util.js"></script>
-<script src="../output/src/ts/Wave.js"></script>
+<script>
+function require(path){
+  var res = /(?:.*\/)?([A-Za-z]+)\d*/.exec(path);
+  var name = res[1];
+  console.log(path, name, window[name]);
+  return window[name] || {};
+}
+window["module"] = {exports:{}};
+</script>
+<script src="../output/ts/CanvasRender.js"></script>
+<script src="../output/ts/FPS.js"></script>
+<script src="../output/ts/FDTD.js"></script>
+<script src="../output/ts/Metronome.js"></script>
+<script src="../output/ts/Newton.js"></script>
+<script src="../output/ts/OSC.js"></script>
+<script src="../output/ts/QRCode.js"></script>
+<script src="../output/ts/Chord.js"></script>
+<script src="../output/ts/RecordBuffer.js"></script>
+<script src="../output/ts/Sandbox1.js"></script>
+<script src="../output/ts/Sandbox2.js"></script>
+<script src="../output/ts/Sandbox3.js"></script>
+<script src="../output/ts/Sandbox4.js"></script>
+<script src="../output/ts/Sandbox5.js"></script>
+<script src="../output/ts/Sandbox6.js"></script>
+<script src="../output/ts/Sandbox7.js"></script>
+<script src="../output/ts/Sandbox8.js"></script>
+<script src="../output/ts/Signal.js"></script>
+<script src="../output/ts/Statictics.js"></script>
+<script src="../output/ts/Wave.js"></script>
+<script src="../output/coffee/duxca.lib.js"></script>
+<script src="../lib/purs.js"></script>
+<script>var _duxca = window["module"]["exports"]</script>
+<script src="../lib/duxca.lib.js"></script>
 <style>
 canvas{
   border: 1px dashed gray;

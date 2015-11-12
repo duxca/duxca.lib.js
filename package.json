@@ -1,20 +1,15 @@
 {
   "name": "duxca.lib.js",
-  "version": "0.0.0",
-  "description": "duxca algorithm and code sandbox",
-  "main": "index.js",
+  "version": "0.0.1",
+  "description": "duxca algorithm and language sandbox",
+  "main": "duxca.lib.js",
   "scripts": {
+    "setup": "npm install -g bower dtsm http-server peer coffee-script watchify",
     "init": "npm run update; npm run build",
-    "update": "npm update; bower update; tsd update --save --overwrite",
-    "build": "npm run build-rm; npm run build-ts; npm run concat",
-    "build-rm": "rm -rf output/*; rm -rf lib/*",
-    "build-coffee": "node node_modules/coffee-script/bin/coffee --compile --output output/coffee src/coffee/*.coffee",
-    "build-ts": "node node_modules/typescript/bin/tsc --target ES5 --noEmitOnError --noImplicitAny --rootDir ./ --outdir output --declaration src/ts/*.ts;",
-    "concat": "cd output/src/ts; cat CanvasRender.js Chord.js FDTD.js FPS.js Metronome.js OSC.js QRCode.js RecordBuffer.js Sandbox2.js Sandbox3.js Sandbox4.js Sandbox5.js Sandbox6.js Sandbox7.js Sandbox.js Signal.js Statictics.js Util.js Wave.js > ../../../lib/duxca.lib.js ",
-    "report": "node node_modules/plato/bin/plato --title duxca.lib.js --jshint .jshintrc --recurse --dir report --exclude output/test/ output; open http://localhost:8000/report/",
-    "demo": "open http://localhost:8000/demo/",
-    "start": "Python -m SimpleHTTPServer 8000 & node node_modules/peer/bin/peerjs --port 9000 --debug &",
-    "stop": "killall -- Python -m SimpleHTTPServer 8000; killall -- node node_modules/peer/bin/peerjs --port 9000 --debug; exit 0"
+    "update": "npm update; bower update; dtsm fetch; dtsm update --save",
+    "clean": "rm lib/*.js dist/*.js",
+    "start": "http-server -o --silent -p 8000 & peerjs --port 9000 --debug & watchify lib/index.js --standalone duxca -o dist/duxca.lib.js -v & coffee -c -w -o lib src/coffee/*.coffee & gulp watch",
+    "stop": "killall -- node */http-server -p 8000"
   },
   "repository": {
     "type": "git",
@@ -27,12 +22,16 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "devDependencies": {
-    "coffee-script": "^1.9.3",
-    "espower-cli": "^0.2.0",
-    "plato": "^1.5.0",
-    "typescript": "^1.5.0-beta"
+    "coffee-script": "^1.10.0",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.2.1",
+    "gulp-espower": "^1.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-tslint": "^3.3.0",
+    "gulp-typescript": "^2.9.2",
+    "typescript": "^1.6.2"
   },
   "dependencies": {
-    "peer": "^0.2.8"
+    "p2p-ring-net.js": "legokichi/P2PRingNet.js"
   }
 }

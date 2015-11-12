@@ -25,10 +25,10 @@
         "./duxca.lib.Metronome.ts",
         "./duxca.lib.OSC.ts",
         "./duxca.lib.RecordBuffer.ts",
-        "./duxca.lib.SGSmooth.ts",
         "./duxca.lib.ServerWorker.ts",
+        "./duxca.lib.SGSmooth.ts",
         "./duxca.lib.Signal.ts",
-        "./duxca.lib.Wave.ts",
-        "./duxca.lib.ts"
+        "./duxca.lib.ts",
+        "./duxca.lib.Wave.ts"
     ]
 }

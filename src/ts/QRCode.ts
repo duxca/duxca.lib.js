@@ -1,7 +1,7 @@
 /// <reference path="../../tsd/qrcode-decoder-js/qrcode.d.ts"/>
 /// <reference path="../../tsd/qrcodejs/qrcode.d.ts"/>
 
-module duxca.lib.QRcode {
+namespace QRcode {
 
   export function reader(cnv: HTMLCanvasElement, ctx:CanvasRenderingContext2D): Promise<string>{
     return new Promise<string>((resolve, reject)=>{
@@ -24,3 +24,5 @@ module duxca.lib.QRcode {
   }
 
 }
+
+export = QRcode;

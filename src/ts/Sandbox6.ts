@@ -1,15 +1,21 @@
 /// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
 /// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
 /// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
 
-module duxca.lib.Sandbox {
+import CanvasRender = require("./CanvasRender");
+import Signal = require("./Signal");
+import RecordBuffer = require("./RecordBuffer");
+import OSC = require("./OSC");
+import FPS = require("./FPS");
+import Wave = require("./Wave");
+import Metronome = require("./Metronome");
+import Statictics = require("./Statictics");
+import Chord = require("./Chord");
+import Newton = require("./Newton");
+import Point = Newton.Point;
+import SDM = Newton.SDM;
 
-  navigator.getUserMedia = (navigator.getUserMedia ||
-                            navigator.webkitGetUserMedia ||
-                            navigator.mozGetUserMedia);
-
-
+namespace Sandbox {
 
   export function relpos(){
     var K = 0;
@@ -41,7 +47,7 @@ module duxca.lib.Sandbox {
     var isRecording = false;
     var processor = actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
     var recbuf = new RecordBuffer(actx.sampleRate, processor.bufferSize, processor.channelCount);
-    var render = new duxca.lib.CanvasRender(128, 128);
+    var render = new CanvasRender(128, 128);
 
     osc.createBarkerCodedChirp(13, 8).then((pulse)=>{
       render.cnv.width = 1024;
@@ -50,7 +56,7 @@ module duxca.lib.Sandbox {
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
-      var chord = new duxca.lib.Chord();
+      var chord = new Chord();
       chord.debug = false;
       chord.on("ping", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
@@ -131,10 +137,10 @@ module duxca.lib.Sandbox {
             console.log("__RES__", id1, id2,
               "delayTime", delayTime,
               "distance", delayTime/2*340,
-              "ave", duxca.lib.Statictics.average(delayTimesLog[id1][id2]),
-              "mode", duxca.lib.Statictics.mode(delayTimesLog[id1][id2]),
-              "med", duxca.lib.Statictics.median(delayTimesLog[id1][id2]),
-              "stdev", duxca.lib.Statictics.stdev(delayTimesLog[id1][id2]));
+              "ave", Statictics.average(delayTimesLog[id1][id2]),
+              "mode", Statictics.mode(delayTimesLog[id1][id2]),
+              "med", Statictics.median(delayTimesLog[id1][id2]),
+              "stdev", Statictics.stdev(delayTimesLog[id1][id2]));
           });
         });
         cb(token);
@@ -144,7 +150,7 @@ module duxca.lib.Sandbox {
         var wait = token.payload.data;
         var id1 = token.route[0];
         var id2 = chord.peer.id;
-        var delay = duxca.lib.Statictics.median(delayTimesLog[id1][id2]);
+        var delay = Statictics.median(delayTimesLog[id1][id2]);
         var offsetTime = pulseTimes[id2][id1] + wait + delay;
         console.log(id1, id2, "delay", delay, wait, offsetTime, pulseTimes, delayTimesLog);
         osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then((abuf)=>{
@@ -214,7 +220,7 @@ module duxca.lib.Sandbox {
         var corrsec = Signal.smartCorrelation(pulse, section);
         console.log(corrsec.length, pulse.length, section.length);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
-        var [max_score, max_offset] = duxca.lib.Statictics.findMax(corrsec);
+        var [max_score, max_offset] = Statictics.findMax(corrsec);
         var offset = -1;
         for(var i=0; i<corrsec.length; i++){
           if(max_score/2 < corrsec[i]){
@@ -237,9 +243,9 @@ module duxca.lib.Sandbox {
         console.screenshot(render.cnv);
       });
 
-      var render1 = new duxca.lib.CanvasRender(1024, 32);
-      var render2 = new duxca.lib.CanvasRender(1024, 32);
-      var render3 = new duxca.lib.CanvasRender(1024, 32);
+      var render1 = new CanvasRender(1024, 32);
+      var render2 = new CanvasRender(1024, 32);
+      var render3 = new CanvasRender(1024, 32);
       render2.drawSignal(rawdata, true, true);
       var sim = new Float32Array(rawdata.length);
       Object.keys(pulseOffset).forEach((id)=>{
@@ -248,7 +254,7 @@ module duxca.lib.Sandbox {
         }else sim.set(pulse, pulseOffset[id]);
       });
       render3.drawSignal(sim, true, true);
-      var correlation = duxca.lib.Signal.smartCorrelation(pulse, rawdata);
+      var correlation = Signal.smartCorrelation(pulse, rawdata);
       console.log(correlation.length, pulse.length, rawdata.length);
       Object.keys(pulseOffset).forEach((id)=>{
         var startTime = pulseStartTime[id];
@@ -287,3 +293,6 @@ module duxca.lib.Sandbox {
     }
   }
 }
+
+
+export = Sandbox;

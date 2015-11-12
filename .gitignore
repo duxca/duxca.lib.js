@@ -1,8 +1,10 @@
 node_modules
 bower_components
 typings
-
+report
+output
 npm-debug.log
+.psci_modules
 
 #################
 ## Eclipse

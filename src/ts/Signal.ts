@@ -1,10 +1,12 @@
 /// <reference path="../../tsd/dsp/dsp.d.ts" />
 
-module duxca.lib.Signal {
+import Statictics = require("./Statictics");
+
+namespace Signal {
 
   export function normalize(arr: Float32Array, max_val=1):Float32Array {
-    var min = duxca.lib.Statictics.findMin(arr)[0];
-    var max = duxca.lib.Statictics.findMax(arr)[0];
+    var min = Statictics.findMin(arr)[0];
+    var max = Statictics.findMax(arr)[0];
     var _arr = new Float32Array(arr.length);
     for(var j=0; j<arr.length; j++){
       _arr[j] = (arr[j] - min) / (max - min) * max_val;
@@ -128,7 +130,7 @@ module duxca.lib.Signal {
   }
   export function createCodedChirp(code: number[], bitWithBinaryPower=10): Float32Array{
     var bitwidth = Math.pow(2, bitWithBinaryPower);
-    var up_chirp = duxca.lib.Signal.createChirpSignal(bitwidth);
+    var up_chirp = Signal.createChirpSignal(bitwidth);
     var down_chirp = new Float32Array(up_chirp);
     for(var i=0; i<down_chirp.length; i++){
       down_chirp[i] *= -1;
@@ -169,3 +171,5 @@ module duxca.lib.Signal {
     return arr;
   }
 }
+
+export = Signal;
