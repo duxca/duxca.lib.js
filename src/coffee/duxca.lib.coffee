@@ -20,6 +20,7 @@ module.exports =
       require("../ts/Sandbox7"),
       require("../ts/Sandbox8"),
       require("../ts/Sandbox9"),
+      require("../coffee/Sandbox")
     ].reduce((merged, obj)->
       Object.keys(obj).forEach (key)->
         merged[key] = obj[key]

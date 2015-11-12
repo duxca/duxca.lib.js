@@ -26,17 +26,7 @@
     "console.snapshot": "git://github.com/adriancooney/console.snapshot.git",
     "qrcodejs": "git://github.com/davidshimjs/qrcodejs.git",
     "qrcode-decoder-js": "git://github.com/umbrella-web/qrcode-decoder-js.git#feature/cleanup",
-    "peerjs": "~0.3.14",
-    "purescript-prelude": "~0.1.1",
-    "purescript-console": "^0.1.0",
-    "purescript-arrays": "~0.4.1",
-    "purescript-lists": "~0.7.0",
-    "purescript-strings": "~0.6.0",
-    "purescript-math": "~0.2.0",
-    "purescript-debug": "~0.1.0",
-    "purescript-tuples": "~0.4.0",
-    "purescript-foreign": "~0.6.0",
-    "purescript-aff": "~0.11.3"
+    "peerjs": "~0.3.14"
   },
   "devDependencies": {
     "qunit": "~1.17.1",

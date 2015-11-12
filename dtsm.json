@@ -1,0 +1,49 @@
+{
+  "repos": [
+    {
+      "url": "https://github.com/borisyankov/DefinitelyTyped.git",
+      "ref": "master"
+    }
+  ],
+  "path": "typings",
+  "bundle": "typings/tsd.d.ts",
+  "link": {
+    "npm": {
+      "include": true
+    }
+  },
+  "dependencies": {
+    "qunit/qunit.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "es6-promise/es6-promise.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "webaudioapi/waa.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "webrtc/MediaStream.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "webrtc/RTCPeerConnection.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "zepto/zepto.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "peerjs/peerjs.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    },
+    "jquery/jquery.d.ts": {
+      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+    }
+  }
+}
