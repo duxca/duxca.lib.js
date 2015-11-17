@@ -9,7 +9,9 @@
     "update": "npm update; bower update; dtsm fetch; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js",
     "start": "http-server -o --silent -p 8000 & peerjs --port 9000 --debug & watchify lib/index.js --standalone duxca -o dist/duxca.lib.js -v & coffee -c -w -o lib src/coffee/*.coffee & gulp watch",
-    "stop": "killall -- node */http-server -p 8000"
+    "stop": "killall -- node */http-server -p 8000",
+    "build-md": "cd ./doc/md; for i in `find . -name '*.md'`; do node ../../node_modules/markdown/bin/md2html.js $i > ../html/$i.html; done",
+    "build-html": "cd ./doc/html; for i in `find . -name '*.md.html'`; do echo \"<html>\n<head>\n<meta charset='utf-8'>\n<script type='text/x-mathjax-config'>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script>\n<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'>\n</script>\n</head>\n<body>\n$(cat $i)\n</body>\n</html>\" > \"$i\"; done"
   },
   "repository": {
     "type": "git",
@@ -29,7 +31,8 @@
     "gulp-rename": "^1.2.2",
     "gulp-tslint": "^3.3.0",
     "gulp-typescript": "^2.9.2",
-    "typescript": "^1.6.2"
+    "typescript": "^1.6.2",
+    "markdown": "^0.5.0"
   },
   "dependencies": {
     "p2p-ring-net.js": "legokichi/P2PRingNet.js"

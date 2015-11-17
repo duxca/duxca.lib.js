@@ -1,0 +1,207 @@
+<html>
+<head>
+<meta charset='utf-8'>
+<script type='text/x-mathjax-config'>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\(','\)']] } });</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'>
+</script>
+</head>
+<body>
+<h1>相互校正法</h1>
+
+<p>マルチチャンネルスピーカを用いて振幅パニングをするためには、各スピーカの出力を制御する必要がある。
+しかしながら、異なる端末間では、ハードウェアの違いからくるスピーカの出力特性やマイクロホンの感度が異なる。
+そのため、異なる端末のスピーカで、同じ大きさの音を発生させるために、何らかの<strong>校正</strong>(calibration)を行う必要がある。
+音響機器の校正には、校正済みの機器を用いて直接測定する他、可逆電気音響変換器を相互に計測しあうことで測定する相互校正法が知られている
+[鈴木英男. &quot;音響学における相反定理とその応用.&quot; 日本音響学会誌 58.4 (2002): 239-243.,
+早坂寿雄, 技術者のための音響工学 (丸善, 東京,1986)
+早坂寿雄, 音の歴史 (電子情報通信学会,1989)]。
+だが、これらの手法は我々の用途では使用できない。
+なぜなら、専用の校正機器は当然用意できないし、
+まして、相互校正法のようにスピーカやマイクロホンを可逆電気音響変換器とみなして電気端子の入力インピーダンスを計測することもできないからである。
+そこで、我々は、スピーカもマイクロホンも異なる端末の間で、相互に音の出力を校正する方法を考案した。</p>
+
+<h2>音響伝達のモデル化</h2>
+
+<p>端末の間での信号の伝播をモデル化する。
+3つの端末1,2,3があるとする。
+これらの端末のマスターボリュームは、ユーザの手によってあらかじめ最大にされているとする。
+端末1が信号$s(t)$をスピーカから発信し、端末2,3がその信号をマイクロホンで受信するとする。
+このとき、
+端末1が発信しようとする信号の振幅の増幅係数を$v<em>1$、
+端末1のスピーカのハードウェアに由来する出力係数を$s</em>1$、
+端末1から端末$i\in{2,3}$に信号が伝搬した際の距離減衰係数を$r<em>{1i}$、
+端末$i$のハードウェアに由来するマイクロホンの受信感度係数を$m</em>i$、
+端末$i$がソフトウェア内部で実際に観測した信号を$c<em>{i1}(t)$と置く。
+すべての伝搬過程において、非線形ひずみは入らず線形システムであることを仮定すると、
+$$
+m</em>i r<em>{1i} s</em>1 v<em>1 s(t) = c</em>{i1}(t) \space , \space i\in {2,3}
+$$
+という減衰モデルが成り立つ。同様にして端末2,3からも信号$s(t)$発信すると、
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+m<em>2 r</em>{12} s<em>1 v</em>1 s(t) = c<em>{21}(t) \
+m</em>3 r<em>{13} s</em>1 v<em>1 s(t) = c</em>{31}(t) \
+m<em>1 r</em>{21} s<em>2 v</em>2 s(t) = c<em>{12}(t) \
+m</em>3 r<em>{23} s</em>2 v<em>2 s(t) = c</em>{32}(t) \
+m<em>1 r</em>{31} s<em>3 v</em>3 s(t) = c<em>{13}(t) \
+m</em>2 r<em>{32} s</em>3 v<em>3 s(t) = c</em>{23}(t) \
+\end{array}
+ight}  	ag{2.1}
+\end{equation}
+$$
+となる。ここで、
+$$
+s<em>1v</em>1s(t) = s<em>2v</em>2s(t) = s<em>3v</em>3s(t)\
+$$
+となるように発信する信号の振幅$v_i,i\in{1,2,3}$を調整してやれば、スピーカからの出力音圧が等しくなると考えられる。</p>
+
+<p>さて、伝送路を通った際の減衰係数$r<em>{ij},i
+eq j,(i,j\in{1,2,3})$を、信号が点音源から発せられた自由空間における球面波と仮定してモデル化する。
+一様な球面波においては音源から出た音波のパワーは波頭面に一様に分布する。
+従って音源から距離$r$離れた単位面積あたりのパワー$w</em>r$は発射音波の総パワー$W<em>0$をその球面の面積$4\pi r^2$で割ったものに等しい。
+すなわち
+$$
+w</em>x = rac{W<em>0}{4\pi r^2}
+$$
+その点における音圧は$\sqrt{w</em>r}$に比例するから、球面波の音圧$p<em>r$は距離$r$に反比例する。
+すなわち$r=r</em>1$の点の音圧を$p<em>1$とすれば、任意の距離$r</em>2$では
+$$
+p<em>2 = p</em>1 rac{r<em>1}{r</em>2} 	ag{2.2}
+$$
+となる。[超音波探傷法 日本学術振興会製鋼第19委員会 丸善 1956]
+つまり、端末1の発した信号を、端末1から距離$d<em>{12}$離れた端末2が観測した音圧$p</em>{21}$と、端末1から距離$d<em>{13}$離れた端末3が観測した音圧$p</em>{31}$とすると、$(2.1)$、$(2.2)$より
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+p<em>{21} = r</em>{12} s<em>1 v</em>1 s(t) = rac{c<em>{21}(t)}{m</em>2}\
+p<em>{31} = r</em>{13} s<em>1 v</em>1 s(t) = rac{c<em>{31}(t)}{m</em>3}\
+p<em>{21} = p</em>{31} rac{d<em>{13}}{d</em>{12}}\
+\end{array}
+ight} 	ag{2.3}
+\end{equation}
+$$
+と言える。$(2.3)$を代入変形すると
+$$
+m<em>3=m</em>2rac{d<em>{13}c</em>{31}(t)}{d<em>{12}c</em>{21}(t)}\
+r<em>{12} = r</em>{13} rac{d<em>{13}}{d</em>{12}}
+$$
+という二つの式ができる。同様にして端末2,3が発信した信号についても考えると、
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+m<em>3=m</em>2rac{d<em>{13}c</em>{31}(t)}{d<em>{12}c</em>{21}(t)}\
+m<em>2=m</em>1rac{d<em>{32}c</em>{23}(t)}{d<em>{31}c</em>{13}(t)}\
+m<em>1=m</em>3rac{d<em>{21}c</em>{12}(t)}{d<em>{23}c</em>{32}(t)}\
+r<em>{12} = r</em>{13} rac{d<em>{13}}{d</em>{12}}\
+r<em>{21} = r</em>{23} rac{d<em>{23}}{d</em>{21}}\
+r<em>{31} = r</em>{32} rac{d<em>{32}}{d</em>{31}}\
+\end{array}
+ight} 	ag{2.5}
+\end{equation}
+$$
+が成り立つ。$r$と$d$は無向グラフの隣接行列なので対称行列である。故に
+$$
+r<em>{ij} = r</em>{ji}\ 	ag{2.6}
+d<em>{ij} = d</em>{ji}
+$$
+である。</p>
+
+<p>$d<em>{ij}$および$c</em>{ij}(t)$は既知として、$(2.1)$、$(2.5)$と$(2.6)$を連立して方程式
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+m<em>2 r</em>{12} s<em>1 v</em>1 s(t) = c<em>{21}(t) \
+m</em>3 r<em>{13} s</em>1 v<em>1 s(t) = c</em>{31}(t) \
+m<em>1 r</em>{21} s<em>2 v</em>2 s(t) = c<em>{12}(t) \
+m</em>3 r<em>{23} s</em>2 v<em>2 s(t) = c</em>{32}(t) \
+m<em>1 r</em>{31} s<em>3 v</em>3 s(t) = c<em>{13}(t) \
+m</em>2 r<em>{32} s</em>3 v<em>3 s(t) = c</em>{23}(t) \
+m<em>3 = m</em>2rac{d<em>{13}c</em>{31}(t)}{d<em>{12}c</em>{21}(t)}\
+m<em>2 = m</em>1rac{d<em>{32}c</em>{23}(t)}{d<em>{31}c</em>{13}(t)}\
+m<em>1 = m</em>3rac{d<em>{21}c</em>{12}(t)}{d<em>{23}c</em>{32}(t)}\
+r<em>{12} = r</em>{13} rac{d<em>{13}}{d</em>{12}}\
+r<em>{21} = r</em>{23} rac{d<em>{23}}{d</em>{21}}\
+r<em>{31} = r</em>{32} rac{d<em>{32}}{d</em>{31}}\
+r<em>{ij} = r</em>{ji}\
+d<em>{ij} = d</em>{ji}
+\end{array}
+ight} 	ag{2.7}
+\end{equation}
+$$
+を$s_i$について解く。</p>
+
+<p>$m<em>3$、$m</em>1$を消して整理する。
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+rac{d<em>{23}c</em>{23}(t) m<em>1 r</em>{12} s<em>1 v</em>1 s(t)}{
+  d<em>{13}c</em>{13}(t) c<em>{21}(t)}  &amp;=&amp; 1 \
+rac{d</em>{23}c<em>{23}(t)m</em>1r<em>{13} s</em>1 v<em>1 s(t)}{
+  d</em>{12}c<em>{13}(t)c</em>{21}(t)}  &amp;=&amp; 1 \
+rac{m<em>1 r</em>{12} s<em>2 v</em>2 s(t)}{
+  c<em>{12}(t)} &amp;=&amp; 1 \
+rac{d</em>{23}c<em>{23}(t)c</em>{31}(t)m<em>1r</em>{23} s<em>2 v</em>2 s(t)}{
+  d<em>{12}c</em>{13}(t)c<em>{21}(t)c</em>{32}(t)} &amp;=&amp; 1 \
+rac{m<em>1 r</em>{13} s<em>3 v</em>3 s(t)}{
+  c<em>{13}(t)} &amp;=&amp; 1 \
+rac{d</em>{23}(t)m<em>1r</em>{23} s<em>3 v</em>3 s(t)}{
+d<em>{13}c</em>{13}(t)} &amp;=&amp; 1 \
+r<em>{12} = r</em>{13} rac{d<em>{13}}{d</em>{12}} \
+r<em>{13} = r</em>{23} rac{d<em>{23}}{d</em>{13}} \
+r<em>{23} = r</em>{12} rac{d<em>{12}}{d</em>{23}} \
+\end{array}
+ight} 	ag{2.8}
+\end{equation}
+$$</p>
+
+<p>$r<em>{12}$、$r</em>{13}$を消して整理する。
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+rac{d<em>{23}^2c</em>{23}(t)m<em>1 r</em>{23} v<em>1 s(t)}{
+  d</em>{13}d<em>{12}c</em>{13}(t)c<em>{21}(t)} s</em>1 &amp;=&amp; 1 \
+rac{d<em>{23} m</em>1 s<em>2 v</em>2 s(t)}{
+  d<em>{12}c</em>{12}(t)} r<em>{23} &amp;=&amp; 1 \
+rac{d</em>{23}c<em>{23}(t)c</em>{31}(t)m<em>1s</em>2  v<em>2 s(t)}{
+  d</em>{12}c<em>{13}(t)c</em>{21}(t)c<em>{32}(t)} r</em>{23} &amp;=&amp; 1 \
+rac{d<em>{23} m</em>1 r<em>{23} v</em>3 s(t)}{
+  d<em>{13} c</em>{13}(t)} s_3 &amp;=&amp; 1 \
+\end{array}
+ight} 	ag{2.9}
+\end{equation}
+$$</p>
+
+<p>$r<em>{23}$を消して整理する。
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+rac{d</em>{23} c<em>{12}(t)c</em>{23}(t) s<em>1 v</em>1}{
+  d<em>{13} c</em>{13}(t)c<em>{21}(t) s</em>2 v<em>2} &amp;=&amp; 1 \
+rac{d</em>{12}c<em>{21}(t)c</em>{32}(t) s<em>3 v</em>3}{
+  d<em>{13} c</em>{23}(t)c<em>{31}(t)s</em>2 v_2 } &amp;=&amp; 1 \
+\end{array}
+ight} 	ag{2.10}
+\end{equation}
+$$</p>
+
+<p>$s<em>{2}$を消して整理する。
+$$
+egin{equation}
+\left.
+egin{array}{ccc}
+rac{d</em>{23} c<em>{12}(t)c</em>{23}(t)^2c<em>{31}(t) s</em>1 v<em>1}{
+  d</em>{12} c<em>{13}(t)c</em>{21}(t)^2c<em>{32}(t) s</em>3 v_3 } &amp;=&amp; 1
+\end{array}
+ight} 	ag{2.11}
+\end{equation}
+$$</p>
+</body>
+</html>

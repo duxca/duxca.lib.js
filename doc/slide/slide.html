@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Markdown to Reveal.js</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/css/reveal.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/css/theme/white.min.css"/>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        extensions: ["tex2jax.js"],
+        jax: ["input/TeX", "output/HTML-CSS"],
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+          displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+          processEscapes: true
+        },
+        "HTML-CSS": {
+          availableFonts: ["TeX"]
+        },
+        "TeX": {
+          extensions: []
+        }
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.5.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <style media="screen">
+      img{border:none !important;}
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section
+         data-markdown
+         data-separator="^---\n"
+         data-separator-vertical="^\n\n"
+         data-separator-notes="^Note:"
+         data-charset="utf-8">
+<script type="text/template">
+# 複数の携帯端末による教室空間の空間音響環境構築手法の検討
+
+#### 伊納洋佑
+
+---
+
+## 概説
+
+- 個人が所有するスマートデバイスを用いて
+- 空間音響を構築し相互の位置に応じた
+- 音による情報提供を行うシステムを開発
+
+
+### 想定
+
+- 教室にいるたくさんの人々のスマートデバイス
+- スピーカを同期的に制御
+- 特定の位置に仮想音源を配置
+- 音による注視効果狙う
+- 例：教室空間で屁の音が聞こえた時
+
+
+### ![図](../img/shikumi1.png)
+
+
+### ![図](../img/shikumi2.png)
+
+
+### 研究背景
+
+- 生活空間へのスマートデバイスの普及
+- 複数端末を利用したシステム構築の試み
+- 例： Wireless Acoustic Sensor Networks
+  - BeepBeep: A High Accuracy Acoustic Ranging System using COTS Mobile Devices[Chunyi Peng]
+
+身近なスマートデバイスを用いて色々できる時代になった
+
+
+### そこで
+
+- スマートデバイスのマイクロホンとスピーカを利用
+- 音声信号で相対位置を把握
+- スピーカアレイを構築
+
+**音像定位**しよう
+
+---
+
+## 先行研究
+
+- 身近にあるスマートデバイスを用いて
+- 位置に基づく情報提示という観点で
+
+
+#### 音の発信を利用したキャリブレーションに基づく
+#### アドホックマイクロホンアレイによる音源定位
+##### [柴田一暁]
+
+- **複数スマートデバイスのマイクロホン**で取得した多チャネル信号を処理
+- 音源定位,音源強調,音源分離などを行う
+
+スマートデバイスでアレイを構成する点においては似ているが、
+こちらはスピーカアレイを構築する点で異なる
+
+
+#### 位置情報を利用した携帯端末への音声情報配信
+##### [河越嵩介]
+
+- 位置情報に基いてスマートフォンから**音声情報案内**
+- 例：観光地で次に行く場所を案内
+- GPSで位置、イヤホンで音声案内
+
+個人に向けての注意喚起であり集団における注意喚起ではない
+
+
+#### 空間把握性に注目した
+#### 音響案内システムの開発に関する研究
+##### [梅津 直貴]
+
+- 音声ARに立体音響効果を付加
+- 例：美術館で頭が向いている方向の**音声案内**が大きく聞こえる
+- カクテルパーティー効果を期待
+
+デバイスを用いた高臨場感音像定位という点では似てるが、
+個人向けのデバイスで集団における注意喚起ではない
+
+
+### 先行研究の欠点
+- 複数端末を用いてマイクロホンアレイを構築は存在するが、複数端末を用いて**スピーカアレイを構築は未研究**
+- スマートデバイスを用いた情報提供システムとしてみると、**個人向け**の研究が
+多い
+- **「複数のスマートデバイスを用いて複数の人間に働きかける」は未開拓分野**
+
+今後さらに生活空間にスマートデバイスが普及するためこの研究は**重要**
+
+---
+
+## 提案システムのしくみ
+
+
+### 状況設定
+
+- 教室空間
+- 各々の机の上にスマートデバイス
+- 各端末が同期的に音声を発信
+- 音像定位する
+
+という状況を想定
+
+
+### ![図](../img/shikumi1.png)
+
+
+### ![図](../img/shikumi2.png)
+
+
+### 必要な技術
+- 音像定位
+  - 同期的制御
+    - 端末間同期
+  - 相対位置推定
+    - 測定用信号処理
+
+といった技術が必要、これから話す
+
+
+---
+
+### 音像定位について
+
+
+#### 音像定位のしくみ
+- 左右の方向知覚の手がかり
+- 両耳間時間差 (ITD: internal time difference)
+- 両耳間レベル差 (ILD: internal level differenve)
+  - <small>Azimuthal and elevation localization of two sound sources using interaural phase and level difference [Y. Chisaki]</small>
+  - <small>Upper hemisphere sound localization using head-related transfer functions in the mediam plane and interaural diffreneces [M. Morimoto]</small>
+
+![図](../img/ITD.png)
+
+
+#### 音像定位の知見
+- 両耳間時間差 (ITD: internal time difference)
+  - 時間差1ms以内ならば正面に定位される
+  - 1msの以上のずれがあると先に聞こえた方に定位される(先行音効果
+- 両耳間レベル差 (ILD: internal level differenve)
+  - 左右レベル差 $\pm$ 10dBで側方に定位される
+
+**時間差1ms以内という高度な同期が求められる**
+
+
+## 音像定位の手法
+
+* 人間は音圧勾配(両耳間音圧差)で音像定位する
+* 仮想音源を囲む最寄りの3ノードを鳴らすことで音像定位する
+
+---
+
+### 同期について
+
+
+#### 同期について
+- 質問信号と応答信号の時間差で同期できる
+  - <small>Timing-sync Protocol for Sensor Networks[Saurabh Ganeriwal]</small>
+  - <small>BeepBeep: A High Accuracy Acoustic Ranging System using COTS Mobile Devices[Chunyi Peng]</small>
+- $t_0'$ の時刻を推定
+
+![Two-way communication between nodes](../img/clock_synchronization.png)
+
+
+#### 測距について
+- 二次レーダーのしくみを使う
+  - 質問信号と応答信号の時間差から距離を求める
+  - 同期と同じしくみでできる
+
+![二次レーダー](../img/secondary_rader.png)
+
+
+#### 同期と測距は同じ手法が使える
+
+![Two-way communication between nodes](../img/clock_synchronization.png)
+
+$$
+t_0' = t_1 - \frac{(t_3 - t_0) - (t_2 - t_1)}{2}
+$$
+
+$$
+c = \sqrt{\frac{\kappa}{\rho_0}}
+$$
+
+$$
+d_{AB} = \frac{(t_3 - t_0) - (t_2 - t_1)}{2c}
+$$
+
+
+#### 精密な同期のためには
+
+![](../img/aimai.png)
+
+- パルスの曖昧さを減らす必要がある
+  - SN比が大きな信号が必要
+    - **パルス圧縮** が必要（後ほど述べる
+
+
+### 相対位置推定
+
+![](../img/mds.png)
+
+- 相対距離から相対位置を推定
+
+
+#### 最小二乗法
+
+推定位置と計測相対距離の誤差を最小二乗法で最適化することで相対位置が推定できることが知られている。
+
+![](../img/stress.png)
+
+- <small>センサの相対位置推定のための最適化手法[島村和希]</small>
+- <small>センサ位置推定における誤差最小化法と多次元尺度構成法の性能比較[小松潤也]</small>
+
+
+#### ここまでまとめ
+
+- 音像定位には位置推定と同期が必要
+- 位置推定には相対距離計測が必要
+- 相対距離計測には良質なパルスが必要
+
+---
+
+### パルス圧縮について
+
+
+#### 信号の検出手法
+
+![](../img/block_diagram.png)
+
+- 最適受信機の理論
+  - パルスを検出する最良のフィルタ
+    - 変調信号とおなじ信号を畳み込むフィルタ
+
+自己相関の結果がディラックのデルタ関数に近い信号がパルス圧縮に向いている
+
+
+#### パルス圧縮とは
+
+- よいパルス
+  - 大電力、高SN比、鋭いピーク
+  - 理想的にはデルタ関数
+- 現実問題として
+  - そんな電力がない、機械が壊れる
+- パルス圧縮は時間方向、周波数方向へエネルギーを拡散させるしくみ
+- 自己相関の結果のデルタ関数になるような信号
+
+
+#### 例1
+
+
+#### バーカー符号
+- パルス圧縮の一種、時間方向へ圧縮
+- JAXA精測レーダー、無線LAN、WiMAX
+- 長さ$N$の有限長系列で、同期点以外での自己相関関数の絶対値の最大が$1/N$となるもの
+- ディラックの$\delta$関数に近い理想的な相関特性を持つ。
+
+
+### バーカー系列は13bitまで
+
+|N|系列|
+|-|-|
+|2|++, +-|
+|3|++-|
+|4|+++-, ++-+|
+|5|+++-+|
+|7|+++--+-|
+|11|+++---+--+-|
+|13|+++++--++-+-+|
+
+
+#### 13bitバーカー符号の自己相関
+
+![バーカー符号の自己相関](../img/barker_autocorr.png)
+
+- 13ビットコードの場合ピークが13倍
+- レンジサイドローブが1/13倍
+
+
+#### 例2
+
+
+#### チャープ信号
+
+![チャープのしくみ](../img/chirp_dia.png)
+
+![](../img/aimai.png)
+
+- パルス圧縮の一種、パルスを周波数方向へ変調
+- より狭い範囲にエネルギーを集中できる
+
+
+#### チャープ信号
+
+![チャープ信号波形](../img/chirp.png)
+![](../img/chirp_spectogram.png)
+
+
+#### 先行研究のダメな点
+
+
+#### TSPをパルス圧縮につかう
+- <small>音の発信を利用したキャリブレーションに基づくアドホックマイクロホンアレイによる音源定位</small>
+  - TSPはインパルス応答に使われる手法
+  - エネルギーは圧縮されるがあいまい度が大きくなる
+
+
+#### チャープ信号使ってるけど帯域が狭い、分散してる
+
+- <small>複数周波数帯を用いた携帯端末における位置推定手法の研究</small>
+  - スマートデバイスの使える**帯域は狭く**、また機器によって周波数応答がまちまち
+
+
+#### 必要な信号検出は
+
+* スマートデバイスのサンプリング周波数は44100Hz
+  * 1サンプルあたりの時間解像度は約22.6μs
+  * 時距離解像度は7.7mm(音速340m/s)
+  * $\pm$ 1msの誤差におよそ $\pm$ 5サンプル以内
+* スマートデバイスのマイクロホンの周波数応答がまちまち
+  * 人間の声に最適化されてる
+
+
+#### 独自のパルス圧縮手法
+
+- より強力なパルス圧縮
+  - チャープ信号をバーカー符号を用いてBPSKで周波数変調
+    - 二重の圧縮
+- TDMA方式で帯域の有効活用(後述
+  - 各端末が**全帯域を目一杯つかう**ことで強力なパルス圧縮
+
+
+#### 独自のパルス圧縮手法
+
+![](../screenshot/2015-07-15_12.35.31.png)
+
+
+#### スペクトルグラム
+
+![](../img/barker_coded_chirp.png)
+![](../img/barker_coded_chirp_err.png)
+
+- 左：論理値
+- 右：スマートデバイスの拾った信号
+
+
+#### Binary phase-shift keying
+
+![BPSK](../img/chirp_qi.png)
+
+- 位相0を0、位相πを1とする
+- 最適フィルタと同じ手法が使える
+
+
+#### パルス圧縮まとめ
+
+- 先行研究のパルス圧縮手法はあまり良くない
+- バーカー符号とチャープ信号を使う提案手法を使えばより強力な圧縮が可能
+
+---
+
+### 多元接続について
+
+
+#### Time Division Multiple Access(TDMA)
+
+![](../img/TDMA.png)
+
+- パルス圧縮 周波数領域 専有
+- バースト信号で時間を分割
+- TDMAを用いれば各デバイスに目一杯帯域を割り振れる
+
+
+### 分散排他
+- 時間を分割とは、つまり時間の排他制御
+  - 排他制御といえばトークンリング
+
+![トークンリング](../img/chord_ring_network.png)
+
+
+#### Chord DHT
+
+![](../img/chord.png)
+
+- Join と Stabilizeという２つのアルゴリズムでP2Pリングネットワークを構築
+- トークンリングのトークンをバースト信号として利用
+
+
+#### 多元接続まとめ
+
+- TDMAを用いれば各デバイスに目一杯帯域を割り振れる
+- TDMAのバースト信号にはトークンリングのトークンを利用
+- リングネットワークの構築にはChordアルゴリズムを使用
+
+---
+
+### 音圧校正
+
+#### 音声伝達のプロセスをモデル化
+
+$$
+x[ij] = m[j] d[ij] v[i]
+$$
+
+- $m[i]$ は受信側のスピーカボリューム係数、
+- $v[j]$ は送信側のマイクボリューム係数、
+- $d[ij]$ は相対距離に基づく減衰係数
+- $x[ij]$ は端末jが受信した端末iの信号
+- スピーカボリュームを操作することで $v[i]$ を均一化
+
+
+#### 音圧レベルを均一化
+- 3端末の場合、
+- $v[1]$ を1とすると、
+  - $v[2]$ は$v[1]\frac{x[23]d[13]}{x[13]d[23]}$ 倍
+  - $v[3]$ は$v[1]\frac{x[32]d[12]}{x[12]d[32]}$ 倍
+- にすればよい
+
+---
+
+## システム構成
+
+
+### システム使用のイメージ
+
+![実験図](../img/2014-01-22_21.20.01_HDR.jpg)
+
+
+#### 3ノードの場合の同期測距の時系列ダイヤグラム
+
+![](../img/flowchart.png)
+
+---
+
+### 距離計測実験
+
+
+#### 端末Aの時分割された観測波形
+
+![](../img/rawdata.png)
+#### 端末Aの各区間の相関検出結果
+![](../img/corrA.png)
+![](../img/corrB.png)
+![](../img/corrC.png)
+
+
+#### 距離計測結果
+
+* MBAを1辺2mの正三角形に配置
+* 10回計測したときの検出時刻差の統計
+
+|端末間|平均(s)|最頻値(s)|中央値(s)|標準偏差|推定距離(m)|
+|--|--|--|--|--|--|
+|A-B|0.0061|0.0061|0.0061|0.00001|2.08|
+|A-C|0.0066|0.0067|0.0067|0.00013|2.27|
+|B-C|0.0057|0.0057|0.0057|0.00001|1.94|
+
+* 最頻値はカーネル密度推定により求めた
+* 高精度に測距できた
+
+
+#### 既知の問題
+
+* 障害物によってダイレクトパスが存在しない場合距離を正しく測定できない
+  * 計測距離が5m以上のパスは無効にする予定
+* 時間が経つとハードウェアクロックのずれが生じる
+  * 定期的に再同期する機能を入れる予定
+
+---
+
+### 音像定位のプレ実験
+
+
+#### スピーカアレイの副次的効果
+
+![](../img/ASW_LEV.png)
+
+* プレ実験で得られた効果
+* 仮想音源付近の人は「音に包まれた感じ(ASW)」を感じる
+* 仮想音源から離れた人は「みかけの音源の幅(LEW)」が大きくなる
+
+---
+
+### 実験予定
+- 同期できているか
+  - 同期後の端末の出力の位相差をオシロスコープで計測
+
+---
+
+## 今後の展開
+
+* 仮想音源の動的な移動
+* チャープ+barker符号から加算M系列符号化へ
+* システムにGUIつける
+* 音像定位の実験
+
+---
+
+## おわり
+
+</script>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/lib/js/head.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/js/reveal.min.js"></script>
+    <script>
+      // Full list of configuration options available here:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        slideNumber: true,
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+        dependencies: [
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/plugin/markdown/marked.min.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/plugin/markdown/markdown.min.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.0.0/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+        ]
+    });
+    </script>
+  </body>
+</html>
