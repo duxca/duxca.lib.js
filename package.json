@@ -2,7 +2,7 @@
   "name": "duxca.serverWorker.js",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/ServerWorker.js",
   "scripts": {
     "coffee": "coffee -c -o dist src; npm run cat",
     "cat": "echo 'function EVENT_EMITTER_3(){' >> dist/ServerWorker.js; cat ./node_modules/eventemitter3/index.js >> dist/ServerWorker.js; echo '}' >> dist/ServerWorker.js",
