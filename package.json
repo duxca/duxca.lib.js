@@ -1,0 +1,26 @@
+{
+  "name": "ServerWorker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "coffee": "coffee -c -o dist src; npm run cat",
+    "cat": "echo 'function EVENT_EMITTER_3(){' >> dist/ServerWorker.js; cat ./node_modules/eventemitter3/index.js >> dist/ServerWorker.js; echo '}' >> dist/ServerWorker.js",
+    "start": "http-server -s -p 8000 -o test&",
+    "stop": "killall -- node http-server -p 8000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/legokichi/ServerWorker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/legokichi/ServerWorker/issues"
+  },
+  "homepage": "https://github.com/legokichi/ServerWorker#readme",
+  "dependencies": {
+    "eventemitter3": "^1.1.1"
+  }
+}
