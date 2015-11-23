@@ -38,14 +38,14 @@ class InlineServerWorker
       @urls.push url = URL.createObjectURL(new Blob(["""
         #{urls.map((url)-> "self.importScripts('#{url}');").join("\n")}
         #{EVENT_EMITTER_3_SOURCE}
-        (#{@fn}(#{
-          ->
+        (#{@fn}.apply(this, #{
+          (consts)->
             emitter = new EventEmitter()
             self.onmessage = ({data: {event, data, session}})->
               emitter.emit event, data, (data)->
                 self.postMessage({data, session})
-            emitter
-        }(), #{@consts.map((a)->JSON.stringify(a)).join(", ")}));
+            [emitter].concat consts
+        }([#{@consts.map((a)-> JSON.stringify(a)).join(",")}])));
       """], {type:"text/javascript"}))
       @worker = new Worker(url)
       return @
@@ -93,8 +93,8 @@ class IframeServerWorker
       #{@urls.map((url)-> "<script src='#{url}'>\x3c/script>").join("\n")}
       <script>
       #{EVENT_EMITTER_3_SOURCE}
-      (#{@fn}(#{
-        ->
+      (#{@fn}.apply(this, #{
+        (consts)->
           emitter = new EventEmitter()
           window.addEventListener "message", (ev)->
             {data: {event, data, session}, source} = ev
@@ -103,8 +103,8 @@ class IframeServerWorker
               return
             emitter.emit event, data, (data)->
               window.parent.postMessage({data, session}, "*")
-          emitter
-      }(), #{@consts.map((a)->JSON.stringify(a)).join(", ")}));
+          [emitter].concat consts
+      }([#{@consts.map((a)-> JSON.stringify(a)).join(",")}])));
       \x3c/script>
     """)
     @iframe.contentDocument.close()

@@ -29,11 +29,11 @@ IframeServerWorker
 
   InlineServerWorker = (function() {
     function InlineServerWorker() {
-      var consts, fn, importScriptsURLs;
-      importScriptsURLs = arguments[0], fn = arguments[1], consts = 3 <= arguments.length ? slice.call(arguments, 2) : [];
+      var consts1, fn, importScriptsURLs;
+      importScriptsURLs = arguments[0], fn = arguments[1], consts1 = 3 <= arguments.length ? slice.call(arguments, 2) : [];
       this.importScriptsURLs = importScriptsURLs;
       this.fn = fn;
-      this.consts = consts;
+      this.consts = consts1;
       this.error = createErrorLogger(this.fn);
       this.urls = [];
       this.worker = null;
@@ -55,7 +55,7 @@ IframeServerWorker
           _this.urls.push(url = URL.createObjectURL(new Blob([
             (urls.map(function(url) {
               return "self.importScripts('" + url + "');";
-            }).join("\n")) + "\n" + EVENT_EMITTER_3_SOURCE + "\n(" + _this.fn + "(" + (function() {
+            }).join("\n")) + "\n" + EVENT_EMITTER_3_SOURCE + "\n(" + _this.fn + ".apply(this, " + (function(consts) {
               var emitter;
               emitter = new EventEmitter();
               self.onmessage = function(arg) {
@@ -68,10 +68,10 @@ IframeServerWorker
                   });
                 });
               };
-              return emitter;
-            }) + "(), " + (_this.consts.map(function(a) {
+              return [emitter].concat(consts);
+            }) + "([" + (_this.consts.map(function(a) {
               return JSON.stringify(a);
-            }).join(", ")) + "));"
+            }).join(",")) + "])));"
           ], {
             type: "text/javascript"
           })));
@@ -123,11 +123,11 @@ IframeServerWorker
 
   IframeServerWorker = (function() {
     function IframeServerWorker() {
-      var consts, fn, importScriptsURLs;
-      importScriptsURLs = arguments[0], fn = arguments[1], consts = 3 <= arguments.length ? slice.call(arguments, 2) : [];
+      var consts1, fn, importScriptsURLs;
+      importScriptsURLs = arguments[0], fn = arguments[1], consts1 = 3 <= arguments.length ? slice.call(arguments, 2) : [];
       this.importScriptsURLs = importScriptsURLs;
       this.fn = fn;
-      this.consts = consts;
+      this.consts = consts1;
       this.error = createErrorLogger(this.fn);
       this.urls = [];
       this.iframe = document.createElement("iframe");
@@ -140,7 +140,7 @@ IframeServerWorker
       this.iframe.contentDocument.open();
       this.iframe.contentDocument.write((this.urls.map(function(url) {
         return "<script src='" + url + "'>\x3c/script>";
-      }).join("\n")) + "\n<script>\n" + EVENT_EMITTER_3_SOURCE + "\n(" + this.fn + "(" + (function() {
+      }).join("\n")) + "\n<script>\n" + EVENT_EMITTER_3_SOURCE + "\n(" + this.fn + ".apply(this, " + (function(consts) {
         var emitter;
         emitter = new EventEmitter();
         window.addEventListener("message", function(ev) {
@@ -160,10 +160,10 @@ IframeServerWorker
             }, "*");
           });
         });
-        return emitter;
-      }) + "(), " + (this.consts.map(function(a) {
+        return [emitter].concat(consts);
+      }) + "([" + (this.consts.map(function(a) {
         return JSON.stringify(a);
-      }).join(", ")) + "));\n\x3c/script>");
+      }).join(",")) + "])));\n\x3c/script>");
       this.iframe.contentDocument.close();
       return this.request("__echo__").then((function(_this) {
         return function() {

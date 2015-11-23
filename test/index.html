@@ -15,8 +15,26 @@ function test(ServerWorker, name){
   }).catch(function(err){ console.error(err, err.stack)});
 }
 
+function test2(ServerWorker, name){
+  var iworker = new ServerWorker([], function(emitter){
+    // inline worker space
+    emitter.on("hello", function(data, reply){
+      reply("hello"+data);
+    });
+  });
+  iworker.load().then(function(){
+    iworker.request("hello", name).then(function(data){
+      console.log(data); // -> helloworker | helloiframe
+      iworker.terminate();
+    });
+  }).catch(function(err){ console.error(err, err.stack)});
+}
+
+
 window.addEventListener("DOMContentLoaded", function(){
   test(InlineServerWorker, "worker");
   test(IframeServerWorker, "iframe");
+  test2(InlineServerWorker, "worker2");
+  test2(IframeServerWorker, "iframe2");
 });
 </script>
