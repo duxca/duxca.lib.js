@@ -1,12 +1,11 @@
 {
   "name": "duxca.serverworker.js",
-  "version": "1.1.0",
-  "description": "",
+  "version": "1.2.0",
+  "description": "simple request/response style inline worker or iframe",
   "main": "dist/ServerWorker.js",
   "scripts": {
-    "coffee": "coffee -c -o dist src; npm run cat",
-    "cat": "echo 'function EVENT_EMITTER_3(){' >> dist/ServerWorker.js; cat ./node_modules/eventemitter3/index.js >> dist/ServerWorker.js; echo '}' >> dist/ServerWorker.js",
-    "start": "http-server -s -p 8000 -o test&",
+    "wcoffee": "coffee -c -w -o dist src",
+    "start": "http-server -s -p 8000 -o test & npm run wcoffee",
     "stop": "killall -- node http-server -p 8000"
   },
   "repository": {
@@ -21,6 +20,5 @@
   },
   "homepage": "https://github.com/legokichi/ServerWorker#readme",
   "devDependencies": {
-    "eventemitter3": "^1.1.1"
   }
 }

@@ -1,87 +1,165 @@
-<script src="../dist/ServerWorker.js"></script>
-<script>
-function test(ServerWorker, name){
-  var iworker = new ServerWorker(function(emitter, math){
-    // inline worker space
-    emitter.on("hello", function(data, reply){
-      reply("hello"+data+math.PI);
-    });
-  }, {PI:3.14});
-  iworker.load().then(function(){
-    console.log(name, "loaded");
-    iworker.request("hello", name).then(function(data){
-      console.log(name, data); // -> helloworker | helloiframe
-      iworker.unload();
-    });
-  }).catch(function(err){ console.error(err, err.stack)});
-}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>QUnit Test Suite</title>
+  <link href="../bower_components/qunit/qunit/qunit.css" rel="stylesheet" />
+  <script src="../bower_components/qunit/qunit/qunit.js"></script>
+  <style>
+    .test-message{
+      white-space: pre;
+      font-family: Osaka-mono, "Osaka-等幅", "ＭＳ ゴシック", monospace;
+      font-size: 14px;
+    }
+  </style>
+  <script src="../dist/ServerWorker.js"></script>
+  <script>
+  function test1(ServerWorker){
+    var name = ServerWorker.name;
 
-function test2(ServerWorker, name){
-  var iworker = new ServerWorker([], function(emitter){
-    // inline worker space
-    emitter.on("hello", function(data, reply){
-      reply("hello"+data);
+    QUnit.module(name);
+
+    QUnit.test(name+" basic", function(assert) {
+      assert.expect(4);
+      var done = assert.async();
+      var iworker = new ServerWorker(function(conn){
+        conn.on("hello", function(data, reply){
+          reply("hello " + data);
+        });
+      });
+      iworker.load().then(function(){
+        assert.ok(true, "load");
+        iworker.request("hello", name).then(function(data){
+          assert.ok(data === "hello "+name, "response");
+          iworker.unload();
+          assert.ok(true, "unload");
+          done();
+        });
+        assert.ok(true, "request");
+      }).catch(function(err){
+        assert.ok(false, "response error");
+        console.error(err, err.stack)
+      });
     });
+
+    QUnit.test(name+" importScripts", function(assert) {
+      assert.expect(4);
+      var done = assert.async();
+      var iworker = new ServerWorker(["add1.js"], function(conn){
+        conn.on("hello", function(data, reply){
+          reply("hello " + add1(data));
+        });
+      });
+      iworker.load().then(function(){
+        assert.ok(true, "load");
+        iworker.request("hello", name).then(function(data){
+          assert.ok(data === "hello "+name+"1", "response");
+          iworker.unload();
+          assert.ok(true, "unload");
+          done();
+        });
+        assert.ok(true, "request");
+      }).catch(function(err){
+        assert.ok(false, "response error");
+        console.error(err, err.stack);
+        done();
+      });
+    });
+
+    QUnit.test(name+" importScripts and importFunctions", function(assert) {
+      assert.expect(4);
+      var done = assert.async();
+      function add2(x){ return add1(add1(x)); }
+      function add4(x){ return add2(add2(x)); }
+      var iworker = new ServerWorker(["add1.js"], [add2,add4], function(conn){
+        conn.on("hello", function(data, reply){
+          reply("hello " + add4(data));
+        });
+      });
+      iworker.load().then(function(){
+        assert.ok(true, "load");
+        iworker.request("hello", name).then(function(data){
+          assert.ok(data === "hello "+name+"1111", "response");
+          iworker.unload();
+          assert.ok(true, "unload");
+          done();
+        });
+        assert.ok(true, "request");
+      }).catch(function(err){
+        assert.ok(false, "response error");
+        console.error(err, err.stack);
+        done();
+      });
+    });
+
+    QUnit.test(name+" importScripts and importFunctions and const val", function(assert) {
+      assert.expect(4);
+      var done = assert.async();
+      function add2(x){return add1(add1(x))}
+      function add4(x){return add2(add2(x))}
+      var iworker = new ServerWorker(["add1.js"], [add2,add4], function(conn, PI){
+        conn.on("hello", function(data, reply){
+          reply("hello " + data + (add4(PI)));
+        });
+      }, Math.PI);
+      iworker.load().then(function(){
+        assert.ok(true, "load");
+        iworker.request("hello", name).then(function(data){
+          assert.ok(data === "hello "+name+(Math.PI+4), "response");
+          iworker.unload();
+          assert.ok(true, "unload");
+          done();
+        });
+        assert.ok(true, "request");
+      }).catch(function(err){
+        assert.ok(false, "response error");
+        console.error(err, err.stack);
+        done();
+      });
+    });
+
+    QUnit.test(name+" iterate", function(assert) {
+      assert.expect(4);
+      var done = assert.async();
+      var iworker = new ServerWorker(function(conn, PI){
+        conn.on("hello", function(data, reply){
+          reply("hello " + data);
+        });
+      });
+      iworker.load().then(function(){
+        assert.ok(true, "load");
+        Promise.all(
+        [1,2,3,4,5,6,7,8,9,10].map(function(i){
+          return iworker.request("hello", i);
+        }) ).then(function(datas){
+          assert.ok(datas.every(function(data, i){
+            return data === "hello " + (i+1);
+          }), "response");
+          iworker.unload();
+          assert.ok(true, "unload");
+          done();
+        });
+        assert.ok(true, "request");
+      }).catch(function(err){
+        assert.ok(false, "response error");
+        console.error(err, err.stack);
+        done();
+      });
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", function(){
+    test1(InlineServerWorker);
+    test1(IFrameServerWorker);
   });
-  iworker.load().then(function(){
-    console.log(name, "loaded");
-    iworker.request("hello", name).then(function(data){
-      console.log(name, data); // -> helloworker | helloiframe
-      iworker.unload();
-    });
-  }).catch(function(err){ console.error(err, err.stack)});
-}
-
-
-function test3(ServerWorker, name){
-  var iworker = new ServerWorker(["./worker.js"], function(emitter){
-    // inline worker space
-    emitter.on("hello", function(data, reply){
-      reply("hello"+add1(data));
-    });
-  });
-  iworker.load().then(function(){
-    console.log(name, "loaded");
-    Promise.all(
-      [1,2,3,4,5].map(function(i){
-        return iworker.request("hello", name+i);
-      })
-    ).then(function(data){
-      console.log(name, data); // -> helloworker | helloiframe
-      iworker.unload();
-    });
-  }).catch(function(err){ console.error(err, err.stack)});
-}
-
-function test4(ServerWorker, name){
-  var iworker = new ServerWorker(["./worker.js"], [function add2(x){return add1(add1(x));}], function(emitter){
-    // inline worker space
-    emitter.on("hello", function(data, reply){
-      reply("hello"+add2(data));
-    });
-  });
-  iworker.load().then(function(){
-    console.log(name, "loaded");
-    Promise.all(
-      [1,2,3,4,5].map(function(i){
-        return iworker.request("hello", name+i);
-      })
-    ).then(function(data){
-      console.log(name, data); // -> helloworker | helloiframe
-      iworker.unload();
-    });
-  }).catch(function(err){ console.error(err, err.stack)});
-}
-
-
-window.addEventListener("DOMContentLoaded", function(){
-  test(InlineServerWorker, "worker1");
-  test(IFrameServerWorker, "iframe1");
-  test2(InlineServerWorker, "worker2");
-  test2(IFrameServerWorker, "iframe2");
-  test3(InlineServerWorker, "worker3");
-  test3(IFrameServerWorker, "iframe3");
-  test4(InlineServerWorker, "worker4");
-  test4(IFrameServerWorker, "iframe4");
-});
-</script>
+  </script>
+</head>
+<body>
+  <h1 id="qunit-header">QUnit Test Suite</h1>
+  <h2 id="qunit-banner"></h2>
+  <div id="qunit-testrunner-toolbar"></div>
+  <h2 id="qunit-userAgent"></h2>
+  <ol id="qunit-tests"></ol>
+  <div id="qunit-fixture">test markup</div>
+</body>
+</html>

@@ -1,35 +1,12 @@
-###
-ServerWorker - simple request/response inline worker
 
-InlineServerWorker
-  - provide worker thread for heavy process
-IframeServerWorker
-  - provide UI thread for DOM sandbox
-
-* usgae:
-```
-  worker = new (InlineServerWorker||IframeServerWorker) [], (emitter)->
-    emitter.on "echo", (data, reply)->
-      reply(data+"world")
-  worker.load().then ->
-    worker.request("echo", "hello").then (data)->
-      console.log data
-      worker.terminate()
-  .catch (err)-> console.error err
-```
-
-###
-
-EVENT_EMITTER_3_SOURCE = (/^function\s*[^\(]*\([^\)]*\)\s*\{([\s\S]*)\}$/gm.exec(""+EVENT_EMITTER_3)||["",""])[1]
-
-class InlineServerWorker
+class ServerWorker
   constructor: (importScriptsURLs, importFunctions, fn, consts...)->
     @importScriptsURLs = []
     @importFunctions = []
     if importScriptsURLs instanceof Function
       @fn = importScriptsURLs
       @consts = [].concat importFunctions, fn, consts
-    else if importFunctions instanceof Function
+    else if importFunctions instanceof Function and Array.isArray(importScriptsURLs)
       @importScriptsURLs = importScriptsURLs
       @fn = importFunctions
       @consts = [].concat fn, consts
@@ -39,7 +16,12 @@ class InlineServerWorker
       @fn = fn
       @consts = [].concat consts
     @error = createErrorLogger(@fn)
-    @urls = []
+
+
+class InlineServerWorker extends ServerWorker
+  constructor: (importScriptsURLs, importFunctions, fn, consts...)->
+    (super)
+    @loadedURLs = []
     @worker = null
   load: ->
     Promise.all(
@@ -48,23 +30,33 @@ class InlineServerWorker
           URL.createObjectURL(
             new Blob([buffer], {"type": "text/javascript"}))
     ).then (urls)=>
-      @urls = @urls.concat(urls)
-      @urls.push url = URL.createObjectURL(new Blob(["""
+      @loadedURLs = @loadedURLs.concat(urls)
+      @loadedURLs.push url = URL.createObjectURL(new Blob(["""
         #{urls.map((url)-> "self.importScripts('#{url}');").join("\n")}
-        #{EVENT_EMITTER_3_SOURCE}
         #{@importFunctions.join("\n")}
-        (#{@fn}.apply(this, #{
-          (consts)->
-            emitter = new EventEmitter()
-            self.onmessage = ({data: {event, data, session}})->
-              emitter.emit event, data, (data)->
-                self.postMessage({data, session})
-            [emitter].concat consts
-        }([#{@consts.map((a)-> JSON.stringify(a)).join(",")}])));
+        (#{@fn}).apply(this, (function INCLUDE_FUNCTION_SOURCE(consts){
+            var events = {};
+            var conn = {
+              on: function on(event, listener){
+                events[event] = listener;
+              }
+            };
+            self.addEventListener("message", function (ev){
+              var event = ev.data.event;
+              var data = ev.data.data;
+              var session = ev.data.session;
+              var listener = events[event];
+              function reply(data, transferable){
+                self.postMessage({data:data, session:session}, transferable);
+              }
+              listener(data, reply);
+            });
+            return [conn].concat(consts);
+        })([#{@consts.map((a)-> JSON.stringify(a)).join(",")}]) );
       """], {type:"text/javascript"}))
       @worker = new Worker(url)
       return @
-  request: (event, data)->
+  request: (event, data, transferable)->
     new Promise (resolve, reject)=>
       msg = {event, data, session: hash()}
       @worker.addEventListener "error", _err = (ev)=>
@@ -77,31 +69,17 @@ class InlineServerWorker
           @worker.removeEventListener("error", _err)
           @worker.removeEventListener("message", _msg)
           resolve(ev.data.data)
-      @worker.postMessage(msg)
+      @worker.postMessage(msg, transferable)
       return
   unload: ->
-    @urls.forEach (url)-> URL.revokeObjectURL(url)
+    @loadedURLs.forEach (url)-> URL.revokeObjectURL(url)
     @worker.terminate()
     @worker = null
     return
 
-class IFrameServerWorker
+class IFrameServerWorker extends ServerWorker
   constructor: (importScriptsURLs, importFunctions, fn, consts...)->
-    @importScriptsURLs = []
-    @importFunctions = []
-    if importScriptsURLs instanceof Function
-      @fn = importScriptsURLs
-      @consts = [].concat importFunctions, fn, consts
-    else if importFunctions instanceof Function
-      @importScriptsURLs = importScriptsURLs
-      @fn = importFunctions
-      @consts = [].concat fn, consts
-    else
-      @importScriptsURLs = importScriptsURLs
-      @importFunctions = importFunctions
-      @fn = fn
-      @consts = [].concat consts
-    @error = createErrorLogger(@fn)
+    (super)
     @iframe = document.createElement("iframe")
     @iframe.setAttribute("style", """
       position: absolute;
@@ -119,21 +97,27 @@ class IFrameServerWorker
     @iframe.contentDocument.write("""
       #{@importScriptsURLs.map((url)-> "<script src='#{url}'>\x3c/script>").join("\n")}
       <script>
-      #{EVENT_EMITTER_3_SOURCE}
       #{@importFunctions.join("\n")}
-      (#{@fn}.apply(this, #{
-        (consts)->
-          emitter = new EventEmitter()
-          window.addEventListener "message", (ev)->
-            {data: {event, data, session}, source} = ev
-            if event is "__echo__"
-              source.postMessage({data, session}, "*")
-              window.parent.postMessage({data, session}, "*")
-            emitter.emit event, data, (data)->
-              source.postMessage({data, session}, "*")
-              window.parent.postMessage({data, session}, "*")
-          [emitter].concat consts
-      }([#{@consts.map((a)-> JSON.stringify(a)).join(",")}])));
+      (#{@fn}).apply(this, (function INCLUDE_FUNCTION_SOURCE(consts){
+          var events = {};
+          var conn = {
+            on: function on(event, listener){
+              events[event] = listener;
+            }
+          };
+          self.addEventListener("message", function (ev){
+            var event = ev.data.event;
+            var data = ev.data.data;
+            var session = ev.data.session;
+            var source = ev.source;
+            var listener = events[event];
+            function reply(data, transferable){
+              source.postMessage({data:data, session:session}, "*")
+            }
+            listener(data, reply);
+          });
+          return [conn].concat(consts);
+      })([#{@consts.map((a)-> JSON.stringify(a)).join(",")}]) );
       \x3c/script>
     """)
     prm = new Promise (resolve)=>
@@ -164,6 +148,8 @@ class IFrameServerWorker
     return
 
 
+``
+
 hash = ->
   Math.round(Math.random() * Math.pow(16, 8)).toString(16)
 
@@ -185,8 +171,7 @@ getArrayBuffer = (url)->
     xhr.responseType = "arraybuffer"
     xhr.send()
 
-
-if 'undefined' isnt typeof module
+if typeof module isnt 'undefined' and typeof module.exports isnt 'undefined'
   module.exports.InlineServerWorker = InlineServerWorker
   module.exports.IFrameServerWorker = IFrameServerWorker
 this.InlineServerWorker = InlineServerWorker
