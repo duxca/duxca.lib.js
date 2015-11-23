@@ -3,7 +3,7 @@
 
 * `InlineServerWorker`
   - provide worker thread for heavy process
-* `IframeServerWorker`
+* `IFrameServerWorker`
   - provide UI thread for DOM sandbox using `window`
 
 
