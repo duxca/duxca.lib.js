@@ -1,7 +1,7 @@
 <script src="../dist/ServerWorker.js"></script>
 <script>
 function test(ServerWorker, name){
-  var iworker = new ServerWorker([], function(emitter, math){
+  var iworker = new ServerWorker(function(emitter, math){
     // inline worker space
     emitter.on("hello", function(data, reply){
       reply("hello"+data+math.PI);
@@ -11,7 +11,7 @@ function test(ServerWorker, name){
     console.log(name, "loaded");
     iworker.request("hello", name).then(function(data){
       console.log(name, data); // -> helloworker | helloiframe
-      iworker.terminate();
+      iworker.unload();
     });
   }).catch(function(err){ console.error(err, err.stack)});
 }
@@ -27,7 +27,7 @@ function test2(ServerWorker, name){
     console.log(name, "loaded");
     iworker.request("hello", name).then(function(data){
       console.log(name, data); // -> helloworker | helloiframe
-      iworker.terminate();
+      iworker.unload();
     });
   }).catch(function(err){ console.error(err, err.stack)});
 }
@@ -48,7 +48,27 @@ function test3(ServerWorker, name){
       })
     ).then(function(data){
       console.log(name, data); // -> helloworker | helloiframe
-      iworker.terminate();
+      iworker.unload();
+    });
+  }).catch(function(err){ console.error(err, err.stack)});
+}
+
+function test4(ServerWorker, name){
+  var iworker = new ServerWorker(["./worker.js"], [function add2(x){return add1(add1(x));}], function(emitter){
+    // inline worker space
+    emitter.on("hello", function(data, reply){
+      reply("hello"+add2(data));
+    });
+  });
+  iworker.load().then(function(){
+    console.log(name, "loaded");
+    Promise.all(
+      [1,2,3,4,5].map(function(i){
+        return iworker.request("hello", name+i);
+      })
+    ).then(function(data){
+      console.log(name, data); // -> helloworker | helloiframe
+      iworker.unload();
     });
   }).catch(function(err){ console.error(err, err.stack)});
 }
@@ -61,5 +81,7 @@ window.addEventListener("DOMContentLoaded", function(){
   test2(IFrameServerWorker, "iframe2");
   test3(InlineServerWorker, "worker3");
   test3(IFrameServerWorker, "iframe3");
+  test4(InlineServerWorker, "worker4");
+  test4(IFrameServerWorker, "iframe4");
 });
 </script>

@@ -13,7 +13,7 @@
 <script src="../dist/ServerWorker.js"></script>
 <script>
 function test(ServerWorker, name){
-  var iworker = new ServerWorker(["foo.js", "bar.js"], function(emitter, math){
+  var iworker = new ServerWorker(["foo.js", "bar.js"], [I], function(emitter, math){
     // inline worker space
     emitter.on("hello", function(data, reply){
       reply("hello"+data+math.PI);
@@ -21,10 +21,14 @@ function test(ServerWorker, name){
   }, {PI:3.14});
   iworker.load().then(function(){
     iworker.request("hello", name).then(function(data){
-      console.log(data); // -> helloworker3.14 | helloiframe3.14
-      iworker.terminate();
+      console.log(I(data)); // -> helloworker3.14 | helloiframe3.14
+      iworker.unload();
     });
   }).catch(function(err){ console.error(err, err.stack)});
+}
+
+function I(x){
+  return x;
 }
 
 window.addEventListener("DOMContentLoaded", function(){
@@ -33,4 +37,17 @@ window.addEventListener("DOMContentLoaded", function(){
 });
 </script>
 
+```
+
+
+## document
+```
+interface ServerWorker {
+  new (fn: (emitter: {on:(event:string, data:any)=> any}, ...args: any[])=> any, ...args: any[]);
+  new (importScripts: string[], fn: (emitter:{on:(event:string, data:any)=> any}, ...args:any[])=> any, ...args:any[]);
+  new (importScripts: string[], importFunctions: Function[], fn: (emitter:{on:(event:string, data:any)=> any}, ...args:any[])=> any, ...args:any[]);
+  load(): Promise<ServerWorker>;
+  request(event: string, data: any): Promise<any>;
+  unload(): void;
+}
 ```

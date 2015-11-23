@@ -29,11 +29,23 @@ IframeServerWorker
 
   InlineServerWorker = (function() {
     function InlineServerWorker() {
-      var consts1, fn, importScriptsURLs;
-      importScriptsURLs = arguments[0], fn = arguments[1], consts1 = 3 <= arguments.length ? slice.call(arguments, 2) : [];
-      this.importScriptsURLs = importScriptsURLs;
-      this.fn = fn;
-      this.consts = consts1;
+      var consts, fn, importFunctions, importScriptsURLs;
+      importScriptsURLs = arguments[0], importFunctions = arguments[1], fn = arguments[2], consts = 4 <= arguments.length ? slice.call(arguments, 3) : [];
+      this.importScriptsURLs = [];
+      this.importFunctions = [];
+      if (importScriptsURLs instanceof Function) {
+        this.fn = importScriptsURLs;
+        this.consts = [].concat(importFunctions, fn, consts);
+      } else if (importFunctions instanceof Function) {
+        this.importScriptsURLs = importScriptsURLs;
+        this.fn = importFunctions;
+        this.consts = [].concat(fn, consts);
+      } else {
+        this.importScriptsURLs = importScriptsURLs;
+        this.importFunctions = importFunctions;
+        this.fn = fn;
+        this.consts = [].concat(consts);
+      }
       this.error = createErrorLogger(this.fn);
       this.urls = [];
       this.worker = null;
@@ -55,7 +67,7 @@ IframeServerWorker
           _this.urls.push(url = URL.createObjectURL(new Blob([
             (urls.map(function(url) {
               return "self.importScripts('" + url + "');";
-            }).join("\n")) + "\n" + EVENT_EMITTER_3_SOURCE + "\n(" + _this.fn + ".apply(this, " + (function(consts) {
+            }).join("\n")) + "\n" + EVENT_EMITTER_3_SOURCE + "\n" + (_this.importFunctions.join("\n")) + "\n(" + _this.fn + ".apply(this, " + (function(consts) {
               var emitter;
               emitter = new EventEmitter();
               self.onmessage = function(arg) {
@@ -108,7 +120,7 @@ IframeServerWorker
       })(this));
     };
 
-    InlineServerWorker.prototype.terminate = function() {
+    InlineServerWorker.prototype.unload = function() {
       this.urls.forEach(function(url) {
         return URL.revokeObjectURL(url);
       });
@@ -122,11 +134,23 @@ IframeServerWorker
 
   IFrameServerWorker = (function() {
     function IFrameServerWorker() {
-      var consts1, fn, importScriptsURLs;
-      importScriptsURLs = arguments[0], fn = arguments[1], consts1 = 3 <= arguments.length ? slice.call(arguments, 2) : [];
-      this.importScriptsURLs = importScriptsURLs;
-      this.fn = fn;
-      this.consts = consts1;
+      var consts, fn, importFunctions, importScriptsURLs;
+      importScriptsURLs = arguments[0], importFunctions = arguments[1], fn = arguments[2], consts = 4 <= arguments.length ? slice.call(arguments, 3) : [];
+      this.importScriptsURLs = [];
+      this.importFunctions = [];
+      if (importScriptsURLs instanceof Function) {
+        this.fn = importScriptsURLs;
+        this.consts = [].concat(importFunctions, fn, consts);
+      } else if (importFunctions instanceof Function) {
+        this.importScriptsURLs = importScriptsURLs;
+        this.fn = importFunctions;
+        this.consts = [].concat(fn, consts);
+      } else {
+        this.importScriptsURLs = importScriptsURLs;
+        this.importFunctions = importFunctions;
+        this.fn = fn;
+        this.consts = [].concat(consts);
+      }
       this.error = createErrorLogger(this.fn);
       this.iframe = document.createElement("iframe");
       this.iframe.setAttribute("style", "position: absolute;\ntop: 0px;\nleft: 0px;\nwidth: 0px;\nheight: 0px;\nborder: 0px;\nmargin: 0px;\npadding: 0px;");
@@ -138,7 +162,7 @@ IframeServerWorker
       this.iframe.contentDocument.open();
       this.iframe.contentDocument.write((this.importScriptsURLs.map(function(url) {
         return "<script src='" + url + "'>\x3c/script>";
-      }).join("\n")) + "\n<script>\n" + EVENT_EMITTER_3_SOURCE + "\n(" + this.fn + ".apply(this, " + (function(consts) {
+      }).join("\n")) + "\n<script>\n" + EVENT_EMITTER_3_SOURCE + "\n" + (this.importFunctions.join("\n")) + "\n(" + this.fn + ".apply(this, " + (function(consts) {
         var emitter;
         emitter = new EventEmitter();
         window.addEventListener("message", function(ev) {
@@ -207,7 +231,7 @@ IframeServerWorker
       })(this));
     };
 
-    IFrameServerWorker.prototype.terminate = function() {
+    IFrameServerWorker.prototype.unload = function() {
       var iframe;
       this.iframe.removeAttribute("src");
       this.iframe.removeAttribute("srcdoc");

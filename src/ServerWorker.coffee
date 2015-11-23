@@ -23,7 +23,21 @@ IframeServerWorker
 EVENT_EMITTER_3_SOURCE = (/^function\s*[^\(]*\([^\)]*\)\s*\{([\s\S]*)\}$/gm.exec(""+EVENT_EMITTER_3)||["",""])[1]
 
 class InlineServerWorker
-  constructor: (@importScriptsURLs, @fn, @consts...)->
+  constructor: (importScriptsURLs, importFunctions, fn, consts...)->
+    @importScriptsURLs = []
+    @importFunctions = []
+    if importScriptsURLs instanceof Function
+      @fn = importScriptsURLs
+      @consts = [].concat importFunctions, fn, consts
+    else if importFunctions instanceof Function
+      @importScriptsURLs = importScriptsURLs
+      @fn = importFunctions
+      @consts = [].concat fn, consts
+    else
+      @importScriptsURLs = importScriptsURLs
+      @importFunctions = importFunctions
+      @fn = fn
+      @consts = [].concat consts
     @error = createErrorLogger(@fn)
     @urls = []
     @worker = null
@@ -38,6 +52,7 @@ class InlineServerWorker
       @urls.push url = URL.createObjectURL(new Blob(["""
         #{urls.map((url)-> "self.importScripts('#{url}');").join("\n")}
         #{EVENT_EMITTER_3_SOURCE}
+        #{@importFunctions.join("\n")}
         (#{@fn}.apply(this, #{
           (consts)->
             emitter = new EventEmitter()
@@ -64,14 +79,28 @@ class InlineServerWorker
           resolve(ev.data.data)
       @worker.postMessage(msg)
       return
-  terminate: ->
+  unload: ->
     @urls.forEach (url)-> URL.revokeObjectURL(url)
     @worker.terminate()
     @worker = null
     return
 
 class IFrameServerWorker
-  constructor: (@importScriptsURLs, @fn, @consts...)->
+  constructor: (importScriptsURLs, importFunctions, fn, consts...)->
+    @importScriptsURLs = []
+    @importFunctions = []
+    if importScriptsURLs instanceof Function
+      @fn = importScriptsURLs
+      @consts = [].concat importFunctions, fn, consts
+    else if importFunctions instanceof Function
+      @importScriptsURLs = importScriptsURLs
+      @fn = importFunctions
+      @consts = [].concat fn, consts
+    else
+      @importScriptsURLs = importScriptsURLs
+      @importFunctions = importFunctions
+      @fn = fn
+      @consts = [].concat consts
     @error = createErrorLogger(@fn)
     @iframe = document.createElement("iframe")
     @iframe.setAttribute("style", """
@@ -91,6 +120,7 @@ class IFrameServerWorker
       #{@importScriptsURLs.map((url)-> "<script src='#{url}'>\x3c/script>").join("\n")}
       <script>
       #{EVENT_EMITTER_3_SOURCE}
+      #{@importFunctions.join("\n")}
       (#{@fn}.apply(this, #{
         (consts)->
           emitter = new EventEmitter()
@@ -125,7 +155,7 @@ class IFrameServerWorker
           resolve(ev.data.data)
       @iframe.contentWindow.postMessage(msg, "*")
       return
-  terminate: ()->
+  unload: ()->
     @iframe.removeAttribute("src")
     @iframe.removeAttribute("srcdoc")
     @iframe.contentWindow.removeEventListener()
