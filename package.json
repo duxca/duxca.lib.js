@@ -20,7 +20,7 @@
     "url": "https://github.com/legokichi/ServerWorker/issues"
   },
   "homepage": "https://github.com/legokichi/ServerWorker#readme",
-  "dependencies": {
+  "devDependencies": {
     "eventemitter3": "^1.1.1"
   }
 }
