@@ -63,17 +63,16 @@ class InlineServerWorker
           @worker.removeEventListener("message", _msg)
           resolve(ev.data.data)
       @worker.postMessage(msg)
-      return @
+      return
   terminate: ->
     @urls.forEach (url)-> URL.revokeObjectURL(url)
     @worker.terminate()
     @worker = null
     return
 
-class IframeServerWorker
+class IFrameServerWorker
   constructor: (@importScriptsURLs, @fn, @consts...)->
     @error = createErrorLogger(@fn)
-    @urls = []
     @iframe = document.createElement("iframe")
     @iframe.setAttribute("style", """
       position: absolute;
@@ -85,12 +84,11 @@ class IframeServerWorker
       margin: 0px;
       padding: 0px;
     """)
-  load: ()->
-    @urls = @importScriptsURLs
+  load: ->
     document.body.appendChild(@iframe)
     @iframe.contentDocument.open()
     @iframe.contentDocument.write("""
-      #{@urls.map((url)-> "<script src='#{url}'>\x3c/script>").join("\n")}
+      #{@importScriptsURLs.map((url)-> "<script src='#{url}'>\x3c/script>").join("\n")}
       <script>
       #{EVENT_EMITTER_3_SOURCE}
       (#{@fn}.apply(this, #{
@@ -99,16 +97,19 @@ class IframeServerWorker
           window.addEventListener "message", (ev)->
             {data: {event, data, session}, source} = ev
             if event is "__echo__"
+              source.postMessage({data, session}, "*")
               window.parent.postMessage({data, session}, "*")
-              return
             emitter.emit event, data, (data)->
+              source.postMessage({data, session}, "*")
               window.parent.postMessage({data, session}, "*")
           [emitter].concat consts
       }([#{@consts.map((a)-> JSON.stringify(a)).join(",")}])));
       \x3c/script>
     """)
+    prm = new Promise (resolve)=>
+      @iframe.addEventListener "load", => resolve(@)
     @iframe.contentDocument.close()
-    @request("__echo__").then => @
+    return prm
   request: (event, data)->
     new Promise (resolve, reject)=>
       msg = {event, data, session: hash()}
@@ -123,13 +124,11 @@ class IframeServerWorker
           window.removeEventListener("message", _msg)
           resolve(ev.data.data)
       @iframe.contentWindow.postMessage(msg, "*")
-      return @
+      return
   terminate: ()->
-    @urls.forEach (url)-> URL.revokeObjectURL(url)
     @iframe.removeAttribute("src")
     @iframe.removeAttribute("srcdoc")
     @iframe.contentWindow.removeEventListener()
-    document.body.removeEventListener()
     document.body.removeChild(@iframe)
     iframe = null
     return
@@ -159,6 +158,6 @@ getArrayBuffer = (url)->
 
 if 'undefined' isnt typeof module
   module.exports.InlineServerWorker = InlineServerWorker
-  module.exports.IframeServerWorker = IframeServerWorker
+  module.exports.IFrameServerWorker = IFrameServerWorker
 this.InlineServerWorker = InlineServerWorker
-this.IframeServerWorker = IframeServerWorker
+this.IFrameServerWorker = IFrameServerWorker

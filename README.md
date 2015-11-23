@@ -29,7 +29,7 @@ function test(ServerWorker, name){
 
 window.addEventListener("DOMContentLoaded", function(){
   test(InlineServerWorker, "worker");
-  test(IframeServerWorker, "iframe");
+  test(IFrameServerWorker, "iframe");
 });
 </script>
 

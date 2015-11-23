@@ -22,7 +22,7 @@ IframeServerWorker
  */
 
 (function() {
-  var EVENT_EMITTER_3_SOURCE, IframeServerWorker, InlineServerWorker, createErrorLogger, getArrayBuffer, hash,
+  var EVENT_EMITTER_3_SOURCE, IFrameServerWorker, InlineServerWorker, createErrorLogger, getArrayBuffer, hash,
     slice = [].slice;
 
   EVENT_EMITTER_3_SOURCE = (/^function\s*[^\(]*\([^\)]*\)\s*\{([\s\S]*)\}$/gm.exec("" + EVENT_EMITTER_3) || ["", ""])[1];
@@ -104,7 +104,6 @@ IframeServerWorker
             }
           });
           _this.worker.postMessage(msg);
-          return _this;
         };
       })(this));
     };
@@ -121,24 +120,23 @@ IframeServerWorker
 
   })();
 
-  IframeServerWorker = (function() {
-    function IframeServerWorker() {
+  IFrameServerWorker = (function() {
+    function IFrameServerWorker() {
       var consts1, fn, importScriptsURLs;
       importScriptsURLs = arguments[0], fn = arguments[1], consts1 = 3 <= arguments.length ? slice.call(arguments, 2) : [];
       this.importScriptsURLs = importScriptsURLs;
       this.fn = fn;
       this.consts = consts1;
       this.error = createErrorLogger(this.fn);
-      this.urls = [];
       this.iframe = document.createElement("iframe");
       this.iframe.setAttribute("style", "position: absolute;\ntop: 0px;\nleft: 0px;\nwidth: 0px;\nheight: 0px;\nborder: 0px;\nmargin: 0px;\npadding: 0px;");
     }
 
-    IframeServerWorker.prototype.load = function() {
-      this.urls = this.importScriptsURLs;
+    IFrameServerWorker.prototype.load = function() {
+      var prm;
       document.body.appendChild(this.iframe);
       this.iframe.contentDocument.open();
-      this.iframe.contentDocument.write((this.urls.map(function(url) {
+      this.iframe.contentDocument.write((this.importScriptsURLs.map(function(url) {
         return "<script src='" + url + "'>\x3c/script>";
       }).join("\n")) + "\n<script>\n" + EVENT_EMITTER_3_SOURCE + "\n(" + this.fn + ".apply(this, " + (function(consts) {
         var emitter;
@@ -147,13 +145,20 @@ IframeServerWorker
           var data, event, ref, session, source;
           (ref = ev.data, event = ref.event, data = ref.data, session = ref.session), source = ev.source;
           if (event === "__echo__") {
+            source.postMessage({
+              data: data,
+              session: session
+            }, "*");
             window.parent.postMessage({
               data: data,
               session: session
             }, "*");
-            return;
           }
           return emitter.emit(event, data, function(data) {
+            source.postMessage({
+              data: data,
+              session: session
+            }, "*");
             return window.parent.postMessage({
               data: data,
               session: session
@@ -164,15 +169,18 @@ IframeServerWorker
       }) + "([" + (this.consts.map(function(a) {
         return JSON.stringify(a);
       }).join(",")) + "])));\n\x3c/script>");
-      this.iframe.contentDocument.close();
-      return this.request("__echo__").then((function(_this) {
-        return function() {
-          return _this;
+      prm = new Promise((function(_this) {
+        return function(resolve) {
+          return _this.iframe.addEventListener("load", function() {
+            return resolve(_this);
+          });
         };
       })(this));
+      this.iframe.contentDocument.close();
+      return prm;
     };
 
-    IframeServerWorker.prototype.request = function(event, data) {
+    IFrameServerWorker.prototype.request = function(event, data) {
       return new Promise((function(_this) {
         return function(resolve, reject) {
           var _err, _msg, msg;
@@ -195,25 +203,20 @@ IframeServerWorker
             }
           });
           _this.iframe.contentWindow.postMessage(msg, "*");
-          return _this;
         };
       })(this));
     };
 
-    IframeServerWorker.prototype.terminate = function() {
+    IFrameServerWorker.prototype.terminate = function() {
       var iframe;
-      this.urls.forEach(function(url) {
-        return URL.revokeObjectURL(url);
-      });
       this.iframe.removeAttribute("src");
       this.iframe.removeAttribute("srcdoc");
       this.iframe.contentWindow.removeEventListener();
-      document.body.removeEventListener();
       document.body.removeChild(this.iframe);
       iframe = null;
     };
 
-    return IframeServerWorker;
+    return IFrameServerWorker;
 
   })();
 
@@ -252,12 +255,12 @@ IframeServerWorker
 
   if ('undefined' !== typeof module) {
     module.exports.InlineServerWorker = InlineServerWorker;
-    module.exports.IframeServerWorker = IframeServerWorker;
+    module.exports.IFrameServerWorker = IFrameServerWorker;
   }
 
   this.InlineServerWorker = InlineServerWorker;
 
-  this.IframeServerWorker = IframeServerWorker;
+  this.IFrameServerWorker = IFrameServerWorker;
 
 }).call(this);
 function EVENT_EMITTER_3(){

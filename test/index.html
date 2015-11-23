@@ -8,8 +8,9 @@ function test(ServerWorker, name){
     });
   }, {PI:3.14});
   iworker.load().then(function(){
+    console.log(name, "loaded");
     iworker.request("hello", name).then(function(data){
-      console.log(data); // -> helloworker | helloiframe
+      console.log(name, data); // -> helloworker | helloiframe
       iworker.terminate();
     });
   }).catch(function(err){ console.error(err, err.stack)});
@@ -23,8 +24,30 @@ function test2(ServerWorker, name){
     });
   });
   iworker.load().then(function(){
+    console.log(name, "loaded");
     iworker.request("hello", name).then(function(data){
-      console.log(data); // -> helloworker | helloiframe
+      console.log(name, data); // -> helloworker | helloiframe
+      iworker.terminate();
+    });
+  }).catch(function(err){ console.error(err, err.stack)});
+}
+
+
+function test3(ServerWorker, name){
+  var iworker = new ServerWorker(["./worker.js"], function(emitter){
+    // inline worker space
+    emitter.on("hello", function(data, reply){
+      reply("hello"+add1(data));
+    });
+  });
+  iworker.load().then(function(){
+    console.log(name, "loaded");
+    Promise.all(
+      [1,2,3,4,5].map(function(i){
+        return iworker.request("hello", name+i);
+      })
+    ).then(function(data){
+      console.log(name, data); // -> helloworker | helloiframe
       iworker.terminate();
     });
   }).catch(function(err){ console.error(err, err.stack)});
@@ -32,9 +55,11 @@ function test2(ServerWorker, name){
 
 
 window.addEventListener("DOMContentLoaded", function(){
-  test(InlineServerWorker, "worker");
-  test(IframeServerWorker, "iframe");
+  test(InlineServerWorker, "worker1");
+  test(IFrameServerWorker, "iframe1");
   test2(InlineServerWorker, "worker2");
-  test2(IframeServerWorker, "iframe2");
+  test2(IFrameServerWorker, "iframe2");
+  test3(InlineServerWorker, "worker3");
+  test3(IFrameServerWorker, "iframe3");
 });
 </script>

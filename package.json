@@ -1,5 +1,5 @@
 {
-  "name": "duxca.serverWorker.js",
+  "name": "duxca.serverworker.js",
   "version": "1.0.1",
   "description": "",
   "main": "dist/ServerWorker.js",
