@@ -19,10 +19,12 @@ function test(ServerWorker){
     ["add1.js"],
     [add2,add4],
     function main(conn, PI){
-    conn.on("add4addPI", function(data, reply){
-      reply((add4(data + 4 + PI)));
-    });
-  }, Math.PI);
+      conn.on("add4addPI", function(data, reply){
+        reply((add4(data + 4 + PI)));
+      });
+    },
+    Math.PI
+  );
 
   iworker.load().then(function(){
     iworker.request("hello", 1).then(function(data){
