@@ -384,5 +384,7 @@ var _Chord = _interopRequireWildcard(_Chord2);
 
 var Chord = _Chord.Chord;
 exports.Chord = Chord;
+var distance = _Chord.distance;
+exports.distance = distance;
 },{"./Chord":1}]},{},[2])(2)
 });
