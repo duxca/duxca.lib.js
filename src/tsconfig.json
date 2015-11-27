@@ -35,5 +35,8 @@
         "./Chord.ts",
         "./index.ts"
     ],
-    "exclude": []
+    "exclude": [],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }
