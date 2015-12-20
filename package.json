@@ -1,0 +1,21 @@
+{
+  "name": "Signal.ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "setup": "npm install -g bower dtsm http-server typescript coffee-script watchify",
+    "init": "npm update -g; npm run update; npm run start",
+    "update": "rm -rf bower_components typings; npm update; bower update; dtsm fetch; dtsm update --save",
+    "clean": "rm lib/*.js dist/*.js",
+    "ts-w": "tsc -w -p src",
+    "coffee-w": "coffee -c -w -o lib src",
+    "watchify": "watchify lib/index.js --standalone Signal -o dist/Signal.js -v",
+    "start": "http-server --silent -p 8000 & npm run ts-w & npm run coffee-w & npm run watchify & gulp watch",
+    "stop": "killall -- node */http-server -p 8000",
+    "test": "phantomjs test/run-qunit.js test/test.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
