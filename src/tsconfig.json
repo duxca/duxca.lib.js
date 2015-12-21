@@ -5,7 +5,7 @@
         "outDir": "../lib",
         "target": "ES5",
         "module": "commonjs",
-        "rootDir": "../",
+        "rootDir": "./",
         "newLine": "LF",
         "listFiles": true,
         "declaration": true,
@@ -23,6 +23,8 @@
     ],
     "files": [
         "./FourierTransform.ts",
+        "./index.ts",
+        "./Render.ts",
         "./Signal.ts",
         "./Statictics.ts"
     ],

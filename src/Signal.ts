@@ -1,8 +1,10 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
+import _Render = require("./Render");
 import * as Statictics from "./Statictics";
 import {FFT} from "./FourierTransform";
 
+export var Render = _Render;
 
 export function normalize(arr: Float32Array, max_val=1):Float32Array {
   var min = Statictics.findMin(arr)[0];
@@ -80,10 +82,10 @@ export function crosscorr(arrA: number[], arrB: number[]): number[]{
   return arrA.map((v,j)=> _autocorr(j));
 }
 
-export function fft(signal: Float32Array, sampleRate=44100): [Float32Array, Float32Array, Float32Array]{
+export function fft(signal: Float32Array, sampleRate=44100): {real: Float32Array, imag: Float32Array, spectrum: Float32Array}{
   var _fft = new FFT(signal.length, sampleRate);
   _fft.forward(signal);
-  return [_fft.real, _fft.imag, _fft.spectrum];
+  return {real: _fft.real, imag: _fft.imag, spectrum: _fft.spectrum};
 }
 
 export function ifft(pulse_real: Float32Array, pulse_imag: Float32Array, sampleRate=44100): Float32Array {
@@ -201,7 +203,49 @@ export function mseqGen(MSEQ_POL_LEN: number, MSEQ_POL_COEFF: number[]): Float32
     tap[0] = tmp;
   }
   for(let i=0; i<mseq.length; i++){
-    mseq[i] = mseq[i] <= 0 ? -1 : mseq[i];
+    mseq[i] = mseq[i] <= 0 ? -1 : 1;
   }
   return mseq;
+}
+
+export function fft_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
+  const spectA = fft(signalA);
+  const spectB = fft(signalB);
+  const cross_real = new Float32Array(spectA.real.length);
+  const cross_imag = new Float32Array(spectA.imag.length);
+  for(var i = 0; i<spectA.real.length; i++){
+    cross_real[i] = spectA.real[i] *  spectB.real[i];
+    cross_imag[i] = spectA.imag[i] * -spectB.imag[i];
+  }
+  var inv_real = ifft(cross_real, cross_imag);
+  return inv_real;
+}
+
+export function fft_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array {
+  const spectA = fft(signalA);
+  const spectB = fft(signalB);
+  const cross_real = new Float32Array(spectA.real.length);
+  const cross_imag = new Float32Array(spectA.imag.length);
+  for(var i = 0; i<spectA.real.length; i++){
+    cross_real[i] = spectA.real[i] * spectB.real[i];
+    cross_imag[i] = spectA.imag[i] * spectB.imag[i];
+  }
+  var inv_real = ifft(cross_real, cross_imag);
+  return inv_real;
+}
+
+export function naive_correlation(xs: number[], ys: number[]): number[]{
+  return crosscorr(xs, ys);
+}
+
+export function naive_convolution(xs: number[], ys: number[]): number[]{
+  const arr: number[] = [];
+  for(let i=0; i<xs.length; i++){
+    let sum = 0;
+    for(let j=0; j<ys.length; j++){
+      sum += xs[i]*(ys[i-j]||0);
+    }
+    arr[i] = sum;
+  }
+  return arr;
 }

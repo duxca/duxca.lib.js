@@ -1,5 +1,29 @@
-QUnit.module 'Signal'
+craetePictureFrame = (description, target=document.body) ->
+  fieldset = document.createElement('fieldset')
+  style = document.createElement('style')
+  style.appendChild(document.createTextNode("canvas,img{border:1px solid black;}"))
+  style.setAttribute("scoped", "scoped")
+  fieldset.appendChild(style)
+  legend = document.createElement('legend')
+  legend.appendChild(document.createTextNode(description))
+  fieldset.appendChild(legend)
+  fieldset.style.display = 'inline-block'
+  target.appendChild(fieldset)
+  fieldset.style.backgroundColor = "#D2E0E6"
+  return {
+    add: (element, txt)->
+      if txt?
+        frame = craetePictureFrame txt, fieldset
+        frame.add element
+      else if typeof element is "string"
+        txtNode = document.createTextNode element
+        p = document.createElement("p")
+        p.appendChild txtNode
+        fieldset.appendChild p
+      else fieldset.appendChild element
+  }
 
+QUnit.module 'Signal'
 
 QUnit.test 'ServerWorker test', (assert) ->
   done = assert.async()
@@ -30,8 +54,8 @@ QUnit.test 'FFT,IFFT', (assert) ->
   length = Math.pow(2, 14)
   sinWave = new Float32Array(length)
   for _, i in sinWave
-    sinWave[i] = Math.sin(i);
-  [real, imag, spectrum] = new Signal.fft(sinWave)
+    sinWave[i] = Math.sin(i)
+  {real, imag, spectrum} = new Signal.fft(sinWave)
   _sinWave = new Signal.ifft(real, imag)
   stopTime = performance.now()
   totalTime = stopTime - startTime
@@ -53,3 +77,93 @@ QUnit.test 'mseqGen', (assert) ->
   expected.forEach (v, i)->
     assert.ok mseq[i] is expected[i]
   assert.ok totalTime
+
+QUnit.test 'drawSignal', (assert) ->
+  length = Math.pow(2, 10)
+  sinWave = new Float32Array(length)
+  for _, i in sinWave
+    sinWave[i] = Math.sin(i/10)
+  render = new Signal.Render(sinWave.length, 127)
+  render.drawSignal(sinWave, true, true)
+  document.body.appendChild(render.element)
+  assert.ok true
+
+QUnit.test 'naive_correlation', (assert) ->
+  frame = craetePictureFrame("naive_correlation")
+  length = Math.pow(2, 8)
+  signal = []
+  for i in [0..length-1]
+    signal[i] = if 64 > i > 32 then 1 else 0
+  correl = Signal.naive_correlation(signal, signal)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "sigal")
+  render = new Signal.Render(correl.length, 127)
+  render.drawSignal(correl, true, true)
+  frame.add(render.element, "auto-correl")
+  assert.ok correl.length is signal.length
+
+QUnit.test 'naive_convolution', (assert) ->
+  frame = craetePictureFrame("naive_convolution")
+  length = Math.pow(2, 8)
+  signal = []
+  for i in [1..length]
+    signal[i] = if 64 > i > 32 then 1 else 0
+  conv = Signal.naive_convolution(signal, signal)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "sigal")
+  render = new Signal.Render(conv.length, 127)
+  render.drawSignal(conv, true, true)
+  frame.add(render.element, "auto-conv")
+  assert.ok conv.length is signal.length
+
+QUnit.test 'fft_correlation', (assert) ->
+  frame = craetePictureFrame("fft_correlation")
+  length = Math.pow(2, 8)
+  signal = new Float32Array(length)
+  for _, i in signal
+    signal[i] = if 64 > i > 32 then 1 else 0
+  correl = Signal.fft_correlation(signal, signal)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "sigal")
+  render = new Signal.Render(correl.length, 127)
+  render.drawSignal(correl, true, true)
+  frame.add(render.element, "auto-correl")
+  assert.ok correl.length is signal.length
+
+
+QUnit.test 'fft_convolution', (assert) ->
+  frame = craetePictureFrame("fft_convolution")
+  length = Math.pow(2, 8)
+  signal = new Float32Array(length)
+  for _, i in signal
+    signal[i] = if 64 > i > 32 then 1 else 0
+  conv = Signal.fft_convolution(signal, signal)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "sigal")
+  render = new Signal.Render(conv.length, 127)
+  render.drawSignal(conv, true, true)
+  frame.add(render.element, "auto-conv")
+  assert.ok conv.length is signal.length
+
+
+QUnit.test 'mseqGen -> fft_correlation', (assert) ->
+  frame = craetePictureFrame("mseqGen -> fft_correlation")
+  length = Math.pow(2, 8)
+  signal = Signal.mseqGen(7, [0,0,1,0, 0, 0, 1]);
+  T = 16
+  _signal = new Int8Array(signal.length*T)
+  for i in [0...T]
+    _signal.set(signal, signal.length*i)
+  signal = _signal
+  correl = Signal.smartCorrelation(signal, signal)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "sigal")
+  render = new Signal.Render(correl.length, 127)
+  render.drawSignal(correl, true, true)
+  frame.add(render.element, "auto-correl")
+  assert.ok correl.length is signal.length

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "scripts": {
     "setup": "npm install -g bower dtsm http-server typescript coffee-script watchify",
     "init": "npm update -g; npm run update; npm run start",
