@@ -249,3 +249,17 @@ export function naive_convolution(xs: number[], ys: number[]): number[]{
   }
   return arr;
 }
+
+
+export function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Array{
+  const {real, imag, spectrum} = fft(xs);
+  const _ys = fft(ys);
+  for(let i=0; i<imag.length; i++){
+    const abs = Math.sqrt(real[i]*real[i] + imag[i]*imag[i])
+    real[i] =  real[i]/abs;
+    imag[i] = -imag[i]/abs;
+    real[i] *= _ys.real[i];
+    imag[i] *= _ys.imag[i];
+  }
+  return ifft(real, imag)
+}

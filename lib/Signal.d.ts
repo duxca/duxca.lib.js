@@ -24,3 +24,4 @@ export declare function fft_correlation(signalA: Float32Array, signalB: Float32A
 export declare function fft_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array;
 export declare function naive_correlation(xs: number[], ys: number[]): number[];
 export declare function naive_convolution(xs: number[], ys: number[]): number[];
+export declare function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Array;

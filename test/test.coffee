@@ -167,3 +167,31 @@ QUnit.test 'mseqGen -> fft_correlation', (assert) ->
   render.drawSignal(correl, true, true)
   frame.add(render.element, "auto-correl")
   assert.ok correl.length is signal.length
+
+QUnit.test 'phase_only_filter', (assert) ->
+  frame = craetePictureFrame("phase_only_filter")
+  length = Math.pow(2, 10)
+  signal = new Float32Array(length)
+  signal_noized = new Float32Array(length)
+  for _, i in signal
+    signal[i] = if 256 > i > 128 or 64 > i > 32 then 1 else 0
+    signal_noized[i] = signal[i] + Math.random()
+  correl = Signal.phase_only_filter(signal, signal_noized)
+  _correl = Signal.correlation(signal, signal_noized)
+  render = new Signal.Render(signal.length, 127)
+  render.drawSignal(signal, true, true)
+  frame.add(render.element, "signal")
+  render = new Signal.Render(signal_noized.length, 127)
+  render.drawSignal(signal_noized, true, true)
+  frame.add(render.element, "signal_noized")
+  render = new Signal.Render(correl.length, 127)
+  render.drawSignal(correl, true, true)
+  frame.add(render.element, "pof_correl")
+  render = new Signal.Render(_correl.length, 127)
+  render.drawSignal(_correl, true, true)
+  frame.add(render.element, "fft_correl")
+  render = new Signal.Render(correl.length, 127)
+  render.drawSignal(correl, true, true)
+  render.drawSignal(_correl, true, true)
+  frame.add(render.element, "pof+fft_correl")
+  assert.ok signal.length is correl.length

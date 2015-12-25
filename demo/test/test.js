@@ -300,3 +300,38 @@ QUnit.test('mseqGen -> fft_correlation', function (assert) {
         line: 223
     }));
 });
+QUnit.test('phase_only_filter', function (assert) {
+    var _, _correl, correl, frame, i, j, len, length, render, signal, signal_noized;
+    frame = craetePictureFrame('phase_only_filter');
+    length = Math.pow(2, 10);
+    signal = new Float32Array(length);
+    signal_noized = new Float32Array(length);
+    for (i = j = 0, len = signal.length; j < len; i = ++j) {
+        _ = signal[i];
+        signal[i] = 256 > i && i > 128 || 64 > i && i > 32 ? 1 : 0;
+        signal_noized[i] = signal[i] + Math.random();
+    }
+    correl = Signal.phase_only_filter(signal, signal_noized);
+    _correl = Signal.correlation(signal, signal_noized);
+    render = new Signal.Render(signal.length, 127);
+    render.drawSignal(signal, true, true);
+    frame.add(render.element, 'signal');
+    render = new Signal.Render(signal_noized.length, 127);
+    render.drawSignal(signal_noized, true, true);
+    frame.add(render.element, 'signal_noized');
+    render = new Signal.Render(correl.length, 127);
+    render.drawSignal(correl, true, true);
+    frame.add(render.element, 'pof_correl');
+    render = new Signal.Render(_correl.length, 127);
+    render.drawSignal(_correl, true, true);
+    frame.add(render.element, 'fft_correl');
+    render = new Signal.Render(correl.length, 127);
+    render.drawSignal(correl, true, true);
+    render.drawSignal(_correl, true, true);
+    frame.add(render.element, 'pof+fft_correl');
+    return assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(signal, 'arguments/0/left/object').length, 'arguments/0/left') === assert._capt(assert._capt(correl, 'arguments/0/right/object').length, 'arguments/0/right'), 'arguments/0'), {
+        content: 'assert.ok(signal.length === correl.length)',
+        filepath: 'test/test.js',
+        line: 255
+    }));
+});

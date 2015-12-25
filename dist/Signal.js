@@ -849,6 +849,19 @@ function naive_convolution(xs, ys) {
     return arr;
 }
 exports.naive_convolution = naive_convolution;
+function phase_only_filter(xs, ys) {
+    var _a = fft(xs), real = _a.real, imag = _a.imag, spectrum = _a.spectrum;
+    var _ys = fft(ys);
+    for (var i = 0; i < imag.length; i++) {
+        var abs = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+        real[i] = real[i] / abs;
+        imag[i] = -imag[i] / abs;
+        real[i] *= _ys.real[i];
+        imag[i] *= _ys.imag[i];
+    }
+    return ifft(real, imag);
+}
+exports.phase_only_filter = phase_only_filter;
 
 },{"./FourierTransform":1,"./Render":2,"./Statictics":4}],4:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
