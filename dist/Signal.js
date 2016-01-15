@@ -590,13 +590,14 @@ module.exports = Render;
 },{"./Signal":3,"./Statictics":4}],3:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 var _Render = require("./Render");
-var Statictics = require("./Statictics");
+var _Statictics = require("./Statictics");
 var FourierTransform_1 = require("./FourierTransform");
 exports.Render = _Render;
+exports.Statictics = _Statictics;
 function normalize(arr, max_val) {
     if (max_val === void 0) { max_val = 1; }
-    var min = Statictics.findMin(arr)[0];
-    var max = Statictics.findMax(arr)[0];
+    var min = exports.Statictics.findMin(arr)[0];
+    var max = exports.Statictics.findMax(arr)[0];
     var _arr = new Float32Array(arr.length);
     for (var j = 0; j < arr.length; j++) {
         _arr[j] = (arr[j] - min) / (max - min) * max_val;
@@ -807,6 +808,149 @@ function mseqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF) {
     return mseq;
 }
 exports.mseqGen = mseqGen;
+function goldSeqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF_A, MSEQ_POL_COEFF_B, shift) {
+    shift = shift % MSEQ_POL_COEFF_B.length;
+    var seq_a = mseqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF_A);
+    var seq_b = mseqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF_B);
+    var gold = new Int8Array(seq_a.length);
+    for (var i = 0; i < gold.length; i++) {
+        gold[i] = seq_a[i] ^ seq_b[(i + shift) % seq_b.length];
+    }
+    return gold;
+}
+exports.goldSeqGen = goldSeqGen;
+function encode_chipcode(bits, PNSeq) {
+    // bits: {-1, 1}
+    // return: {-1, 1}
+    var _PNSeq = new Int8Array(PNSeq);
+    for (var i = 0; i < _PNSeq.length; i++) {
+        _PNSeq[i] *= -1;
+    }
+    var seq = new Int8Array(PNSeq.length * bits.length);
+    for (var i = 0; i < bits.length; i++) {
+        var pt = i * PNSeq.length;
+        var bit = bits[i];
+        seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+    }
+    return seq;
+}
+exports.encode_chipcode = encode_chipcode;
+function encode_chipcode_separated_zero(bits, PNSeq) {
+    // bits: {-1, 1}
+    // return: {-1, 0, 1}
+    // inverse phase pn sequence
+    var _PNSeq = new Int8Array(PNSeq);
+    for (var i = 0; i < _PNSeq.length; i++) {
+        _PNSeq[i] *= -1;
+    }
+    var seq = new Int8Array(PNSeq.length * bits.length * 2 - 1);
+    for (var i = 0; i < bits.length; i++) {
+        var pt = i * PNSeq.length /* zero space -> */ * 2;
+        var bit = bits[i];
+        seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+    }
+    return seq;
+}
+exports.encode_chipcode_separated_zero = encode_chipcode_separated_zero;
+function carrierGen(freq, sampleRate, currentTime, length) {
+    var result = new Float32Array(length);
+    var phaseSec = 1 / freq;
+    var one_phase_sample = sampleRate / freq;
+    var startId = currentTime * sampleRate;
+    for (var i = 0; i < result.length; i++) {
+        result[i] = Math.sin(2 * Math.PI / one_phase_sample * (startId + i));
+    }
+    return result;
+}
+exports.carrierGen = carrierGen;
+function BPSK(bits, carrierFreq, sampleRate, currentTime, length) {
+    // bits: {-1, 1}
+    var one_phase_sample = sampleRate / carrierFreq;
+    if (length == null) {
+        length = bits.length * one_phase_sample;
+    }
+    var result = carrierGen(carrierFreq, sampleRate, currentTime, length);
+    var startId = currentTime * sampleRate;
+    for (var i = 0; i < result.length; i++) {
+        result[i] *= bits[((startId + i) / one_phase_sample | 0) % bits.length];
+    }
+    return result;
+}
+exports.BPSK = BPSK;
+function fft_smart_correlation(signalA, signalB) {
+    var short;
+    var long;
+    if (signalA.length > signalB.length) {
+        short = signalB;
+        long = signalA;
+    }
+    else {
+        short = signalA;
+        long = signalB;
+    }
+    var pow = 0;
+    for (pow = 1; long.length > Math.pow(2, pow); pow++)
+        ;
+    var resized_long = new Float32Array(Math.pow(2, pow));
+    resized_long.set(long, 0);
+    var resized_short = new Float32Array(Math.pow(2, pow));
+    resized_short.set(short, 0);
+    var corr = fft_correlation(resized_short, resized_long);
+    return corr;
+}
+exports.fft_smart_correlation = fft_smart_correlation;
+function fft_smart_overwrap_correlation(signalA, signalB) {
+    var short;
+    var long;
+    if (signalA.length > signalB.length) {
+        short = signalB;
+        long = signalA;
+    }
+    else {
+        short = signalA;
+        long = signalB;
+    }
+    // ajasting power of two for FFT for overwrap adding way correlation
+    var pow = 0;
+    for (pow = 1; short.length > Math.pow(2, pow); pow++)
+        ;
+    var resized_short = new Float32Array(Math.pow(2, pow + 1));
+    resized_short.set(short, 0); //resized_short.length/4);
+    // short = [1,-1,1,-1,1] // length = 5
+    // resized_short = [1,-1,1,-1,1,0,0,0] ++ [0,0,0,0,0,0,0,0] // length = 2^3 * 2 = 8 * 2 = 16
+    var windowSize = resized_short.length / 2;
+    var slideWidth = short.length;
+    var _correlation = new Float32Array(long.length);
+    //let frame = window["craetePictureFrame"]("debug")
+    for (var i = 0; (long.length - (i + slideWidth)) >= 0; i += slideWidth) {
+        var resized_long = new Float32Array(resized_short.length);
+        resized_long.set(long.subarray(i, i + windowSize), 0); //resized_short.length/4);
+        //let corr = fft_correlation(resized_short, resized_long);
+        var corr = phase_only_filter(resized_short, resized_long);
+        /*
+          let render = new Render(resized_long.length, 127)
+          render.drawSignal(resized_long, true, true);
+          frame.add(render.element, "resized_long")
+          render = new Render(resized_short.length, 127)
+          render.drawSignal(resized_short, true, true);
+          frame.add(render.element, "resized_short")
+          render = new Render(corr.length, 127)
+          render.drawSignal(corr, true, true);
+          frame.add(render.element, "corr")
+          let [max, maxId] = Statictics.findMax(corr.subarray(0, corr.length/2));
+          let [min, minId] = Statictics.findMin(corr.subarray(0, corr.length/2));
+          frame.add(document.createTextNode(max > min ? maxId+"|"+max : minId+"|"+min));
+        */
+        for (var j = 0; j < corr.length / 2; j++) {
+            _correlation[i + j] += corr[j];
+        }
+        for (var j = 0; j < corr.length / 2; j++) {
+            _correlation[i - j] += corr[corr.length - 1 - j];
+        }
+    }
+    return _correlation;
+}
+exports.fft_smart_overwrap_correlation = fft_smart_overwrap_correlation;
 function fft_correlation(signalA, signalB) {
     var spectA = fft(signalA);
     var spectB = fft(signalB);
@@ -854,6 +998,10 @@ function phase_only_filter(xs, ys) {
     var _ys = fft(ys);
     for (var i = 0; i < imag.length; i++) {
         var abs = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+        if (abs === 0) {
+            console.warn("Signal.phase_only_filter", "zero division detected");
+            abs = 1;
+        }
         real[i] = real[i] / abs;
         imag[i] = -imag[i] / abs;
         real[i] *= _ys.real[i];

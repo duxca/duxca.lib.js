@@ -1,10 +1,11 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
 import _Render = require("./Render");
-import * as Statictics from "./Statictics";
+import * as _Statictics from "./Statictics";
 import {FFT} from "./FourierTransform";
 
 export var Render = _Render;
+export var Statictics = _Statictics;
 
 export function normalize(arr: Float32Array, max_val=1):Float32Array {
   var min = Statictics.findMin(arr)[0];
@@ -180,7 +181,7 @@ export function createM(polynomial:number[], shiftN:number, seed?:number[]): num
   return arr;
 }
 
-export function mseqGen(MSEQ_POL_LEN: number, MSEQ_POL_COEFF: number[]): Float32Array {
+export function mseqGen(MSEQ_POL_LEN: number, MSEQ_POL_COEFF: number[]): Int8Array {
   //const MSEQ_POL_LEN = 4; // M系列を生成する多項式の次数
   //const MSEQ_POL_COEFF = [1, 0, 0, 1]; // M系列を生成する多項式の係数
   const L_MSEQ = Math.pow(2, MSEQ_POL_LEN)-1; // M系列の長さ
@@ -206,6 +207,145 @@ export function mseqGen(MSEQ_POL_LEN: number, MSEQ_POL_COEFF: number[]): Float32
     mseq[i] = mseq[i] <= 0 ? -1 : 1;
   }
   return mseq;
+}
+
+export function goldSeqGen(MSEQ_POL_LEN: number, MSEQ_POL_COEFF_A: number[], MSEQ_POL_COEFF_B: number[], shift: number): Int8Array {
+  shift = shift % MSEQ_POL_COEFF_B.length;
+  const seq_a = mseqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF_A);
+  const seq_b = mseqGen(MSEQ_POL_LEN, MSEQ_POL_COEFF_B);
+  const gold = new Int8Array(seq_a.length)
+  for(let i=0; i<gold.length; i++){
+    gold[i] = seq_a[i] ^ seq_b[(i+shift)%seq_b.length];
+  }
+  return gold;
+}
+
+export function encode_chipcode(bits: number[], PNSeq: Int8Array): Int8Array {
+  // bits: {-1, 1}
+  // return: {-1, 1}
+  let _PNSeq = new Int8Array(PNSeq);
+  for(let i=0; i<_PNSeq.length; i++){
+    _PNSeq[i] *= -1;
+  }
+  const seq = new Int8Array(PNSeq.length * bits.length);
+  for(let i=0; i<bits.length; i++){
+    let pt = i * PNSeq.length;
+    let bit = bits[i];
+    seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+  }
+  return seq;
+}
+
+export function encode_chipcode_separated_zero(bits: number[], PNSeq: Int8Array): Int8Array {
+  // bits: {-1, 1}
+  // return: {-1, 0, 1}
+  // inverse phase pn sequence
+  let _PNSeq = new Int8Array(PNSeq);
+  for(let i=0; i<_PNSeq.length; i++){
+    _PNSeq[i] *= -1;
+  }
+  const seq = new Int8Array(PNSeq.length * bits.length * 2 - 1);
+  for(let i=0; i<bits.length; i++){
+    let pt = i * PNSeq.length /* zero space -> */* 2;
+    let bit = bits[i];
+    seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+  }
+  return seq;
+}
+
+
+export function carrierGen(freq: number, sampleRate: number, currentTime: number, length: number): Float32Array {
+  let result = new Float32Array(length);
+  let phaseSec = 1/freq;
+  let one_phase_sample = sampleRate/freq;
+  let startId = currentTime*sampleRate;
+  for(let i=0; i<result.length; i++){
+    result[i] = Math.sin(2*Math.PI/one_phase_sample*(startId+i));
+  }
+  return result;
+}
+
+export function BPSK(bits: Int8Array, carrierFreq: number, sampleRate: number, currentTime: number, length?: number): Float32Array {
+  // bits: {-1, 1}
+  let one_phase_sample = sampleRate/carrierFreq;
+  if(length == null){
+    length = bits.length*one_phase_sample;
+  }
+  let result = carrierGen(carrierFreq, sampleRate, currentTime, length);
+  let startId = currentTime*sampleRate;
+  for(let i=0; i<result.length; i++){
+    result[i] *= bits[((startId+i)/one_phase_sample|0)%bits.length];
+  }
+  return result;
+}
+export function fft_smart_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
+  let short: Float32Array;
+  let long: Float32Array;
+  if(signalA.length > signalB.length){
+    short = signalB;
+    long = signalA;
+  }else{
+    short = signalA;
+    long = signalB;
+  }
+  let pow = 0;
+  for(pow = 1; long.length > Math.pow(2, pow); pow++);
+  let resized_long = new Float32Array(Math.pow(2, pow));
+  resized_long.set(long, 0);
+  let resized_short = new Float32Array(Math.pow(2, pow));
+  resized_short.set(short, 0);
+  let corr = fft_correlation(resized_short, resized_long);
+  return corr;
+}
+
+export function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
+  let short: Float32Array;
+  let long: Float32Array;
+  if(signalA.length > signalB.length){
+    short = signalB;
+    long = signalA;
+  }else{
+    short = signalA;
+    long = signalB;
+  }
+  // ajasting power of two for FFT for overwrap adding way correlation
+  let pow = 0;
+  for(pow = 1; short.length > Math.pow(2, pow); pow++);
+  let resized_short = new Float32Array(Math.pow(2, pow+1));
+  resized_short.set(short, 0);//resized_short.length/4);
+  // short = [1,-1,1,-1,1] // length = 5
+  // resized_short = [1,-1,1,-1,1,0,0,0] ++ [0,0,0,0,0,0,0,0] // length = 2^3 * 2 = 8 * 2 = 16
+  let windowSize = resized_short.length/2;
+  let slideWidth = short.length;
+  let _correlation = new Float32Array(long.length);
+  //let frame = window["craetePictureFrame"]("debug")
+  for(let i=0; (long.length - (i+slideWidth)) >= 0; i+=slideWidth) {
+    let resized_long = new Float32Array(resized_short.length);
+    resized_long.set(long.subarray(i, i+windowSize), 0);//resized_short.length/4);
+    //let corr = fft_correlation(resized_short, resized_long);
+    let corr = phase_only_filter(resized_short, resized_long);
+    /*
+      let render = new Render(resized_long.length, 127)
+      render.drawSignal(resized_long, true, true);
+      frame.add(render.element, "resized_long")
+      render = new Render(resized_short.length, 127)
+      render.drawSignal(resized_short, true, true);
+      frame.add(render.element, "resized_short")
+      render = new Render(corr.length, 127)
+      render.drawSignal(corr, true, true);
+      frame.add(render.element, "corr")
+      let [max, maxId] = Statictics.findMax(corr.subarray(0, corr.length/2));
+      let [min, minId] = Statictics.findMin(corr.subarray(0, corr.length/2));
+      frame.add(document.createTextNode(max > min ? maxId+"|"+max : minId+"|"+min));
+    */
+    for(var j=0; j<corr.length/2; j++){
+      _correlation[i+j] += corr[j];
+    }
+    for(var j=0; j<corr.length/2; j++){
+      _correlation[i-j] += corr[corr.length-1-j];
+    }
+  }
+  return _correlation;
 }
 
 export function fft_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
@@ -255,7 +395,11 @@ export function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Ar
   const {real, imag, spectrum} = fft(xs);
   const _ys = fft(ys);
   for(let i=0; i<imag.length; i++){
-    const abs = Math.sqrt(real[i]*real[i] + imag[i]*imag[i])
+    let abs = Math.sqrt(real[i]*real[i] + imag[i]*imag[i])
+    if(abs === 0){
+      console.warn("Signal.phase_only_filter", "zero division detected")
+      abs = 1;
+    }
     real[i] =  real[i]/abs;
     imag[i] = -imag[i]/abs;
     real[i] *= _ys.real[i];
