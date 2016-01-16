@@ -621,3 +621,119 @@ QUnit.test('goldSeqGen', function (assert) {
     render.drawSignal(correl_longMB, true, true);
     return frame.add(render.element, 'correl_longAB');
 });
+QUnit.test('phase_shift_detection', function (assert) {
+    var A, B, C, T, _maxes, _signal, frame, i, maxes, offset, recur, signal;
+    assert.ok(true);
+    frame = craetePictureFrame('phase_shift_detection');
+    _signal = new Int16Array(256);
+    _signal[128] = 230;
+    _signal[142] = 255;
+    _signal[153] = 128;
+    _signal[164] = 100;
+    _signal[175] = 120;
+    T = _signal.length;
+    signal = new Int16Array(1024);
+    offset = 0;
+    signal.set(_signal, offset);
+    signal.set(_signal, offset + T);
+    signal.set(_signal, offset + 2 * T);
+    signal.forEach(function (v, i) {
+        return signal[i] += (Math.random() - 0.5) * 2 * 16;
+    });
+    A = signal.subarray(0, T);
+    B = signal.subarray(T + 1, T * 2 + 1);
+    C = signal.subarray(T * 2 + 2, T * 3 + 2);
+    [
+        [
+            signal,
+            'signal'
+        ],
+        [
+            A,
+            'A'
+        ],
+        [
+            C,
+            'C'
+        ],
+        [
+            C,
+            'C'
+        ]
+    ].forEach(function (arg) {
+        var render, sig, title;
+        sig = arg[0], title = arg[1];
+        render = new Signal.Render(sig.length, 255);
+        render.drawSignal(sig);
+        frame.add(render.element, title);
+        return frame.add(document.createElement('br'));
+    });
+    i = 0;
+    maxes = new Int16Array(T);
+    _maxes = new Int16Array(T);
+    return (recur = function () {
+        var _, _A, _C, _corr, a, b, coms, corr, ref, ref1, ref2, ref3, renders;
+        if (!(i < T - T * 0.1)) {
+            return;
+        }
+        _A = new Int16Array(T);
+        _A.set(A.subarray(T - i, T), 0);
+        _C = new Int16Array(T);
+        _C.set(C.subarray(T - i, T), 0);
+        corr = Signal.fft_smart_overwrap_correlation(B, _A);
+        ref = Signal.Statictics.findMax(corr), a = ref[0], b = ref[1];
+        maxes[i] = b > 0 ? a : 0;
+        _corr = Signal.fft_smart_overwrap_correlation(B, _C);
+        ref1 = Signal.Statictics.findMax(_corr), a = ref1[0], b = ref1[1];
+        _maxes[i] = b > 0 ? a : 0;
+        console.log((ref2 = Signal.Statictics.findMax(maxes), _ = ref2[0], a = ref2[1], ref2));
+        console.log((ref3 = Signal.Statictics.findMax(_maxes), _ = ref3[0], b = ref3[1], ref3));
+        console.log((a + b) / 2);
+        coms = [
+            [B],
+            [_A],
+            [_C],
+            [
+                corr,
+                false,
+                true
+            ],
+            [
+                _corr,
+                false,
+                true
+            ],
+            [
+                maxes,
+                false,
+                true
+            ],
+            [
+                _maxes,
+                false,
+                true
+            ]
+        ];
+        renders = function () {
+            var j, len1, results1;
+            results1 = [];
+            for (j = 0, len1 = coms.length; j < len1; j++) {
+                _ = coms[j];
+                results1.push(new Signal.Render(A.length, 64));
+            }
+            return results1;
+        }();
+        renders.forEach(function (render) {
+            return render.clear();
+        });
+        renders.forEach(function (_, i) {
+            return Signal.Render.prototype.drawSignal.apply(renders[i], coms[i]);
+        });
+        renders.forEach(function (render) {
+            frame.add(render.element);
+            return frame.add(document.createElement('br'));
+        });
+        i++;
+        return setTimeout(recur, 10);
+    })();
+});

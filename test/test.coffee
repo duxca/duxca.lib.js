@@ -354,3 +354,66 @@ QUnit.test 'goldSeqGen', (assert) ->
   render = new Signal.Render(correl_longMB.length, 127)
   render.drawSignal(correl_longMB, true, true)
   frame.add(render.element, "correl_longAB")
+
+
+QUnit.test 'phase_shift_detection', (assert) ->
+  assert.ok true
+  frame = craetePictureFrame("phase_shift_detection")
+  _signal = new Int16Array(256)
+  _signal[128] = 230
+  _signal[142] = 255
+  _signal[153] = 128
+  _signal[164] = 100
+  _signal[175] = 120
+  T = _signal.length
+  signal = new Int16Array(1024)
+  offset = 0
+  signal.set(_signal, offset)
+  signal.set(_signal, offset+T)
+  signal.set(_signal, offset+2*T)
+  signal.forEach (v,i)-> signal[i] += (Math.random()-0.5)*2*16
+  A = signal.subarray(0, T)
+  B = signal.subarray(T+1, T*2+1)
+  C = signal.subarray(T*2+2, T*3+2)
+  [[signal, "signal"], [A, "A"], [C, "C"], [C, "C"]].forEach ([sig, title])->
+    render = new Signal.Render(sig.length, 255)
+    render.drawSignal(sig)
+    frame.add(render.element, title)
+    frame.add document.createElement "br"
+  i = 0
+  maxes = new Int16Array(T)
+  _maxes = new Int16Array(T)
+  do recur = ->
+    unless i<T-T*0.1
+    then return
+    _A = new Int16Array(T)
+    _A.set(A.subarray(T-i, T), 0)
+    _C = new Int16Array(T)
+    _C.set(C.subarray(T-i, T), 0)
+    corr = Signal.fft_smart_overwrap_correlation(B, _A)
+    [a, b]=Signal.Statictics.findMax(corr)
+    maxes[i] = if b>0 then a else 0
+    _corr = Signal.fft_smart_overwrap_correlation(B, _C)
+    [a, b]=Signal.Statictics.findMax(_corr)
+    _maxes[i] = if b>0 then a else 0
+    console.log [_,a] = Signal.Statictics.findMax(maxes)
+    console.log [_,b] = Signal.Statictics.findMax(_maxes)
+    console.log (a+b)/2
+    coms = [
+      [B]
+      [_A]
+      [_C]
+      [corr, false, true]
+      [_corr, false, true]
+      [maxes, false, true]
+      [_maxes, false, true]
+    ]
+    renders = (new Signal.Render(A.length, 64) for _ in coms)
+    renders.forEach (render)-> render.clear()
+    renders.forEach (_, i)->
+      Signal.Render::drawSignal.apply(renders[i], coms[i])
+    renders.forEach (render)->
+      frame.add(render.element)
+      frame.add document.createElement "br"
+    i++
+    setTimeout(recur, 10)

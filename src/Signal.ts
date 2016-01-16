@@ -397,8 +397,8 @@ export function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Ar
   for(let i=0; i<imag.length; i++){
     let abs = Math.sqrt(real[i]*real[i] + imag[i]*imag[i])
     if(abs === 0){
-      console.warn("Signal.phase_only_filter", "zero division detected")
-      abs = 1;
+      // console.warn("Signal.phase_only_filter", "zero division detected")
+      abs = 0.000001;
     }
     real[i] =  real[i]/abs;
     imag[i] = -imag[i]/abs;
