@@ -737,3 +737,52 @@ QUnit.test('phase_shift_detection', function (assert) {
         return setTimeout(recur, 10);
     })();
 });
+QUnit.test('phase_shift_detection2', function (assert) {
+    var T, _, conv, frame, i, idx, j, k, ref, signal, view, xs;
+    assert.ok(true);
+    frame = craetePictureFrame('phase_shift_detection');
+    view = function (sig, title) {
+        var render;
+        if (title == null) {
+            title = '';
+        }
+        render = new Signal.Render(sig.length, 255);
+        render.drawSignal(sig, true, true);
+        frame.add(render.element, title);
+        return frame.add(document.createElement('br'));
+    };
+    signal = new Float32Array(256);
+    for (i = j = 0; j < 32; i = ++j) {
+        signal[i + 128] += Math.sin(i / 32 * Math.PI);
+    }
+    for (i = k = 0; k < 32; i = ++k) {
+        signal[i + 62] += Math.sin(i / 32 * Math.PI) / 2;
+    }
+    signal.forEach(function (_, i) {
+        return signal[i] += Math.sin(i / 32 * Math.PI) / 100;
+    });
+    signal.forEach(function (v, i) {
+        return signal[i] *= signal[i];
+    });
+    signal.forEach(function (v, i) {
+        return signal[i] += Math.random() / 10;
+    });
+    T = signal.length;
+    xs = signal;
+    view(xs, 'xs');
+    conv = new Float32Array(T);
+    xs.forEach(function (_, i) {
+        var corr, ys;
+        ys = new Float32Array(T);
+        ys.set(xs.subarray(i, T), 0);
+        corr = Signal.fft_smart_overwrap_correlation(xs, ys);
+        return conv[i] = corr[0];
+    });
+    view(conv, 'conv');
+    i = 1;
+    while (conv[i - 1] - conv[i] > 0) {
+        i++;
+    }
+    ref = Signal.Statictics.findMax(conv.subarray(i, conv.length)), _ = ref[0], idx = ref[1];
+    return console.log(i + idx);
+});

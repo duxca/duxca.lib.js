@@ -1010,6 +1010,50 @@ function phase_only_filter(xs, ys) {
     return ifft(real, imag);
 }
 exports.phase_only_filter = phase_only_filter;
+function mean_squared_error(xs, ys) {
+    var sum = 0;
+    for (var i = 0; i < xs.length; i++) {
+        sum += Math.pow(xs[i] - ys[i], 2);
+    }
+    return sum / xs.length;
+}
+exports.mean_squared_error = mean_squared_error;
+function lowpass(input, sampleRate, freq, q) {
+    // float input[]  …入力信号の格納されたバッファ。
+    // float sampleRate … サンプリング周波数。
+    // float freq … カットオフ周波数。
+    // float q    … フィルタのQ値。
+    var size = input.length;
+    var output = new Float32Array(size);
+    // フィルタ係数を計算する
+    var omega = 2.0 * Math.PI * freq / sampleRate;
+    var alpha = Math.sin(omega) / (2.0 * q);
+    var a0 = 1.0 + alpha;
+    var a1 = -2.0 * Math.cos(omega);
+    var a2 = 1.0 - alpha;
+    var b0 = (1.0 - Math.cos(omega)) / 2.0;
+    var b1 = 1.0 - Math.cos(omega);
+    var b2 = (1.0 - Math.cos(omega)) / 2.0;
+    // フィルタ計算用のバッファ変数。
+    var in1 = 0.0;
+    var in2 = 0.0;
+    var out1 = 0.0;
+    var out2 = 0.0;
+    // フィルタを適用
+    for (var i = 0; i < size; i++) {
+        // 入力信号にフィルタを適用し、出力信号として書き出す。
+        output[i] = b0 / a0 * input[i] + b1 / a0 * in1
+            + b2 / a0 * in2
+            - a1 / a0 * out1
+            - a2 / a0 * out2;
+        in2 = in1; // 2つ前の入力信号を更新
+        in1 = input[i]; // 1つ前の入力信号を更新
+        out2 = out1; // 2つ前の出力信号を更新
+        out1 = output[i]; // 1つ前の出力信号を更新
+    }
+    return output;
+}
+exports.lowpass = lowpass;
 
 },{"./FourierTransform":1,"./Render":2,"./Statictics":4}],4:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>

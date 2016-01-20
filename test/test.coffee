@@ -417,3 +417,49 @@ QUnit.test 'phase_shift_detection', (assert) ->
       frame.add document.createElement "br"
     i++
     setTimeout(recur, 10)
+
+
+QUnit.test 'phase_shift_detection2', (assert) ->
+  assert.ok true
+  frame = craetePictureFrame("phase_shift_detection")
+  view = (sig, title="")->
+    render = new Signal.Render(sig.length, 255)
+    render.drawSignal(sig, true, true)
+    frame.add(render.element, title)
+    frame.add document.createElement "br"
+  signal = new Float32Array(256)
+  for i in [0...32]
+    signal[i+128] += Math.sin(i/32 * Math.PI)
+  for i in [0...32]
+    signal[i+62] += Math.sin(i/32 * Math.PI)/2
+  signal.forEach (_,i)->
+    signal[i] += Math.sin(i/32 * Math.PI)/100
+  signal.forEach (v,i)-> signal[i] *= signal[i]
+  signal.forEach (v,i)-> signal[i] += Math.random()/10
+  T = signal.length
+  xs = signal
+  view xs, "xs"
+  conv = new Float32Array(T)
+  xs.forEach (_,i)->
+    ys = new Float32Array(T)
+    ys.set(xs.subarray(i, T), 0)
+    #view ys, "ys"
+    corr = Signal.fft_smart_overwrap_correlation(xs, ys)
+    conv[i] = corr[0]
+    #view conv, "conv#{i}"
+  view conv, "conv"
+  i = 1
+  while conv[i-1] - conv[i] > 0 then i++
+  [_,idx] = Signal.Statictics.findMax(conv.subarray(i, conv.length))
+  console.log i+idx
+  ###
+  xs.forEach (_,i)->
+    ys = new Float32Array(T)
+    ys.set(xs.subarray(i, T), i)
+    view ys, "ys"
+    conv[i] =  Signal.mean_squared_error(xs, ys)
+    view conv, "conv#{i}"
+  view conv, "conv"
+  console.log der = Signal.Statictics.derivative(conv.subarray(0, conv.length))
+  view der
+  ###
