@@ -738,7 +738,7 @@ QUnit.test('phase_shift_detection', function (assert) {
     })();
 });
 QUnit.test('phase_shift_detection2', function (assert) {
-    var T, _, conv, frame, i, idx, j, k, ref, signal, view, xs;
+    var T, frame, i, j, k, signal, view, xs;
     assert.ok(true);
     frame = craetePictureFrame('phase_shift_detection');
     view = function (sig, title) {
@@ -753,36 +753,136 @@ QUnit.test('phase_shift_detection2', function (assert) {
     };
     signal = new Float32Array(256);
     for (i = j = 0; j < 32; i = ++j) {
-        signal[i + 128] += Math.sin(i / 32 * Math.PI);
+        signal[i + 62] += Math.sin(i / 32 * Math.PI);
     }
     for (i = k = 0; k < 32; i = ++k) {
-        signal[i + 62] += Math.sin(i / 32 * Math.PI) / 2;
+        signal[i + 128] += Math.sin(i / 32 * Math.PI);
     }
     signal.forEach(function (_, i) {
-        return signal[i] += Math.sin(i / 32 * Math.PI) / 100;
+        return signal[i] += Math.sin(i / 64 * Math.PI) / 10;
+    });
+    signal.forEach(function (_, i) {
+        return signal[i] += Math.sin(i / 32 * Math.PI) / 10;
     });
     signal.forEach(function (v, i) {
-        return signal[i] *= signal[i];
-    });
-    signal.forEach(function (v, i) {
-        return signal[i] += Math.random() / 10;
+        return signal[i] = Math.pow(signal[i], 2);
     });
     T = signal.length;
     xs = signal;
-    view(xs, 'xs');
-    conv = new Float32Array(T);
-    xs.forEach(function (_, i) {
-        var corr, ys;
-        ys = new Float32Array(T);
-        ys.set(xs.subarray(i, T), 0);
-        corr = Signal.fft_smart_overwrap_correlation(xs, ys);
-        return conv[i] = corr[0];
+    return console.log(Signal.first_wave_detection(xs));
+});
+QUnit.test('picture', function (assert) {
+    var PULSE_N, carrier_freq, chip_width, corr, length, matched, n, sampleRate, seed, sig_coded, ss_code, ss_sig, zoom;
+    assert.ok(true);
+    n = function (a) {
+        return a.split('').map(Number);
+    };
+    length = 3;
+    seed = n('101');
+    carrier_freq = 44100 / 16;
+    sampleRate = 44100;
+    PULSE_N = 1;
+    chip_width = 16;
+    zoom = 2;
+    chip_width *= zoom;
+    document.body.appendChild(document.createElement('hr'));
+    ss_code = Signal.mseqGen(length, seed);
+    (function () {
+        var lastPosX, lastPosY, render, sig;
+        sig = new Int8Array(ss_code.length * 2);
+        sig.forEach(function (_, i) {
+            return sig[i] = i < ss_code.length ? 1 : 0;
+        });
+        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render.ctx.beginPath();
+        render.ctx.moveTo(0, render.cnv.height / 2);
+        lastPosX = chip_width * 0;
+        lastPosY = (1 + 0) * render.cnv.height / 2;
+        sig.forEach(function (v, i) {
+            render.ctx.lineTo(chip_width * i, (1 - v) * render.cnv.height / 2);
+            lastPosX = chip_width * (i + 1);
+            lastPosY = (1 - v) * render.cnv.height / 2;
+            return render.ctx.lineTo(lastPosX, lastPosY);
+        });
+        render.ctx.stroke();
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
+    }());
+    (function () {
+        var lastPosX, lastPosY, render, sig;
+        sig = new Int8Array(ss_code.length * 2);
+        sig.set(ss_code, 0);
+        sig.set(ss_code, ss_code.length);
+        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render.ctx.beginPath();
+        render.ctx.moveTo(0, render.cnv.height / 2);
+        lastPosX = chip_width * 0;
+        lastPosY = (1 + 0) * render.cnv.height / 2;
+        sig.forEach(function (v, i) {
+            render.ctx.lineTo(chip_width * i, (1 - v) * render.cnv.height / 2);
+            lastPosX = chip_width * (i + 1);
+            lastPosY = (1 - v) * render.cnv.height / 2;
+            return render.ctx.lineTo(lastPosX, lastPosY);
+        });
+        render.ctx.stroke();
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
+    }());
+    sig_coded = Signal.encode_chipcode(n('10'), ss_code);
+    (function () {
+        var lastPosX, lastPosY, render, sig;
+        sig = sig_coded;
+        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render.ctx.beginPath();
+        render.ctx.moveTo(0, render.cnv.height / 2);
+        lastPosX = chip_width * 0;
+        lastPosY = (1 + 0) * render.cnv.height / 2;
+        sig.forEach(function (v, i) {
+            render.ctx.lineTo(chip_width * i, (1 - v) * render.cnv.height / 2);
+            lastPosX = chip_width * (i + 1);
+            lastPosY = (1 - v) * render.cnv.height / 2;
+            return render.ctx.lineTo(lastPosX, lastPosY);
+        });
+        render.ctx.stroke();
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
+    }());
+    (function () {
+        var render, sig;
+        sig = Signal.BPSK(sig_coded.map(function () {
+            return 1;
+        }), carrier_freq, sampleRate, 0);
+        render = new Signal.Render(sig.length * zoom, 128);
+        render.drawSignal(sig, true, true);
+        document.body.appendChild(render.element);
+        document.body.appendChild(document.createElement('br'));
+        return Signal.BPSK(sig_coded, carrier_freq, sampleRate, 0);
+    }());
+    ss_sig = Signal.BPSK(sig_coded, carrier_freq, sampleRate, 0);
+    (function () {
+        var render, sig;
+        sig = ss_sig;
+        render = new Signal.Render(sig.length * zoom, 128);
+        render.drawSignal(sig, true, true);
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
+    }());
+    matched = Signal.BPSK(ss_code, carrier_freq, sampleRate, 0);
+    (function () {
+        var render, sig;
+        sig = matched;
+        render = new Signal.Render(sig.length * zoom, 128);
+        render.drawSignal(sig, true, true);
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
     });
-    view(conv, 'conv');
-    i = 1;
-    while (conv[i - 1] - conv[i] > 0) {
-        i++;
-    }
-    ref = Signal.Statictics.findMax(conv.subarray(i, conv.length)), _ = ref[0], idx = ref[1];
-    return console.log(i + idx);
+    console.log(corr = Signal.fft_smart_overwrap_correlation(ss_sig, matched));
+    return function () {
+        var render, sig;
+        sig = corr;
+        render = new Signal.Render(sig.length * zoom, 128);
+        render.drawSignal(sig, true, true);
+        document.body.appendChild(render.element);
+        return document.body.appendChild(document.createElement('br'));
+    }();
 });

@@ -826,11 +826,12 @@ function encode_chipcode(bits, PNSeq) {
     for (var i = 0; i < _PNSeq.length; i++) {
         _PNSeq[i] *= -1;
     }
+    var zeros = new Int8Array(PNSeq.length);
     var seq = new Int8Array(PNSeq.length * bits.length);
     for (var i = 0; i < bits.length; i++) {
         var pt = i * PNSeq.length;
         var bit = bits[i];
-        seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+        seq.set((bit === 0 ? zeros : bit > 0 ? PNSeq : _PNSeq), pt);
     }
     return seq;
 }
@@ -1054,6 +1055,22 @@ function lowpass(input, sampleRate, freq, q) {
     return output;
 }
 exports.lowpass = lowpass;
+function first_wave_detection(xs) {
+    var conv = xs.map(function (_, i) {
+        var ys = new Float32Array(xs.length);
+        ys.set(xs.subarray(i, xs.length), 0);
+        var corr = fft_smart_overwrap_correlation(xs, ys);
+        return corr[0];
+    });
+    var i = 1;
+    while (conv[0] / 2 < conv[i])
+        i++;
+    while (conv[i - 1] - conv[i] > 0)
+        i++;
+    var _a = exports.Statictics.findMax(conv.subarray(i, conv.length)), _ = _a[0], idx = _a[1];
+    return i + idx;
+}
+exports.first_wave_detection = first_wave_detection;
 
 },{"./FourierTransform":1,"./Render":2,"./Statictics":4}],4:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>

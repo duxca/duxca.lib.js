@@ -429,37 +429,126 @@ QUnit.test 'phase_shift_detection2', (assert) ->
     frame.add document.createElement "br"
   signal = new Float32Array(256)
   for i in [0...32]
-    signal[i+128] += Math.sin(i/32 * Math.PI)
+    signal[i+62] += Math.sin(i/32 * Math.PI)
   for i in [0...32]
-    signal[i+62] += Math.sin(i/32 * Math.PI)/2
+    signal[i+128] += Math.sin(i/32 * Math.PI)
   signal.forEach (_,i)->
-    signal[i] += Math.sin(i/32 * Math.PI)/100
-  signal.forEach (v,i)-> signal[i] *= signal[i]
-  signal.forEach (v,i)-> signal[i] += Math.random()/10
+    signal[i] += Math.sin(i/64 * Math.PI)/10
+  signal.forEach (_,i)->
+    signal[i] += Math.sin(i/32 * Math.PI)/10
+  signal.forEach (v,i)-> signal[i] = Math.pow(signal[i], 2)
+  #signal.forEach (v,i)-> signal[i] += Math.random()/10
   T = signal.length
   xs = signal
+  ###
   view xs, "xs"
   conv = new Float32Array(T)
   xs.forEach (_,i)->
     ys = new Float32Array(T)
     ys.set(xs.subarray(i, T), 0)
-    #view ys, "ys"
+    view ys, "ys"
     corr = Signal.fft_smart_overwrap_correlation(xs, ys)
     conv[i] = corr[0]
+    view corr, "corr#{i}"
     #view conv, "conv#{i}"
   view conv, "conv"
   i = 1
+  while conv[0]/2 < conv[i] then i++
   while conv[i-1] - conv[i] > 0 then i++
   [_,idx] = Signal.Statictics.findMax(conv.subarray(i, conv.length))
   console.log i+idx
   ###
-  xs.forEach (_,i)->
-    ys = new Float32Array(T)
-    ys.set(xs.subarray(i, T), i)
-    view ys, "ys"
-    conv[i] =  Signal.mean_squared_error(xs, ys)
-    view conv, "conv#{i}"
-  view conv, "conv"
-  console.log der = Signal.Statictics.derivative(conv.subarray(0, conv.length))
-  view der
-  ###
+  console.log Signal.first_wave_detection(xs)
+
+
+QUnit.test 'picture', (assert) ->
+  assert.ok true
+  n = (a)-> a.split("").map(Number)
+  length = 3
+  seed = n("101")
+  carrier_freq = 44100/16
+  sampleRate = 44100
+  PULSE_N = 1
+  chip_width = 16
+  zoom = 2
+  chip_width*=zoom
+  document.body.appendChild document.createElement "hr"
+  ss_code = Signal.mseqGen(length, seed) # {1,-1}
+  do ->
+    sig = new Int8Array(ss_code.length*2)
+    sig.forEach (_, i)->
+      sig[i] = if i < ss_code.length then 1 else 0
+    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render.ctx.beginPath()
+    render.ctx.moveTo(0, render.cnv.height/2)
+    lastPosX = chip_width*0
+    lastPosY = (1+0)*render.cnv.height/2
+    sig.forEach (v, i)->
+      render.ctx.lineTo(chip_width*(i), (1-v)*render.cnv.height/2)
+      lastPosX = chip_width*(i+1)
+      lastPosY = (1-v)*render.cnv.height/2
+      render.ctx.lineTo(lastPosX, lastPosY)
+    render.ctx.stroke()
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+  do ->
+    sig = new Int8Array(ss_code.length*2)
+    sig.set(ss_code, 0)
+    sig.set(ss_code, ss_code.length)
+    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render.ctx.beginPath()
+    render.ctx.moveTo(0, render.cnv.height/2)
+    lastPosX = chip_width*0
+    lastPosY = (1+0)*render.cnv.height/2
+    sig.forEach (v, i)->
+      render.ctx.lineTo(chip_width*(i), (1-v)*render.cnv.height/2)
+      lastPosX = chip_width*(i+1)
+      lastPosY = (1-v)*render.cnv.height/2
+      render.ctx.lineTo(lastPosX, lastPosY)
+    render.ctx.stroke()
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+  sig_coded = Signal.encode_chipcode(n("10"), ss_code)
+  do ->
+    sig = sig_coded
+    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render.ctx.beginPath()
+    render.ctx.moveTo(0, render.cnv.height/2)
+    lastPosX = chip_width*0
+    lastPosY = (1+0)*render.cnv.height/2
+    sig.forEach (v, i)->
+      render.ctx.lineTo(chip_width*(i), (1-v)*render.cnv.height/2)
+      lastPosX = chip_width*(i+1)
+      lastPosY = (1-v)*render.cnv.height/2
+      render.ctx.lineTo(lastPosX, lastPosY)
+    render.ctx.stroke()
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+  do ->
+    sig = Signal.BPSK(sig_coded.map(->1), carrier_freq, sampleRate, 0)
+    render = new Signal.Render(sig.length*zoom, 128)
+    render.drawSignal(sig, true, true)
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+    Signal.BPSK(sig_coded, carrier_freq, sampleRate, 0)
+  ss_sig = Signal.BPSK(sig_coded, carrier_freq, sampleRate, 0)
+  do ->
+    sig = ss_sig
+    render = new Signal.Render(sig.length*zoom, 128)
+    render.drawSignal(sig, true, true)
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+  matched = Signal.BPSK(ss_code, carrier_freq, sampleRate, 0)
+  ->
+    sig = matched
+    render = new Signal.Render(sig.length*zoom, 128)
+    render.drawSignal(sig, true, true)
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"
+  console.log corr = Signal.fft_smart_overwrap_correlation(ss_sig, matched)
+  do ->
+    sig = corr
+    render = new Signal.Render(sig.length*zoom, 128)
+    render.drawSignal(sig, true, true)
+    document.body.appendChild render.element
+    document.body.appendChild document.createElement "br"

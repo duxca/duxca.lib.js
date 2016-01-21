@@ -36,3 +36,4 @@ export declare function naive_convolution(xs: number[], ys: number[]): number[];
 export declare function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Array;
 export declare function mean_squared_error(xs: Float32Array, ys: Float32Array): number;
 export declare function lowpass(input: Float32Array, sampleRate: number, freq: number, q: number): Float32Array;
+export declare function first_wave_detection(xs: Float32Array): number;

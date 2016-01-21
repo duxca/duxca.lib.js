@@ -227,11 +227,12 @@ export function encode_chipcode(bits: number[], PNSeq: Int8Array): Int8Array {
   for(let i=0; i<_PNSeq.length; i++){
     _PNSeq[i] *= -1;
   }
+  let zeros = new Int8Array(PNSeq.length);
   const seq = new Int8Array(PNSeq.length * bits.length);
   for(let i=0; i<bits.length; i++){
     let pt = i * PNSeq.length;
     let bit = bits[i];
-    seq.set((bit > 0 ? PNSeq : _PNSeq), pt);
+    seq.set((bit === 0 ? zeros : bit > 0 ? PNSeq : _PNSeq), pt);
   }
   return seq;
 }
@@ -448,4 +449,18 @@ export function lowpass(input: Float32Array, sampleRate: number, freq: number, q
     out1 = output[i]; // 1つ前の出力信号を更新
   }
   return output
+}
+
+export function first_wave_detection(xs: Float32Array): number {
+  let conv = xs.map((_,i)=>{
+    let ys = new Float32Array(xs.length);
+    ys.set(xs.subarray(i, xs.length), 0)
+    let corr = fft_smart_overwrap_correlation(xs, ys);
+    return corr[0];
+  });
+  let i = 1;
+  while (conv[0]/2 < conv[i] ) i++;
+  while (conv[i-1] - conv[i] > 0 ) i++;
+  let [_,idx] = Statictics.findMax(conv.subarray(i, conv.length));
+  return i+idx;
 }
