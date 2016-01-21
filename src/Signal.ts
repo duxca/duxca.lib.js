@@ -355,7 +355,7 @@ export function fft_smart_overwrap_convolution(signalA: Float32Array, signalB: F
   let windowSize = resized_short.length/2;
   let slideWidth = short.length;
   let _correlation = new Float32Array(long.length);
-  const filter = fft_correlation;
+  const filter = fft_convolution;
   for(let i=0; (long.length - (i+slideWidth)) >= 0; i+=slideWidth) {
     let resized_long = new Float32Array(resized_short.length);
     resized_long.set(long.subarray(i, i+windowSize), 0);//resized_short.length/4);
@@ -438,6 +438,7 @@ export function phase_only_filter(xs: Float32Array, ys: Float32Array): Float32Ar
   }
   return ifft(real, imag)
 }
+
 export function mean_squared_error(xs: Float32Array, ys: Float32Array): number {
   let sum = 0;
   for(let i=0; i<xs.length; i++){

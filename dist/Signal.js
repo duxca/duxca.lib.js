@@ -960,7 +960,7 @@ function fft_smart_overwrap_convolution(signalA, signalB) {
     var windowSize = resized_short.length / 2;
     var slideWidth = short.length;
     var _correlation = new Float32Array(long.length);
-    var filter = fft_correlation;
+    var filter = fft_convolution;
     for (var i = 0; (long.length - (i + slideWidth)) >= 0; i += slideWidth) {
         var resized_long = new Float32Array(resized_short.length);
         resized_long.set(long.subarray(i, i + windowSize), 0); //resized_short.length/4);
