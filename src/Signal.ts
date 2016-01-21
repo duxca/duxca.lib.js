@@ -299,7 +299,7 @@ export function fft_smart_correlation(signalA: Float32Array, signalB: Float32Arr
   return corr;
 }
 
-export function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
+export function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: Float32Array, pof=true): Float32Array {
   let short: Float32Array;
   let long: Float32Array;
   if(signalA.length > signalB.length){
@@ -319,26 +319,11 @@ export function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: F
   let windowSize = resized_short.length/2;
   let slideWidth = short.length;
   let _correlation = new Float32Array(long.length);
-  //let frame = window["craetePictureFrame"]("debug")
+  const filter = pof ? phase_only_filter : fft_correlation;
   for(let i=0; (long.length - (i+slideWidth)) >= 0; i+=slideWidth) {
     let resized_long = new Float32Array(resized_short.length);
     resized_long.set(long.subarray(i, i+windowSize), 0);//resized_short.length/4);
-    //let corr = fft_correlation(resized_short, resized_long);
-    let corr = phase_only_filter(resized_short, resized_long);
-    /*
-      let render = new Render(resized_long.length, 127)
-      render.drawSignal(resized_long, true, true);
-      frame.add(render.element, "resized_long")
-      render = new Render(resized_short.length, 127)
-      render.drawSignal(resized_short, true, true);
-      frame.add(render.element, "resized_short")
-      render = new Render(corr.length, 127)
-      render.drawSignal(corr, true, true);
-      frame.add(render.element, "corr")
-      let [max, maxId] = Statictics.findMax(corr.subarray(0, corr.length/2));
-      let [min, minId] = Statictics.findMin(corr.subarray(0, corr.length/2));
-      frame.add(document.createTextNode(max > min ? maxId+"|"+max : minId+"|"+min));
-    */
+    let corr = filter(resized_short, resized_long);
     for(var j=0; j<corr.length/2; j++){
       _correlation[i+j] += corr[j];
     }
@@ -348,6 +333,43 @@ export function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: F
   }
   return _correlation;
 }
+
+
+export function fft_smart_overwrap_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array {
+  let short: Float32Array;
+  let long: Float32Array;
+  if(signalA.length > signalB.length){
+    short = signalB;
+    long = signalA;
+  }else{
+    short = signalA;
+    long = signalB;
+  }
+  // ajasting power of two for FFT for overwrap adding way correlation
+  let pow = 0;
+  for(pow = 1; short.length > Math.pow(2, pow); pow++);
+  let resized_short = new Float32Array(Math.pow(2, pow+1));
+  resized_short.set(short, 0);//resized_short.length/4);
+  // short = [1,-1,1,-1,1] // length = 5
+  // resized_short = [1,-1,1,-1,1,0,0,0] ++ [0,0,0,0,0,0,0,0] // length = 2^3 * 2 = 8 * 2 = 16
+  let windowSize = resized_short.length/2;
+  let slideWidth = short.length;
+  let _correlation = new Float32Array(long.length);
+  const filter = fft_correlation;
+  for(let i=0; (long.length - (i+slideWidth)) >= 0; i+=slideWidth) {
+    let resized_long = new Float32Array(resized_short.length);
+    resized_long.set(long.subarray(i, i+windowSize), 0);//resized_short.length/4);
+    let corr = filter(resized_short, resized_long);
+    for(var j=0; j<corr.length/2; j++){
+      _correlation[i+j] += corr[j];
+    }
+    for(var j=0; j<corr.length/2; j++){
+      _correlation[i-j] += corr[corr.length-1-j];
+    }
+  }
+  return _correlation;
+}
+
 
 export function fft_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array {
   const spectA = fft(signalA);
@@ -363,8 +385,12 @@ export function fft_correlation(signalA: Float32Array, signalB: Float32Array): F
 }
 
 export function fft_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array {
-  const spectA = fft(signalA);
-  const spectB = fft(signalB);
+  let _signalA = new Float32Array(signalA.length*2)
+  _signalA.set(signalA, 0)
+  let _signalB = new Float32Array(signalB.length*2)
+  _signalB.set(signalB, 0)
+  const spectA = fft(_signalA);
+  const spectB = fft(_signalB);
   const cross_real = new Float32Array(spectA.real.length);
   const cross_imag = new Float32Array(spectA.imag.length);
   for(var i = 0; i<spectA.real.length; i++){
@@ -372,7 +398,7 @@ export function fft_convolution(signalA: Float32Array, signalB: Float32Array): F
     cross_imag[i] = spectA.imag[i] * spectB.imag[i];
   }
   var inv_real = ifft(cross_real, cross_imag);
-  return inv_real;
+  return inv_real.subarray(0, inv_real.length/2);
 }
 
 export function naive_correlation(xs: number[], ys: number[]): number[]{
@@ -380,11 +406,15 @@ export function naive_correlation(xs: number[], ys: number[]): number[]{
 }
 
 export function naive_convolution(xs: number[], ys: number[]): number[]{
+  // 引数が逆なのはインパルスレスポンスを畳み込んでみれば分かる
   const arr: number[] = [];
+  let zs = new Float32Array(ys.length*2);
+  zs.set(ys, 0);
+  zs.set(ys, ys.length);
   for(let i=0; i<xs.length; i++){
     let sum = 0;
     for(let j=0; j<ys.length; j++){
-      sum += xs[i]*(ys[i-j]||0);
+      sum += xs[j]*zs[ys.length+i-j];
     }
     arr[i] = sum;
   }

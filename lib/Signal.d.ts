@@ -28,7 +28,8 @@ export declare function encode_chipcode_separated_zero(bits: number[], PNSeq: In
 export declare function carrierGen(freq: number, sampleRate: number, currentTime: number, length: number): Float32Array;
 export declare function BPSK(bits: Int8Array, carrierFreq: number, sampleRate: number, currentTime: number, length?: number): Float32Array;
 export declare function fft_smart_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array;
-export declare function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array;
+export declare function fft_smart_overwrap_correlation(signalA: Float32Array, signalB: Float32Array, pof?: boolean): Float32Array;
+export declare function fft_smart_overwrap_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array;
 export declare function fft_correlation(signalA: Float32Array, signalB: Float32Array): Float32Array;
 export declare function fft_convolution(signalA: Float32Array, signalB: Float32Array): Float32Array;
 export declare function naive_correlation(xs: number[], ys: number[]): number[];
