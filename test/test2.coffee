@@ -101,3 +101,14 @@ QUnit.test 'splated echo', (assert) ->
   view correl = Signal.fft_smart_overwrap_correlation(cepstrum, pn)
   view _correl = correl.map (v)->v*v
   console.log Signal.Statictics.findMax(_correl)
+
+n = (a)-> a.split("").map(Number)
+QUnit.test 'Gold', (assert) ->
+  assert.ok true
+  view goldA = Signal.goldSeqGen(12, n("111000011001"), n("011110111111"), 3)
+  view goldB = Signal.goldSeqGen(12, n("100101000001"), n("101101010111"), 3)
+  view signalA = Signal.BPSK(goldA, 1000, 44100, 0), 1024*4
+  view signalB = Signal.BPSK(goldB, 1000, 44100, 0), 1024*4
+  view correlAA = Signal.fft_smart_overwrap_correlation(signalA, signalA), 1024*4
+  view correlAB = Signal.fft_smart_overwrap_correlation(signalA, signalB), 1024*4
+  view correlBB = Signal.fft_smart_overwrap_correlation(signalB, signalB), 1024*4
