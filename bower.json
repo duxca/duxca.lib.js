@@ -1,11 +1,11 @@
 {
-  "name": "duxca.lib.js",
+  "name": "Signal.ts",
   "description": "duxca algorithm and code sandbox",
   "version": "0.0.1",
   "moduleType": [
     "browser"
   ],
-  "homepage": "https://github.com/legokichi/duxca.lib.js",
+  "homepage": "https://github.com/legokichi/Signal.ts",
   "authors": [
     "Legokichi Duckscallion <legokichi@duxca.com>"
   ],
