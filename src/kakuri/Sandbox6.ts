@@ -1,23 +1,42 @@
-/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
-import CanvasRender = require("./CanvasRender");
-import Signal = require("./Signal");
-import RecordBuffer = require("./RecordBuffer");
-import OSC = require("./OSC");
-import FPS = require("./FPS");
-import Wave = require("./Wave");
-import Metronome = require("./Metronome");
-import Statictics = require("./Statictics");
-import Chord = require("./Chord");
-import Newton = require("./Newton");
+import CanvasRender from "./CanvasRender";
+import Signal from "./Signal";
+import RecordBuffer from "./RecordBuffer";
+import OSC from "./OSC";
+import FPS from "./FPS";
+import Wave from "./Wave";
+import Metronome from "./Metronome";
+import Statictics from "./Statictics";
+import {Chord, Token} from "./Chord";
+import Newton from "./Newton";
 import Point = Newton.Point;
 import SDM = Newton.SDM;
 
 namespace Sandbox {
 
-  export function testDetect8(rootNodeId: string){
+  export function relpos(){
+    var K = 0;
+    var pseudoPts: Point[] = [0,1,2].map((i)=> new Point(Math.random()*10, Math.random()*10));
+    var ds: number[][] = [
+      [0, 1, 1],
+      [1, 0, 1],
+      [1, 1, 0]
+    ];
+    var sdm = new SDM(pseudoPts, ds);
+    (function recur(){
+      if(K++ < 200){
+        sdm.step();
+        requestAnimationFrame(recur);
+      }else{
+        console.log("fin", sdm.det(), sdm.points);
+      }
+    }());
+  }
+
+
+
+  export function testDetect7(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
     var count = 0;
 
@@ -35,7 +54,7 @@ namespace Sandbox {
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
-      var chord = new Chord();
+      var chord = new Chord({host:"localhost", port:9000});
       chord.debug = false;
       chord.on("ping", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
@@ -122,7 +141,6 @@ namespace Sandbox {
               "stdev", Statictics.stdev(delayTimesLog[id1][id2]));
           });
         });
-        relpos(relDelayTimes);
         cb(token);
       });
       chord.on("play", (token, cb)=>{
@@ -270,34 +288,6 @@ namespace Sandbox {
       console.screenshot(render.cnv);
 
       return pulseTime;
-    }
-
-    function relpos(relDelayTimes: {[id:string]:{[id:string]: number}}){
-      var K = 0;
-      var names: string[] = [];
-      var ds: number[][] = [];
-      // new Point(Math.random()*10, Math.random()*10));
-      Object.keys(relDelayTimes).forEach((id1, i)=>{
-        names[i] = id1;
-        ds[i] = [];
-        Object.keys(relDelayTimes).forEach((id2, j)=>{
-          ds[i][j] = Math.abs(Math.abs(relDelayTimes[id1][id2]) - Math.abs(relDelayTimes[id2][id1]))*170;
-        });
-      });
-      var pseudoPts: Point[] = names.map((id1, i)=> new Point(Math.random()*10, Math.random()*10));
-      var sdm = new SDM(pseudoPts, ds);
-      while(K++ < 200){
-        sdm.step();
-      }
-      render.cnv.width = 128;
-      render.cnv.height = 128;
-      render.ctx.strokeStyle = "blue";
-      render.arc(64, 64, 16);
-      sdm.points.forEach((pt)=>{
-        render.cross(pt.x*10+10, pt.y*10+10, 16);
-      });
-      console.log("relpos", sdm.det(), sdm.points);
-      console.screenshot(render.cnv);
     }
   }
 }

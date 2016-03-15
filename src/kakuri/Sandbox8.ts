@@ -1,28 +1,21 @@
-/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
-import CanvasRender = require("./CanvasRender");
-import Signal = require("./Signal");
-import RecordBuffer = require("./RecordBuffer");
-import OSC = require("./OSC");
-import FPS = require("./FPS");
-import Wave = require("./Wave");
-import Metronome = require("./Metronome");
-import Statictics = require("./Statictics");
-import Chord = require("./Chord");
-import Newton = require("./Newton");
+import CanvasRender from "./CanvasRender";
+import Signal from "./Signal";
+import RecordBuffer from "./RecordBuffer";
+import OSC from "./OSC";
+import FPS from "./FPS";
+import Wave from "./Wave";
+import Metronome from "./Metronome";
+import Statictics from "./Statictics";
+import {Chord, Token} from "./Chord";
+import Newton from "./Newton";
 import Point = Newton.Point;
 import SDM = Newton.SDM;
-import QRcode = require("./QRcode");
-import FDTD = require("./FDTD");
+import QRcode from "./QRcode";
+import FDTD from "./FDTD";
 
 namespace Sandbox {
-
-
-  export function testNext(){
-
-  }
 
   export function testQRCodeWrite(){
     console.screenshot(QRcode.writer("hoge"));

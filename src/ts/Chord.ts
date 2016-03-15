@@ -1,7 +1,6 @@
-/// <reference path="../../tsd/peerjs/peerjs.d.ts"/>
-/// <reference path="../../typings/bluebird/bluebird.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
-class Chord{
+export class Chord {
 
   successor: PeerJs.DataConnection;
   predecessor: PeerJs.DataConnection;
@@ -11,12 +10,16 @@ class Chord{
   peer: PeerJs.Peer;
   debug: boolean;
   tid: number;
-  listeners: {[event:string]: (token:Chord.Token, cb:(token:Chord.Token)=> void)=> void};
-  requests: {[requestId:number]: ((token:Chord.Token)=> void)};
+  listeners: {[event:string]: (token:Token, cb:(token:Token)=> void)=> void};
+  requests: {[requestId:number]: ((token:Token)=> void)};
+  host: string;
+  port: number;
   lastRequestId: number;
   STABILIZE_INTERVAL: number;
 
-  constructor(hostname?:string, port?:number){
+  constructor(opt: {host: string, port: number}){
+    this.host = opt.host || location.hostname;
+    this.port = opt.port || 9000;
     this.joined = false;
     this.successor = null;
     this.successors = [];
@@ -33,8 +36,8 @@ class Chord{
   }
 
   _init(): Promise<void>{
-    if(!!this.peer) return Promise.resolve();
-    this.peer = new Peer({host: location.hostname, port: 9000, debug: 2});
+    if(!!this.peer) return Promise.resolve<void>(undefined);
+    this.peer = new Peer({host: this.host, port: this.port, debug: 2});
     this.peer.on('open', (id)=>{ if(this.debug) console.log(this.peer.id, "peer:open", id); });
     // open
     // Emitted when a connection to the PeerServer is established.
@@ -80,7 +83,7 @@ class Chord{
         this.peer.off('error', _error);
         this.peer.off('open', _open);
       };
-      function _open(id:string){ off(); resolve(Promise.resolve()); }
+      function _open(id:string){ off(); resolve(Promise.resolve<void>(undefined)); }
       function _error(err:any){ off(); reject(err); }
     });
   }
@@ -106,7 +109,7 @@ class Chord{
           conn.off('error', _error);
           conn.off('open', _open);
         };
-        function _open(){ off(); resolve(Promise.resolve()); }
+        function _open(){ off(); resolve(Promise.resolve<void>(undefined)); }
         function _error(err:any){ off(); reject(err); }
       }).then(()=>{
         if(this.debug) console.log(this.peer.id, "join:done", "to", id);
@@ -157,8 +160,8 @@ class Chord{
     }
   }
 
-  request(event: string, data?: any, addressee?: string[], timeout?:number): Promise<Chord.Token>{
-    return new Promise<Chord.Token>((resolve, reject)=>{
+  request(event: string, data?: any, addressee?: string[], timeout?:number): Promise<Token>{
+    return new Promise<Token>((resolve, reject)=>{
       if(!this.peer) throw new Error("this node does not join yet");
       if(this.peer.destroyed) reject(new Error(this.peer.id+" is already destroyed"));
       if(!this.successor && !!this.predecessor) throw new Error(this.peer.id+" does not have successor.");
@@ -195,11 +198,11 @@ class Chord{
     });
   }
 
-  on(event: string, listener:(token:Chord.Token, cb:(token:Chord.Token)=> void)=> void): void{
+  on(event: string, listener:(token:Token, cb:(token:Token)=> void)=> void): void{
     this.listeners[event] = listener;
   }
 
-  off(event: string, listener:(token:Chord.Token, cb:(token:Chord.Token)=> void)=> void): void{
+  off(event: string, listener:(token:Token, cb:(token:Token)=> void)=> void): void{
     delete this.listeners[event];
   }
 
@@ -215,7 +218,7 @@ class Chord{
       this.stabilize();
     });
 
-    var ondata: (data:{msg:string, id:string, successors:string[], token:Chord.Token})=>void = null;
+    var ondata: (data:{msg:string, id:string, successors:string[], token:Token})=>void = null;
     conn.on('data', ondata = (data)=>{
       if(!this.successor){
         this.join(conn.peer).then(()=>{
@@ -242,7 +245,7 @@ class Chord{
           }
           data.token.route.push(this.peer.id);
           data.token.time.push(Date.now());
-          var tokenpassing = (token: Chord.Token)=>{
+          var tokenpassing = (token: Token)=>{
             if(this.successor.open){
               this.successor.send({msg: "Token", token: token});
             }else{
@@ -262,10 +265,10 @@ class Chord{
         // response
         case "This is my predecessor.":
           var min = 0;
-          var max =  Chord.distance("zzzzzzzzzzzzzzzz");
-          var myid = Chord.distance(this.peer.id);
-          var succ = Chord.distance(conn.peer);
-          var succ_says_pred = Chord.distance(data.id);
+          var max =  distance("zzzzzzzzzzzzzzzz");
+          var myid = distance(this.peer.id);
+          var succ = distance(conn.peer);
+          var succ_says_pred = distance(data.id);
           if(this.debug) console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
 
           if(data.id === this.peer.id){ // no probrem
@@ -291,11 +294,11 @@ class Chord{
           break;
         case "Check your predecessor.":
           var min = 0;
-          var max =  Chord.distance("zzzzzzzzzzzzzzzz");
-          var myid = Chord.distance(this.peer.id);
-          var succ = Chord.distance(this.successor.peer);
-          var pred = Chord.distance(this.predecessor.peer);
-          var newbee = Chord.distance(conn.peer);
+          var max =  distance("zzzzzzzzzzzzzzzz");
+          var myid = distance(this.peer.id);
+          var succ = distance(this.successor.peer);
+          var pred = distance(this.predecessor.peer);
+          var newbee = distance(conn.peer);
           if(this.debug) console.log(this.peer.id, "conn:distance2", {min, max, myid, succ, pred, newbee});
 
           if( (myid > newbee && newbee > pred) ){ // change my predecessor
@@ -328,16 +331,12 @@ class Chord{
 
 
 
-namespace Chord{
-  export function distance(str:string){
-    return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
-  }
-  export interface Token {
-    payload: {event: string, addressee :string[], data: any};
-    requestId: number;
-    route: string[];
-    time: number[];
-  }
+export function distance(str:string){
+  return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
 }
-
-export = Chord;
+export interface Token {
+  payload: {event: string, addressee :string[], data: any};
+  requestId: number;
+  route: string[];
+  time: number[];
+}

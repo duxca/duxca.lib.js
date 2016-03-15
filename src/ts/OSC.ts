@@ -1,6 +1,12 @@
-import CanvasRender = require("./CanvasRender");
-import Signal = require("./Signal");
-import RecordBuffer = require("./RecordBuffer");
+/// <reference path="../../typings/tsd.d.ts"/>
+
+import CanvasRender from "./CanvasRender";
+import Signal from "./Signal";
+import RecordBuffer from "./RecordBuffer";
+
+function screenshot (cnv: HTMLCanvasElement){
+  document.body.appendChild(cnv);
+};
 
 class OSC {
 
@@ -131,17 +137,17 @@ class OSC {
         console.log("raw", rawdata.length);
         render.cnv.width = rawdata.length/256;
         render.drawSignal(rawdata, true, true);
-        console.screenshot(render.element);
+        screenshot(render.element);
         console.log("corr", corr.length);
         render.cnv.width = corr.length/256;
         render.drawSignal(corr, true, true);
-        console.screenshot(render.element);
+        screenshot(render.element);
         console.log("up", up.length);
         render.cnv.width = up.length/256;
         render.drawSignal(up, true, true);
-        console.screenshot(render.element);
+        screenshot(render.element);
         render._drawSpectrogram(rawdata, recbuf.sampleRate);
-        console.screenshot(render.cnv);
+        screenshot(render.cnv);
       }
     });
   }

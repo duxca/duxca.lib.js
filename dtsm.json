@@ -3,6 +3,10 @@
     {
       "url": "https://github.com/borisyankov/DefinitelyTyped.git",
       "ref": "master"
+    },
+    {
+      "url": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "master"
     }
   ],
   "path": "typings",
@@ -13,37 +17,43 @@
     }
   },
   "dependencies": {
-    "qunit/qunit.d.ts": {
-      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
-    },
-    "es6-promise/es6-promise.d.ts": {
-      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
-    },
     "webaudioapi/waa.d.ts": {
       "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
     },
     "webrtc/MediaStream.d.ts": {
       "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
     },
     "webrtc/RTCPeerConnection.d.ts": {
       "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
-    },
-    "zepto/zepto.d.ts": {
-      "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
     },
     "peerjs/peerjs.d.ts": {
       "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
     },
     "jquery/jquery.d.ts": {
       "commit": "b0d313e1b10be5cdbd47f8bdadd888f066a626bd",
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
+    },
+    "qrcode/qrcode.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "010ee905f42187a972abb76821b32633ef41d8ac",
+      "path": "qrcode.d.ts"
+    },
+    "qrcode/jsqrcode.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "010ee905f42187a972abb76821b32633ef41d8ac",
+      "path": "jsqrcode.d.ts"
+    },
+    "dsp.js/dsp.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "010ee905f42187a972abb76821b32633ef41d8ac",
+      "path": "dsp.d.ts"
+    },
+    "bluebird/bluebird.d.ts": {
+      "ref": "8ea42cd8bb11863ed6f242d67c502288ebc45a7b"
     }
   }
 }

@@ -1,4 +1,6 @@
-import CanvasRender = require("./CanvasRender");
+/// <reference path="../../typings/tsd.d.ts"/>
+
+import CanvasRender from "./CanvasRender";
 
 class FDTD {
 

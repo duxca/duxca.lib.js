@@ -1,24 +1,16 @@
 gulp = require 'gulp'
-ts = require 'gulp-typescript'
-rename = require 'gulp-rename'
-babel = require 'gulp-babel'
+espower = require 'gulp-espower'
+coffee = require 'gulp-coffee'
 
-tsProject = ts.createProject 'src/ts/tsconfig.json',
-  typescript: require 'typescript'
-  sortOutput: true
-  declaration: true
+gulp.task 'build:test', ->
+  gulp.src("test/**/*.coffee")
+    .pipe coffee({bare: true}).on("error", console.error.bind(console))
+    .pipe espower()
+    .pipe gulp.dest 'demo/test'
 
-
-gulp.task 'build:ts', ->
-  tsProject.src()
-    .pipe ts(tsProject)
-    .pipe rename (p) -> p.dirname = p.dirname.replace('src', ''); p
-    .pipe babel()
-    .pipe gulp.dest 'lib'
-
-gulp.task 'watch:ts', ->
-  gulp.watch 'src/ts/*.ts', ['build:ts']
+gulp.task 'watch:test', ->
+  gulp.watch 'test/**/*.coffee', ['build:test']
 
 gulp.task('default', ['build']);
-gulp.task('build', ['build:ts']);
-gulp.task('watch', ["build", 'watch:ts']);
+gulp.task('build', ["build:test"]);
+gulp.task('watch', ["watch:test"]);

@@ -1,17 +1,21 @@
 {
-    "version": "1.5.3",
+    "version": "1.6.2",
     "compilerOptions": {
-        "target": "es5",
+        "noLib": false,
+        "outDir": "../../lib",
+        "target": "ES5",
         "module": "commonjs",
+        "rootDir": "../",
+        "newLine": "LF",
+        "listFiles": true,
         "declaration": true,
         "noImplicitAny": true,
-        "noEmitOnError": true,
+        "noEmitOnError": false,
         "removeComments": false,
-        "noLib": false,
+        "moduleResolution": "node",
         "preserveConstEnums": true,
-        "suppressImplicitAnyIndexErrors": true,
-        "outDir": "../../output",
-        "rootDir": "../"
+        "experimentalDecorators": true,
+        "suppressImplicitAnyIndexErrors": true
     },
     "filesGlob": [
         "./**/*.ts",
@@ -20,24 +24,19 @@
     "files": [
         "./CanvasRender.ts",
         "./Chord.ts",
+        "./console.ts",
         "./FDTD.ts",
         "./FPS.ts",
         "./Metronome.ts",
         "./Newton.ts",
         "./OSC.ts",
-        "./QRcode.ts",
+        "./QRCode.ts",
         "./RecordBuffer.ts",
-        "./Sandbox1.ts",
-        "./Sandbox2.ts",
-        "./Sandbox3.ts",
-        "./Sandbox4.ts",
-        "./Sandbox5.ts",
-        "./Sandbox6.ts",
-        "./Sandbox7.ts",
-        "./Sandbox8.ts",
-        "./Sandbox9.ts",
         "./Signal.ts",
         "./Statictics.ts",
         "./Wave.ts"
-    ]
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }

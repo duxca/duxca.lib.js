@@ -10,15 +10,6 @@ module.exports =
     QRcode: require("./ts/QRCode");
     RecordBuffer: require("./ts/RecordBuffer");
     Sandbox: [
-      require("./ts/Sandbox1"),
-      require("./ts/Sandbox2"),
-      require("./ts/Sandbox3"),
-      require("./ts/Sandbox4"),
-      require("./ts/Sandbox5"),
-      require("./ts/Sandbox6"),
-      require("./ts/Sandbox7"),
-      require("./ts/Sandbox8"),
-      require("./ts/Sandbox9"),
       require("./Sandbox")
     ].reduce((merged, obj)->
       Object.keys(obj).forEach (key)->

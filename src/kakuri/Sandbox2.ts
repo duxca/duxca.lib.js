@@ -1,16 +1,14 @@
-/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
-import CanvasRender = require("./CanvasRender");
-import Signal = require("./Signal");
-import RecordBuffer = require("./RecordBuffer");
-import OSC = require("./OSC");
-import FPS = require("./FPS");
-import Wave = require("./Wave");
-import Metronome = require("./Metronome");
-import Statictics = require("./Statictics");
-import Chord = require("./Chord");
+import CanvasRender from "./CanvasRender";
+import Signal from "./Signal";
+import RecordBuffer from "./RecordBuffer";
+import OSC from "./OSC";
+import FPS from "./FPS";
+import Wave from "./Wave";
+import Metronome from "./Metronome";
+import Statictics from "./Statictics";
+import {Chord, Token} from "./Chord";
 
 namespace Sandbox {
 
@@ -55,21 +53,21 @@ namespace Sandbox {
         // master node
         setTimeout(function recur(){
           chd.request("ping")
-          .then((token)=>{
+          .then((token: Token)=>{
             console.log(token.payload.event, token.route);
             var member = token.route;
             return chd.request("startRec", {member})
-            .then((token)=>
+            .then((token: Token)=>
               token.route.reduce((prm, id)=>
                 prm
-                .then((token)=> chd.request("pulseStart", {member, id}))
-                .then((token)=> chd.request("pulseBeep", {member, id}))
-                .then((token)=> chd.request("pulseStop", {member, id}))
+                .then((token: Token)=> chd.request("pulseStart", {member, id}))
+                .then((token: Token)=> chd.request("pulseBeep", {member, id}))
+                .then((token: Token)=> chd.request("pulseStop", {member, id}))
               , Promise.resolve(token) ) )
-            .then((token)=> chd.request("stopRec", {member, id}))
-            .then((token)=> chd.request("calc", {member, id}))
-            .then((token)=> chd.request("collect", {member, data:[]}))
-            .then((token)=>{
+            .then((token: Token)=> chd.request("stopRec", {member, id}))
+            .then((token: Token)=> chd.request("calc", {member, id}))
+            .then((token: Token)=> chd.request("collect", {member, data:[]}))
+            .then((token: Token)=>{
               console.log(token.payload.event, token.route, token.payload.data);
               var data:{id:string, stdscoreResult:{[id:string]: number}}[] = token.payload.data.data;
               data.forEach(({id:id1}, i)=>{
@@ -84,14 +82,14 @@ namespace Sandbox {
               setTimeout(()=>recur(), 1000);
             });
           })
-          .catch((err)=> console.error(err));
+          .catch((err:any)=> console.error(err));
         }, 1000);
       }
       console.log("ready.");
     });
 
     function setupChord(){
-      var chd = new Chord();
+      var chd = new Chord({host: "localhost", port:9000});
       var osc = new OSC(actx);
       var abufA = osc.createAudioBufferFromArrayBuffer(pulseA, 44100);
       chd.debug = false;
@@ -372,23 +370,23 @@ namespace Sandbox {
         // master node
         setTimeout(function recur(){
           chd.request("ping")
-          .then((token)=>{
+          .then((token: Token)=>{
             console.log(token.payload.event, token.route);
             return chd.request("startRec", {member: token.route});
           })
-          .then((token)=>{
+          .then((token: Token)=>{
             console.log(token.payload.event, token.route);
             return token.route.reduce((prm, id)=>
               prm
-              .then((token)=> chd.request("pulseStart", {member: token.route, id}))
-              .then((token)=> chd.request("pulseBeep", {member: token.route, id}))
-              .then((token)=> chd.request("pulseStop", {member: token.route, id}))
+              .then((token: Token)=> chd.request("pulseStart", {member: token.route, id}))
+              .then((token: Token)=> chd.request("pulseBeep", {member: token.route, id}))
+              .then((token: Token)=> chd.request("pulseStop", {member: token.route, id}))
             , Promise.resolve(token) );
           })
-          .then((token)=> chd.request("stopRec", {member: token.route, id}))
-          .then((token)=> chd.request("calc", {member: token.route, id}))
-          .then((token)=> chd.request("collect", {member: token.route, data:[]}))
-          .then((token)=>{
+          .then((token: Token)=> chd.request("stopRec", {member: token.route, id}))
+          .then((token: Token)=> chd.request("calc", {member: token.route, id}))
+          .then((token: Token)=> chd.request("collect", {member: token.route, data:[]}))
+          .then((token: Token)=>{
             console.log(token.payload.event, token.route, token.payload.data);
             var data:{id:string, stdscoreResult:{[id:string]: number}}[] = token.payload.data.data;
             data.forEach(({id:id1}, i)=>{
@@ -398,14 +396,14 @@ namespace Sandbox {
             });
             setTimeout(()=>recur(), 1000);
           })
-          .catch((err)=> console.error(err));
+          .catch((err:any)=> console.error(err));
         }, 1000);
       }
       console.log("ready.");
     });
 
     function setupChord(){
-      var chd = new Chord();
+      var chd = new Chord({host:"localhost", port:9000});
       var osc = new OSC(actx);
       var abufA = osc.createAudioBufferFromArrayBuffer(pulseA, actx.sampleRate);
       chd.debug = false;

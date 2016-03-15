@@ -1,3 +1,5 @@
+/// <reference path="../../typings/tsd.d.ts"/>
+
 import Point = Newton.Point;
 
 class Newton{

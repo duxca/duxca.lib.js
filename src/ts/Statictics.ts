@@ -1,3 +1,4 @@
+/// <reference path="../../typings/tsd.d.ts"/>
 
 namespace Statictics {
   export function summation(arr:number[]|Float32Array):number {
@@ -31,7 +32,7 @@ namespace Statictics {
 
   export function derivative(arr:number[]|Float32Array):number[] {
     var results = [0];
-    for(var i=1; 0<arr.length; i++){
+    for(var i=1; i<arr.length; i++){
       results.push(arr[i] - arr[i - 1]);
     }
     return results;

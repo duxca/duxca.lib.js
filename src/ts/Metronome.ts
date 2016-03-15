@@ -1,3 +1,5 @@
+/// <reference path="../../typings/tsd.d.ts"/>
+
 class Metronome{
 
   actx: AudioContext;

@@ -1,45 +1,32 @@
-/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
-import CanvasRender = require("./CanvasRender");
-import Signal = require("./Signal");
-import RecordBuffer = require("./RecordBuffer");
-import OSC = require("./OSC");
-import FPS = require("./FPS");
-import Wave = require("./Wave");
-import Metronome = require("./Metronome");
-import Statictics = require("./Statictics");
-import Chord = require("./Chord");
-import Newton = require("./Newton");
-import Point = Newton.Point;
-import SDM = Newton.SDM;
+import CanvasRender from "./CanvasRender";
+import Signal from "./Signal";
+import RecordBuffer from "./RecordBuffer";
+import OSC from "./OSC";
+import FPS from "./FPS";
+import Wave from "./Wave";
+import Metronome from "./Metronome";
+import Statictics from "./Statictics";
+import {Chord, Token} from "./Chord";
 
 namespace Sandbox {
 
-  export function relpos(){
-    var K = 0;
-    var pseudoPts: Point[] = [0,1,2].map((i)=> new Point(Math.random()*10, Math.random()*10));
-    var ds: number[][] = [
-      [0, 1, 1],
-      [1, 0, 1],
-      [1, 1, 0]
-    ];
-    var sdm = new SDM(pseudoPts, ds);
-    (function recur(){
-      if(K++ < 200){
-        sdm.step();
-        requestAnimationFrame(recur);
-      }else{
-        console.log("fin", sdm.det(), sdm.points);
-      }
-    }());
+  export function testAudioDownload(){
+    var actx = new AudioContext();
+    var osc = new OSC(actx);
+    osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then((abuf)=>{
+      var node = osc.createAudioNodeFromAudioBuffer(abuf);
+      node.start(actx.currentTime);
+      node.connect(actx.destination);
+    });
   }
 
 
 
-  export function testDetect7(rootNodeId: string){
+  export function testDetect6(rootNodeId: string){
     var TEST_INPUT_MYSELF = false;
+    var lastTime = 0;
     var count = 0;
 
     var actx = new AudioContext();
@@ -56,21 +43,22 @@ namespace Sandbox {
       console.screenshot(render.element);
       return pulse;
     }).then((pulse)=>{
-      var chord = new Chord();
+      var chord = new Chord({host:"localhost", port:9000});
       chord.debug = false;
       chord.on("ping", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         cb(token);
       });
-      chord.on("recStart", (token, cb)=>{
+      chord.on("startRec", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
-        isRecording = true; cb(token);
+        isRecording = true;
+        cb(token);
       });
       var pulseStartTime:{[id:string]: number} = {};
       chord.on("pulseStart", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var id = token.payload.data;
-        pulseStartTime[id] = actx.currentTime;
+        pulseStartTime[token.payload.data] = actx.currentTime;
         cb(token);
       });
       var abuf = osc.createAudioBufferFromArrayBuffer(pulse, actx.sampleRate);
@@ -79,7 +67,9 @@ namespace Sandbox {
         var id = token.payload.data;
         if(chord.peer.id !== id) return cb(token);
         var anode = osc.createAudioNodeFromAudioBuffer(abuf);
+        var anode1 = osc.createAudioNodeFromAudioBuffer(abuf);
         anode.connect(TEST_INPUT_MYSELF?processor:actx.destination);
+        lastTime = actx.currentTime;
         anode.start(actx.currentTime);
         setTimeout(()=> cb(token), pulse.length/actx.sampleRate * 1000);
       });
@@ -87,19 +77,19 @@ namespace Sandbox {
       chord.on("pulseStop", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var id = token.payload.data;
-        pulseStopTime[id] = actx.currentTime;
+        pulseStopTime[token.payload.data] = actx.currentTime;
         cb(token);
       });
-      var pulseTime:{[id:string]: number} = null;
-      chord.on("recStop", (token, cb)=>{
+      var calcResult:{[id:string]: number} = null;
+      chord.on("stopRec", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         var tmp = recbuf.count;
         (function recur(){
-          if(recbuf.count === tmp) return setTimeout(recur, 100); // wait audioprocess
+          if(recbuf.count === tmp) return setTimeout(recur, 100);
           isRecording = false;
-          pulseTime = null;
+          calcResult = null;
           setTimeout(()=>{
-            pulseTime = calc(chord.peer.id, pulse, pulseStartTime, pulseStopTime);
+            calcResult = calc(chord.peer.id, pulse, pulseStartTime, pulseStopTime);
           }, 0);
           cb(token);
         })();
@@ -107,58 +97,42 @@ namespace Sandbox {
       chord.on("collect", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
         (function recur(){
-          if(pulseTime === null) return setTimeout(recur, 100); // wait calc
-          token.payload.data[chord.peer.id] = pulseTime;
+          if(calcResult === null) return setTimeout(recur, 100);
+          token.payload.data[chord.peer.id] = calcResult;
           cb(token);
         })();
       });
-      var pulseTimes:{[id:string]:{[id:string]: number}} = null;
-      var relDelayTimes:{[id:string]:{[id:string]: number}} = null;
-      var delayTimesLog:{[id:string]:{[id:string]: number[]}} = {};
+      var results:{[id:string]: number[]} = {};
+      var RESULT_HISTORY_SIZE = 10;
       chord.on("distribute", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
-        pulseTimes = token.payload.data;
-        relDelayTimes = {};
-        Object.keys(pulseTimes).forEach((id1)=>{
-          Object.keys(pulseTime).forEach((id2)=>{
-            relDelayTimes[id1] = relDelayTimes[id1] || {};
-            relDelayTimes[id1][id2] = pulseTimes[id1][id2] - pulseTimes[id1][id1];
-          });
-        });
-        console.log("relDelayTimes", relDelayTimes);
-        Object.keys(pulseTimes).forEach((id1)=>{
-          delayTimesLog[id1] = delayTimesLog[id1] || {};
-          Object.keys(pulseTime).forEach((id2)=>{
-            delayTimesLog[id2] = delayTimesLog[id2] || {};
-            if(!Array.isArray(delayTimesLog[id1][id2])) delayTimesLog[id1][id2] = [];
-            if(delayTimesLog[id1][id2].length > 10) delayTimesLog[id1][id2].shift();
-            var delayTime = Math.abs(Math.abs(relDelayTimes[id1][id2]) - Math.abs(relDelayTimes[id2][id1]));
-            delayTimesLog[id1][id2].push(delayTime);
-            console.log("__RES__", id1, id2,
-              "delayTime", delayTime,
-              "distance", delayTime/2*340,
-              "ave", Statictics.average(delayTimesLog[id1][id2]),
-              "mode", Statictics.mode(delayTimesLog[id1][id2]),
-              "med", Statictics.median(delayTimesLog[id1][id2]),
-              "stdev", Statictics.stdev(delayTimesLog[id1][id2]));
+        var data:{[id:string]: {[id:string]: number}} = token.payload.data;
+        Object.keys(data).forEach((id1)=>{
+          Object.keys(data).forEach((id2)=>{
+            if(Array.isArray(results[id2+"-"+id1])){
+              results[id1+"-"+id2] = results[id2+"-"+id1];
+              return;
+            }
+            if(!Array.isArray(results[id1+"-"+id2])) results[id1+"-"+id2] = [];
+            if(results[id1+"-"+id2].length > RESULT_HISTORY_SIZE) results[id1+"-"+id2].shift();
+            var tmp = Math.abs(Math.abs(data[id1][id2]) - Math.abs(data[id2][id1]));
+            if(isFinite(tmp)) results[id1+"-"+id2].push(tmp);
+            console.log("__RES__", id1+"-"+id2, "phaseShift", tmp,
+              "ave", Statictics.average(results[id1+"-"+id2]),
+              "mode", Statictics.mode(results[id1+"-"+id2]),
+              "med", Statictics.median(results[id1+"-"+id2]),
+              "stdev", Statictics.stdev(results[id1+"-"+id2]));
           });
         });
         cb(token);
       });
       chord.on("play", (token, cb)=>{
         console.log(token.payload.event, token.payload.data);
-        var wait = token.payload.data;
+        var masterNodeLastTime = token.payload.data;
         var id1 = token.route[0];
         var id2 = chord.peer.id;
-        var delay = Statictics.median(delayTimesLog[id1][id2]);
-        var offsetTime = pulseTimes[id2][id1] + wait + delay;
-        console.log(id1, id2, "delay", delay, wait, offsetTime, pulseTimes, delayTimesLog);
-        osc.createAudioBufferFromURL("./TellYourWorld1min.mp3").then((abuf)=>{
-          var node = osc.createAudioNodeFromAudioBuffer(abuf);
-          node.start(offsetTime);
-          node.loop = true;
-          node.connect(actx.destination);
-        });
+        var delay = results[id1+"-"+id2].pop();
+        console.log(id1, id2, "delay", delay);
         cb(token);
       });
       return (typeof rootNodeId === "string") ? chord.join(rootNodeId) : chord.create();
@@ -170,16 +144,14 @@ namespace Sandbox {
         !TEST_INPUT_MYSELF && source.connect(processor);
         processor.connect(actx.destination);
         processor.addEventListener("audioprocess", function handler(ev: AudioProcessingEvent){
-          if(isRecording)
+          if(isRecording){
             recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+          }
         });
-        return new Promise<Chord>((resolve, reject)=>{ setTimeout(()=>{
-          resolve(Promise.resolve(chord));
-        }, 1000); });
       }).then(()=> chord);
     }).then( typeof rootNodeId === "string" ? (chord)=> void 0 : function recur(chord){
       chord.request("ping")
-      .then((token)=> chord.request("recStart", null, token.route) )
+      .then((token)=> chord.request("startRec", null, token.route) )
       .then((token)=>
         token.payload.addressee.reduce((prm, id)=>
           prm
@@ -187,19 +159,28 @@ namespace Sandbox {
           .then((token)=> chord.request("pulseBeep", id, token.payload.addressee))
           .then((token)=> chord.request("pulseStop", id, token.payload.addressee))
         , Promise.resolve(token) ) )
-      .then((token)=> chord.request("recStop", null, token.payload.addressee))
+      .then((token)=> chord.request("stopRec", null, token.payload.addressee))
       .then((token)=> chord.request("collect", {}, token.payload.addressee))
       .then((token)=> chord.request("distribute", token.payload.data, token.payload.addressee))
       .then((token)=>{
-        console.log(count, Date.now());
-        if(++count === 2){
-          chord.request("play", (Date.now()-token.time[0])*1.5/1000+1, token.payload.addressee).then((token)=>{
-            //setTimeout(recur.bind(null, chord), 0);
-          });
+        if(count++ > 10){
+          console.log("play", token.payload.data, token.payload.addressee);
+          chord.request("play", lastTime, token.payload.addressee);
         }else setTimeout(recur.bind(null, chord), 0);
       });
       return chord;
     });
+
+    function calcStdscore(correlation: Float32Array):Float32Array{
+      var _correlation = Signal.normalize(correlation, 100);
+      var ave = Statictics.average(_correlation);
+      var vari = Statictics.variance(_correlation);
+      var stdscores = new Float32Array(_correlation.length);
+      for(var i=0; i<_correlation.length; i++){
+        stdscores[i] = 10*(_correlation[i] - ave)/vari+50;
+      }
+      return stdscores;
+    }
 
     function calc(myId:string, pulse:Float32Array, pulseStartTime:{[id:string]: number}, pulseStopTime:{[id:string]: number}):{[id:string]: number}{
       var rawdata = recbuf.merge();
@@ -208,9 +189,10 @@ namespace Sandbox {
 
       var recStartTime = sampleTimes[0] - (recbuf.bufferSize / recbuf.sampleRate);
       var recStopTime = sampleTimes[sampleTimes.length-1];
-      var pulseTime:{[id:string]: number} = {};
-      var pulseOffset:{[id:string]: number} = {};
+      var results:{[id:string]: number} = {};
 
+      render.cnv.width = 1024;
+      render.cnv.height = 32;
       Object.keys(pulseStartTime).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
@@ -218,21 +200,19 @@ namespace Sandbox {
         var stopPtr = (stopTime - recStartTime) * recbuf.sampleRate;
         var section = rawdata.subarray(startPtr, stopPtr);
         var corrsec = Signal.smartCorrelation(pulse, section);
-        console.log(corrsec.length, pulse.length, section.length);
+        corrsec = corrsec.subarray(0, section.length);
         console.log(id, "recStartTime", recStartTime, "recStopTime", recStopTime, "startTime", startTime, "stopTime", stopTime, "startPtr", startPtr, "stopPtr", stopPtr, "length", section.length);
         var [max_score, max_offset] = Statictics.findMax(corrsec);
-        var offset = -1;
         for(var i=0; i<corrsec.length; i++){
           if(max_score/2 < corrsec[i]){
-            offset = i;
-            pulseOffset[id] = startPtr + i;
-            pulseTime[id] = (startPtr + i)/recbuf.sampleRate;
+            var offset = i;
             break;
           }
         }
+        results[id] = startPtr + (offset || max_offset);
+        results[id] = results[id] > 0 ? results[id] : 0;
         console.log(id, "offset", offset, "max_offset", max_offset, "max_score", max_score, "globalOffset", startPtr + offset);
-        render.cnv.width = 1024;
-        render.cnv.height = 32;
+        render.clear();
         render.ctx.strokeStyle = "black";
         render.drawSignal(corrsec, true, true);
         render.ctx.strokeStyle = "blue";
@@ -248,15 +228,17 @@ namespace Sandbox {
       var render3 = new CanvasRender(1024, 32);
       render2.drawSignal(rawdata, true, true);
       var sim = new Float32Array(rawdata.length);
-      Object.keys(pulseOffset).forEach((id)=>{
-        if(sim.length < pulseOffset[id] + pulse.length){
-          sim.set(pulse.subarray(0, (pulseOffset[id] + pulse.length) - sim.length), pulseTime[id]);
-        }else sim.set(pulse, pulseOffset[id]);
+      Object.keys(results).forEach((id)=>{
+        if(sim.length < results[id] + pulse.length){
+          sim.set(pulse.subarray(0, (results[id] + pulse.length) - sim.length));
+        }else{
+          sim.set(pulse, results[id]);
+        }
       });
       render3.drawSignal(sim, true, true);
       var correlation = Signal.smartCorrelation(pulse, rawdata);
-      console.log(correlation.length, pulse.length, rawdata.length);
-      Object.keys(pulseOffset).forEach((id)=>{
+      correlation = correlation.subarray(0, rawdata.length);
+      Object.keys(results).forEach((id)=>{
         var startTime = pulseStartTime[id];
         var stopTime = pulseStopTime[id];
         var startPtr = (startTime - recStartTime) * recbuf.sampleRate;
@@ -273,9 +255,9 @@ namespace Sandbox {
         render1.ctx.strokeStyle = "red";
         render2.ctx.strokeStyle = "red";
         render3.ctx.strokeStyle = "red";
-        render1.drawColLine(pulseOffset[id]*1024/correlation.length);
-        render2.drawColLine(pulseOffset[id]*1024/rawdata.length);
-        render3.drawColLine(pulseOffset[id]*1024/sim.length);
+        render1.drawColLine(results[id]*1024/correlation.length);
+        render2.drawColLine(results[id]*1024/rawdata.length);
+        render3.drawColLine(results[id]*1024/sim.length);
       });
       console.log("correlation");
       console.screenshot(render1.cnv);
@@ -283,16 +265,19 @@ namespace Sandbox {
       console.screenshot(render2.cnv);
       console.log("sim");
       console.screenshot(render3.cnv);
-      console.log("pulseOffset", pulseOffset);
-      console.log("pulseTime", pulseTime);
+      console.log("results", results);
+      var _results: {[id:string]: number} = {};
+      Object.keys(results).forEach((id)=>{
+        _results[id] = (results[id] - results[myId])/recbuf.sampleRate;
+      });
+      console.log("results", _results);
 
       render._drawSpectrogram(rawdata, recbuf.sampleRate);
       console.screenshot(render.cnv);
 
-      return pulseTime;
+      return _results;
     }
   }
 }
-
 
 export = Sandbox;

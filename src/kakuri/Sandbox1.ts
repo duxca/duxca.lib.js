@@ -1,6 +1,4 @@
-/// <reference path="../../typings/webrtc/MediaStream.d.ts"/>
-/// <reference path="../../tsd/console.snapshot/console.snapshot.d.ts"/>
-/// <reference path="../../tsd/MediaStreamAudioSourceNode/MediaStreamAudioSourceNode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
 import CanvasRender = require("./CanvasRender");
 import Signal = require("./Signal");
@@ -10,7 +8,8 @@ import FPS = require("./FPS");
 import Wave = require("./Wave");
 import Metronome = require("./Metronome");
 import Statictics = require("./Statictics");
-import Chord = require("./Chord");
+import _Chord = require("./Chord");
+import Token = require("./Chord").Token;
 
 navigator.getUserMedia = (navigator.getUserMedia ||
                           navigator.webkitGetUserMedia ||
@@ -309,7 +308,7 @@ namespace Sandbox {
 
 
   export function testAutoDetect(id?:string): void{
-    var chd = new Chord();
+    var chd = new Chord({host:"http://localhost", port:9000});
     var actx = new AudioContext();
     chd.on("tone", (token, cb)=>{
       console.log("tone");
@@ -332,12 +331,12 @@ namespace Sandbox {
 
 
   export function testChord(id?:string): void{
-    var chd0 = new Chord();
-    var a = (token:Chord.Token, cb:(token:Chord.Token)=>void)=>{ cb(token); };
-    var chd1 = new Chord();
-    var chd2 = new Chord();
-    var chd3 = new Chord();
-    var chd4 = new Chord();
+    var chd0 = new Chord({host:"http://localhost", port:9000});
+    var a = (token:Token, cb:(token:Token)=>void)=>{ cb(token); };
+    var chd1 = new Chord({host:"http://localhost", port:9000});
+    var chd2 = new Chord({host:"http://localhost", port:9000});
+    var chd3 = new Chord({host:"http://localhost", port:9000});
+    var chd4 = new Chord({host:"http://localhost", port:9000});
     chd0.create().then(()=>{
       return chd1.join(chd0.peer.id).then(()=>{
         return chd2.join(chd0.peer.id).then(()=>{

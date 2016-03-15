@@ -30,5 +30,8 @@
         "./duxca.lib.Signal.ts",
         "./duxca.lib.ts",
         "./duxca.lib.Wave.ts"
-    ]
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }

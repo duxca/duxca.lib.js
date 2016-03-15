@@ -1,6 +1,6 @@
-/// <reference path="../../tsd/dsp/dsp.d.ts" />
+/// <reference path="../../typings/tsd.d.ts"/>
 
-import Statictics = require("./Statictics");
+import Statictics from "./Statictics";
 
 namespace Signal {
 
@@ -84,6 +84,12 @@ namespace Signal {
     var _fft = new FFT(signal.length, sampleRate);
     _fft.forward(signal);
     return [_fft.real, _fft.imag, _fft.spectrum];
+  }
+
+  export function ifft(pulse_real: Float32Array, pulse_imag: Float32Array, sampleRate=44100): Float32Array {
+    var _fft = new FFT(pulse_real.length, sampleRate);
+    var inv_real = _fft.inverse(pulse_real, pulse_imag);
+    return inv_real;
   }
 
   export function createChirpSignal(pulse_length: number, downchirp=false): Float32Array{

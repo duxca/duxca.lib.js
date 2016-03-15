@@ -1,5 +1,4 @@
-/// <reference path="../../tsd/qrcode-decoder-js/qrcode.d.ts"/>
-/// <reference path="../../tsd/qrcodejs/qrcode.d.ts"/>
+/// <reference path="../../typings/tsd.d.ts"/>
 
 namespace QRcode {
 
