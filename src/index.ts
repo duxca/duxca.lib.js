@@ -1,5 +1,5 @@
 import Signal = require("duxca.lib.signal.js");
-import Statictics = require("duxca.lib.statictics.js");
+import Statistics = require("duxca.lib.statistics.js");
 
 class CanvasRender{
 
@@ -23,7 +23,7 @@ class CanvasRender{
       signal = Signal.normalize(signal, 1);
     }
     var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
-    var zoomY = !flagY ? 1 : this.cnv.height / Statictics.findMax(signal)[0];
+    var zoomY = !flagY ? 1 : this.cnv.height / Statistics.findMax(signal)[0];
     this.ctx.beginPath();
     this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
     for(var i = 1; i<signal.length; i++){

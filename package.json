@@ -25,7 +25,7 @@
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
     "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal",
-    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics"
+    "duxca.lib.statistics.js": "github:legokichi/duxca.lib.js#statistics"
   },
   "devDependencies": {
   }
