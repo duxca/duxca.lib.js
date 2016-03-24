@@ -1,0 +1,39 @@
+{
+    "version": "1.8.9",
+    "compilerOptions": {
+        "allowJs": true,
+        "noLib": false,
+        "outDir": "../lib",
+        "target": "ES5",
+        "module": "commonjs",
+        "rootDir": "./",
+        "newLine": "LF",
+        "pretty": true,
+        "listFiles": true,
+        "declaration": false,
+        "noImplicitAny": true,
+        "noEmitOnError": false,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "removeComments": false,
+        "moduleResolution": "node",
+        "preserveConstEnums": true,
+        "experimentalDecorators": true,
+        "suppressImplicitAnyIndexErrors": true
+    },
+    "filesGlob": [
+        "./**/*.ts"
+    ],
+    "exclude": [
+       "../typings/main.d.ts",
+       "../typings/main",
+       "../node_modules"
+    ],
+    "files": [
+        "./index.ts",
+        "../typings/browser.d.ts",
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
+}
