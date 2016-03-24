@@ -24,9 +24,9 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
+    "duxca.lib.recordbuffer.js": "github:legokichi/duxca.lib.js#recordbuffer",
     "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal",
-    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics",
-    "duxca.lib.recordbuffer.js": "github:legokichi/duxca.lib.js#recordbuffer"
+    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics"
   },
   "devDependencies": {}
 }
