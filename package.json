@@ -10,7 +10,7 @@
     "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
     "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone duxca -o dist/duxca.lib.js  & http-server -s -p 8000 &",
-    "start": "npm run clean; tsc -w -p ./ & watchify   lib/index.js --standalone duxca -o dist/duxca.lib.js -v",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone duxca -o dist/duxca.lib.js -v",
     "stop": "killall -- node */http-server -s -p 8000"
   },
   "repository": {

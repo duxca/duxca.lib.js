@@ -1,4 +1,3 @@
-export declare namespace duxca {
-    namespace lib {
-    }
+export declare namespace lib {
+    var Statictics: any;
 }
