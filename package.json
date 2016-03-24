@@ -1,5 +1,5 @@
 {
-  "name": "duxca.lib.hoge.js",
+  "name": "duxca.lib.canvasrender.js",
   "version": "1.0.0",
   "description": "duxca algorithm sandbox",
   "main": "lib/index.js",
@@ -9,8 +9,8 @@
     "init": "npm run update; npm run build",
     "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
-    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone Hoge -o dist/index.js",
-    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone Hoge -o dist/index.js -v & http-server -s -p 8000",
+    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone CanvasRender -o dist/index.js",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone CanvasRender -o dist/index.js -v & http-server -s -p 8000",
     "stop": "killall -- node */tsc -w -p"
   },
   "repository": {
@@ -24,6 +24,8 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
+    "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal",
+    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics"
   },
   "devDependencies": {
   }
