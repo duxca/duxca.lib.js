@@ -8,13 +8,14 @@ import _Metronome = require("./Metronome");
 import _FPS = require("./FPS");
 import _Newton = require("./Newton");
 import _FDTD = require("./FDTD");
-import _Chord = require("./Chord");
+import _Chord = require("duxca.lib.chord.js");
 import _Ajax = require("./Ajax");
 //import _QRCode = require("./QRCode");
 
 declare function require<T>(path: string): T;
 
 const _SignalViewer= require<any>("./SignalViewer");
+const _SGSmooth= require<any>("./SGSmooth");
 
 export namespace lib {
   export const Statistics = _Statistics;
@@ -31,6 +32,7 @@ export namespace lib {
   export const Ajax = _Ajax;
   //export const QRCode = _QRCode;
   export const SignalViewer = _SignalViewer;
+  export const SGSmooth = _SGSmooth;
   export namespace Util {
     export function importObject (hash: {[key:string]: any;}): void {
       Object.keys(hash).forEach((key)=>{

@@ -8,7 +8,7 @@ import _Metronome = require("./Metronome");
 import _FPS = require("./FPS");
 import _Newton = require("./Newton");
 import _FDTD = require("./FDTD");
-import _Chord = require("./Chord");
+import _Chord = require("duxca.lib.chord.js");
 import _Ajax = require("./Ajax");
 export declare namespace lib {
     const Statistics: typeof _Statistics;
@@ -24,6 +24,7 @@ export declare namespace lib {
     const Chord: typeof _Chord;
     const Ajax: typeof _Ajax;
     const SignalViewer: any;
+    const SGSmooth: any;
     namespace Util {
         function importObject(hash: {
             [key: string]: any;

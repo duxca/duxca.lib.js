@@ -1,4 +1,3 @@
-/*
 class SGSmooth
   constructor: (@nth_degree_polynomial, @radius)->
     @currentWorker = 0
@@ -32,4 +31,5 @@ class SGSmooth
           derivatives[k][point+m+1] = math.factorial(k)*A[k]
         point += 1
       reply(derivatives, derivatives.map ({buffer})-> buffer)
-*/
+
+module.exports = SGSmooth

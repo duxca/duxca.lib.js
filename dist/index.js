@@ -30,6 +30,586 @@ module.exports = Ajax;
 
 },{}],2:[function(require,module,exports){
 "use strict";
+var CanvasRender = require("duxca.lib.canvasrender.js");
+var FDTD = (function () {
+    function FDTD(width, height) {
+        if (width === void 0) { width = 100; }
+        if (height === void 0) { height = 100; }
+        this.DELTA_T = 0.001;
+        this.DELTA_X = 0.001;
+        this.DENSITY = 1;
+        this.BLUK_MODULUS = 0.1;
+        this.BOUNDARY_IMPEDANCE = 0.5;
+        this.width = width;
+        this.height = height;
+        this.pressures = [new Float32Array(width * height), new Float32Array(width * height)];
+        this.velocities = [
+            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))],
+            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))]
+        ];
+        this.counter = 0;
+    }
+    FDTD.prototype.step = function () {
+        var preP = this.pressures[this.counter % this.pressures.length];
+        var curP = this.pressures[(this.counter + 1) % this.pressures.length];
+        var _a = this.velocities[this.counter % this.pressures.length], preVx = _a[0], preVy = _a[1];
+        var _b = this.velocities[(this.counter + 1) % this.pressures.length], curVx = _b[0], curVy = _b[1];
+        //console.assert(preP.length === curP.length);
+        //console.assert(preVx !== curVx);
+        //console.assert(preP.length+1 !== curVx.length);
+        //console.log("x boundary condition");
+        for (var j = 1; j <= this.height; j++) {
+            var ptr = 0 + j * this.width;
+            curVx[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+            var ptr = this.width + j * this.width;
+            var ptr1 = (this.width + 1) + j * this.width;
+            curVx[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+        }
+        //console.log("y boundary condition");
+        for (var i = 1; i <= this.width; i++) {
+            var ptr = i + 0 * this.width;
+            curVy[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+            var ptr = i + this.height * this.width;
+            var ptr1 = i + (this.height + 1) * this.width;
+            curVy[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+        }
+        for (var j = 0; j < this.height - 1; j++) {
+            for (var i = 0; i < this.width - 1; i++) {
+                var ptr = i + j * this.width;
+                var ptrx = (i + 1) + j * this.width;
+                var ptry = i + (j + 1) * this.height;
+                curVx[ptrx] = curVx[ptrx] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptrx] - preP[ptr]);
+                curVy[ptry] = curVy[ptry] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptry] - preP[ptr]);
+            }
+        }
+        for (var j = 0; j < this.height; j++) {
+            for (var i = 0; i < this.width; i++) {
+                var ptr = i + j * this.width;
+                var ptrx = (i + 1) + j * this.width;
+                var ptry = i + (j + 1) * this.height;
+                curP[ptr] = preP[ptr] - (((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVx[ptrx] - curVx[ptr]) +
+                    ((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVy[ptry] - curVy[ptr]));
+            }
+        }
+        this.counter++;
+        return this;
+    };
+    FDTD.prototype.draw = function (render) {
+        var cnv = render.cnv;
+        var ctx = render.ctx;
+        cnv.width = this.width;
+        cnv.height = this.height;
+        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+        var curP = this.pressures[(this.counter) % this.pressures.length];
+        for (var j = 0; j < this.height; j++) {
+            for (var i = 0; i < this.width; i++) {
+                var ptr = i + j * this.width;
+                var _a = CanvasRender.hslToRgb(1 - curP[ptr] / 1024, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
+                imgdata.data[ptr * 4 + 0] = r | 0;
+                imgdata.data[ptr * 4 + 1] = g | 0;
+                imgdata.data[ptr * 4 + 2] = b | 0;
+                imgdata.data[ptr * 4 + 3] = 255;
+            }
+        }
+        ctx.putImageData(imgdata, 0, 0);
+        return this;
+    };
+    return FDTD;
+}());
+module.exports = FDTD;
+
+},{"duxca.lib.canvasrender.js":9}],3:[function(require,module,exports){
+"use strict";
+var FPS = (function () {
+    function FPS(period) {
+        this.period = period;
+        this.lastTime = performance.now();
+        this.fps = 0;
+        this.counter = 0;
+    }
+    FPS.prototype.step = function () {
+        var currentTime = performance.now();
+        this.counter += 1;
+        if (currentTime - this.lastTime > this.period) {
+            this.fps = 1000 * this.counter / (currentTime - this.lastTime);
+            this.counter = 0;
+            this.lastTime = currentTime;
+        }
+    };
+    FPS.prototype.valueOf = function () {
+        return Math.round(this.fps * 1000) / 1000;
+    };
+    return FPS;
+}());
+module.exports = FPS;
+
+},{}],4:[function(require,module,exports){
+"use strict";
+var Metronome = (function () {
+    function Metronome(actx, interval) {
+        this.actx = actx;
+        this.interval = interval;
+        this.lastTime = this.actx.currentTime;
+        this.nextTime = this.interval + this.actx.currentTime;
+        this.nextTick = function () { };
+    }
+    Metronome.prototype.step = function () {
+        if (this.actx.currentTime - this.nextTime >= 0) {
+            this.lastTime = this.nextTime;
+            this.nextTime += this.interval;
+            this.nextTick();
+        }
+    };
+    return Metronome;
+}());
+module.exports = Metronome;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+var Newton = (function () {
+    function Newton(theta, pts, _pts) {
+        this.theta = theta;
+        this.points = pts;
+        this._pts = _pts;
+    }
+    Newton.prototype.step = function () {
+        var _theta = this.theta - this.det(this.theta) / this.der(this.theta);
+        this.theta = _theta;
+    };
+    Newton.prototype.det = function (theta) {
+        var _this = this;
+        return this.points.reduce(function (sum, _, k) {
+            return (_this.points[k].x - Math.pow((_this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)), 2)) +
+                (_this.points[k].y - Math.pow((_this._pts[k].x * Math.sin(theta) + _this._pts[k].y * Math.cos(theta)), 2));
+        }, 0);
+    };
+    Newton.prototype.der = function (theta) {
+        var _this = this;
+        return -2 * this.points.reduce(function (sum, _, k) {
+            return (_this.points[k].x * (-1 * _this._pts[k].x * Math.sin(theta) - _this._pts[k].y * Math.cos(theta))) +
+                (_this.points[k].y * (-1 * _this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)));
+        }, 0);
+    };
+    return Newton;
+}());
+var Newton;
+(function (Newton) {
+    var Point = (function () {
+        function Point(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        Point.prototype.plus = function (pt) {
+            return new Point(this.x + pt.x, this.y + pt.y);
+        };
+        Point.prototype.minus = function (pt) {
+            return new Point(this.x - pt.x, this.y - pt.y);
+        };
+        Point.prototype.times = function (num) {
+            return new Point(num * this.x, num * this.y);
+        };
+        Point.prototype.distance = function (pt) {
+            return Math.sqrt(Math.pow(pt.x - this.x, 2) +
+                Math.pow(pt.y - this.y, 2));
+        };
+        return Point;
+    }());
+    Newton.Point = Point;
+    var SDM = (function () {
+        function SDM(pts, ds, a) {
+            if (a === void 0) { a = 0.05; }
+            this.points = pts;
+            this.distance = ds;
+            this.a = a;
+        }
+        SDM.prototype.step = function () {
+            var _this = this;
+            var _pts = [];
+            for (var i = 0; i < this.points.length; i++) {
+                var delta = this.distance[i].reduce((function (sumPt, _, j) {
+                    if (i === j) {
+                        return sumPt;
+                    }
+                    else {
+                        return sumPt.plus((_this.points[i].minus(_this.points[j])).times((1 - _this.distance[i][j] / _this.points[i].distance(_this.points[j]))));
+                    }
+                }), new Point(0, 0)).times(2);
+                _pts[i] = this.points[i].minus(delta.times(this.a));
+            }
+            this.points = _pts;
+        };
+        SDM.prototype.det = function () {
+            var _this = this;
+            return this.points.reduce((function (sum, _, i) {
+                return sum + _this.points.reduce((function (sum, _, j) {
+                    return i === j ? sum :
+                        sum + Math.pow(_this.points[i].distance(_this.points[j]) - _this.distance[i][j], 2);
+                }), 0);
+            }), 0);
+        };
+        return SDM;
+    }());
+    Newton.SDM = SDM;
+})(Newton || (Newton = {}));
+module.exports = Newton;
+
+},{}],6:[function(require,module,exports){
+// Generated by CoffeeScript 1.10.0
+(function() {
+  var SGSmooth;
+
+  SGSmooth = (function() {
+    var workerScript;
+
+    function SGSmooth(nth_degree_polynomial, radius) {
+      this.nth_degree_polynomial = nth_degree_polynomial;
+      this.radius = radius;
+      this.currentWorker = 0;
+      this.workers = [1].map(function(i) {
+        return new ServerWorker(workerScript, [this.nth_degree_polynomial, this.radius]);
+      });
+    }
+
+    SGSmooth.prototype.process = function(f32arr) {
+      var worker;
+      worker = this.workers[this.currentWorker++];
+      if (this.workers.length === this.currentWorker) {
+        this.currentWorker = 0;
+      }
+      return new Promise(function(resolve, reject) {
+        return worker.request("calc", f32arr, resolve);
+      });
+    };
+
+    workerScript = function(p, m) {
+      importScripts("https://cdnjs.cloudflare.com/ajax/libs/mathjs/1.1.1/math.min.js");
+      return self.on("calc", function(f32arr, reply) {
+        var A, B, C, X, Y, derivatives, j, k, l, n, point, ref, results, results1, y;
+        y = f32arr;
+        point = 0;
+        derivatives = (function() {
+          results = [];
+          for (var j = 0; 0 <= p ? j <= p : j >= p; 0 <= p ? j++ : j--){ results.push(j); }
+          return results;
+        }).apply(this).map(function() {
+          return new Float32Array(y.length);
+        });
+        while (y.length > point + 2 * m + 1) {
+          X = (function() {
+            results1 = [];
+            for (var l = 0; 0 <= p ? l <= p : l >= p; 0 <= p ? l++ : l--){ results1.push(l); }
+            return results1;
+          }).apply(this).map(function(_, ik) {
+            var l, ref, results1;
+            return (function() {
+              results1 = [];
+              for (var l = ref = -m; ref <= m ? l <= m : l >= m; ref <= m ? l++ : l--){ results1.push(l); }
+              return results1;
+            }).apply(this).map(function(im) {
+              return Math.pow(im, ik);
+            });
+          });
+          Y = Array.prototype.slice.call(y, point, point + 2 * m + 1);
+          C = math.inv(math.multiply(X, math.transpose(X)));
+          B = math.multiply(C, X);
+          A = math.multiply(B, Y);
+          for (k = n = 0, ref = p; 0 <= ref ? n <= ref : n >= ref; k = 0 <= ref ? ++n : --n) {
+            derivatives[k][point + m + 1] = math.factorial(k) * A[k];
+          }
+          point += 1;
+        }
+        return reply(derivatives, derivatives.map(function(arg) {
+          var buffer;
+          buffer = arg.buffer;
+          return buffer;
+        }));
+      });
+    };
+
+    return SGSmooth;
+
+  })();
+
+  module.exports = SGSmooth;
+
+}).call(this);
+
+},{}],7:[function(require,module,exports){
+// Generated by CoffeeScript 1.10.0
+(function() {
+  var SignalViewer;
+
+  SignalViewer = (function() {
+    function SignalViewer(width, height) {
+      this.cnv = document.createElement("canvas");
+      this.cnv.width = width;
+      this.cnv.height = height;
+      this.ctx = this.cnv.getContext("2d");
+      this.offsetX = 0;
+      this.offsetY = this.cnv.height / 2;
+      this.zoomX = 1;
+      this.zoomY = 1;
+      this.drawZero = true;
+      this.drawAuto = true;
+      this.drawStatus = true;
+    }
+
+    SignalViewer.prototype.text = function(str, x, y) {
+      var fillStyle, font, lineWidth, o, ref, strokeStyle;
+      ref = this.ctx, font = ref.font, lineWidth = ref.lineWidth, strokeStyle = ref.strokeStyle, fillStyle = ref.fillStyle;
+      this.ctx.font = "35px";
+      this.ctx.lineWidth = 4;
+      this.ctx.strokeStyle = "white";
+      this.ctx.strokeText(str, x, y);
+      this.ctx.fillStyle = "black";
+      this.ctx.fillText(str, x, y);
+      o = {
+        font: font,
+        lineWidth: lineWidth,
+        strokeStyle: strokeStyle,
+        fillStyle: fillStyle
+      };
+      return Object.keys(o).forEach((function(_this) {
+        return function(key) {
+          return _this.ctx[key] = o[key];
+        };
+      })(this));
+    };
+
+    SignalViewer.prototype.draw = function(_arr) {
+      var _, arr, i, max, min, ref, ref1;
+      arr = _arr.map(function(v) {
+        if (isFinite(v)) {
+          return v;
+        } else {
+          return 0;
+        }
+      });
+      ref = Signal.Statictics.findMax(arr), max = ref[0], _ = ref[1];
+      ref1 = Signal.Statictics.findMin(arr), min = ref1[0], _ = ref1[1];
+      if (this.drawAuto) {
+        this.zoomX = this.cnv.width / arr.length;
+        this.zoomY = this.cnv.height / (max - min);
+        this.offsetY = -min;
+      }
+      if (this.drawZero) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.cnv.height - this.zoomY * (0 + this.offsetY));
+        this.ctx.lineTo(this.cnv.width, this.cnv.height - this.zoomY * (0 + this.offsetY));
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.offsetX, this.cnv.height - 0);
+        this.ctx.lineTo(this.offsetX, this.cnv.height - this.cnv.height);
+        this.ctx.stroke();
+      }
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.zoomX * (0 + this.offsetX), this.cnv.height - this.zoomY * (arr[0] + this.offsetY));
+      i = 0;
+      while (i++ < arr.length) {
+        this.ctx.lineTo(this.zoomX * (i + this.offsetX), this.cnv.height - this.zoomY * (arr[i] + this.offsetY));
+      }
+      this.ctx.stroke();
+      if (this.drawStatus) {
+        this.text("min:" + min, 5, 15);
+        this.text("max:" + max, 5, 25);
+        return this.text("len:" + arr.length, 5, 35);
+      }
+    };
+
+    return SignalViewer;
+
+  })();
+
+  module.exports = SignalViewer;
+
+}).call(this);
+
+},{}],8:[function(require,module,exports){
+"use strict";
+var _Statistics = require("duxca.lib.statistics.js");
+var _Signal = require("duxca.lib.signal.js");
+var _RecordBuffer = require("duxca.lib.recordbuffer.js");
+var _Wave = require("duxca.lib.wave.js");
+var _OSC = require("duxca.lib.osc.js");
+var _CanvasRender = require("duxca.lib.canvasrender.js");
+var _Metronome = require("./Metronome");
+var _FPS = require("./FPS");
+var _Newton = require("./Newton");
+var _FDTD = require("./FDTD");
+var _Chord = require("duxca.lib.chord.js");
+var _Ajax = require("./Ajax");
+var _SignalViewer = require("./SignalViewer");
+var _SGSmooth = require("./SGSmooth");
+var lib;
+(function (lib) {
+    lib.Statistics = _Statistics;
+    lib.Signal = _Signal;
+    lib.RecordBuffer = _RecordBuffer;
+    lib.Wave = _Wave;
+    lib.OSC = _OSC;
+    lib.CanvasRender = _CanvasRender;
+    lib.Metronome = _Metronome;
+    lib.FPS = _FPS;
+    lib.Newton = _Newton;
+    lib.FDTD = _FDTD;
+    lib.Chord = _Chord;
+    lib.Ajax = _Ajax;
+    //export const QRCode = _QRCode;
+    lib.SignalViewer = _SignalViewer;
+    lib.SGSmooth = _SGSmooth;
+    var Util;
+    (function (Util) {
+        function importObject(hash) {
+            Object.keys(hash).forEach(function (key) {
+                self[key] = hash[key];
+                console.log("some global variables appended: ", Object.keys(hash));
+            });
+        }
+        Util.importObject = importObject;
+    })(Util = lib.Util || (lib.Util = {}));
+})(lib = exports.lib || (exports.lib = {}));
+
+},{"./Ajax":1,"./FDTD":2,"./FPS":3,"./Metronome":4,"./Newton":5,"./SGSmooth":6,"./SignalViewer":7,"duxca.lib.canvasrender.js":9,"duxca.lib.chord.js":10,"duxca.lib.osc.js":11,"duxca.lib.recordbuffer.js":12,"duxca.lib.signal.js":14,"duxca.lib.statistics.js":15,"duxca.lib.wave.js":16}],9:[function(require,module,exports){
+"use strict";
+var Signal = require("duxca.lib.signal.js");
+var Statistics = require("duxca.lib.statistics.js");
+var CanvasRender = (function () {
+    function CanvasRender(width, height) {
+        this.element = this.cnv = document.createElement("canvas");
+        this.cnv.width = width;
+        this.cnv.height = height;
+        this.ctx = this.cnv.getContext("2d");
+    }
+    CanvasRender.prototype.clear = function () {
+        this.cnv.width = this.cnv.width;
+    };
+    CanvasRender.prototype.drawSignal = function (signal, flagX, flagY) {
+        if (flagX === void 0) { flagX = false; }
+        if (flagY === void 0) { flagY = false; }
+        if (flagY) {
+            signal = Signal.normalize(signal, 1);
+        }
+        var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
+        var zoomY = !flagY ? 1 : this.cnv.height / Statistics.findMax(signal)[0];
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
+        for (var i = 1; i < signal.length; i++) {
+            this.ctx.lineTo(zoomX * i, this.cnv.height - signal[i] * zoomY);
+        }
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawColLine = function (x) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, 0);
+        this.ctx.lineTo(x, this.cnv.height);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawRowLine = function (y) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, y);
+        this.ctx.lineTo(this.cnv.width, y);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.cross = function (x, y, size) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + size, y + size);
+        this.ctx.lineTo(x - size, y - size);
+        this.ctx.moveTo(x - size, y + size);
+        this.ctx.lineTo(x + size, y - size);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.arc = function (x, y, size) {
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, size, 0, 2 * Math.PI, false);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawSpectrogram = function (spectrogram, max) {
+        if (max === void 0) { max = 255; }
+        var imgdata = this.ctx.createImageData(spectrogram.length, spectrogram[0].length);
+        for (var i = 0; i < spectrogram.length; i++) {
+            for (var j = 0; j < spectrogram[i].length; j++) {
+                var _a = CanvasRender.hslToRgb(spectrogram[i][j] / max, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
+                var _b = [i, imgdata.height - 1 - j], x = _b[0], y = _b[1];
+                var index = x + y * imgdata.width;
+                imgdata.data[index * 4 + 0] = b | 0;
+                imgdata.data[index * 4 + 1] = g | 0;
+                imgdata.data[index * 4 + 2] = r | 0; // is this bug?
+                imgdata.data[index * 4 + 3] = 255;
+            }
+        }
+        this.ctx.putImageData(imgdata, 0, 0);
+    };
+    CanvasRender.prototype._drawSpectrogram = function (rawdata, sampleRate) {
+        var windowsize = Math.pow(2, 8); // spectrgram height
+        var slidewidth = Math.pow(2, 5); // spectrgram width rate
+        console.log("sampleRate:", sampleRate, "\n", "windowsize:", windowsize, "\n", "slidewidth:", slidewidth, "\n", "windowsize(ms):", windowsize / sampleRate * 1000, "\n", "slidewidth(ms):", slidewidth / sampleRate * 1000, "\n");
+        var spectrums = [];
+        for (var ptr = 0; ptr + windowsize < rawdata.length; ptr += slidewidth) {
+            var buffer = rawdata.subarray(ptr, ptr + windowsize);
+            if (buffer.length !== windowsize)
+                break;
+            var spectrum = Signal.fft(buffer, sampleRate)[2];
+            for (var i = 0; i < spectrum.length; i++) {
+                spectrum[i] = spectrum[i] * 20000;
+            }
+            spectrums.push(spectrum);
+        }
+        console.log("ptr", 0 + "-" + (ptr - 1) + "/" + rawdata.length, "ms", 0 / sampleRate * 1000 + "-" + (ptr - 1) / sampleRate * 1000 + "/" + rawdata.length * 1000 / sampleRate, spectrums.length + "x" + spectrums[0].length);
+        this.cnv.width = spectrums.length;
+        this.cnv.height = spectrums[0].length;
+        this.drawSpectrogram(spectrums);
+    };
+    return CanvasRender;
+}());
+var CanvasRender;
+(function (CanvasRender) {
+    function hue2rgb(p, q, t) {
+        if (t < 0) {
+            t += 1;
+        }
+        if (t > 1) {
+            t -= 1;
+        }
+        if (t < 1 / 6) {
+            return p + (q - p) * 6 * t;
+        }
+        if (t < 1 / 2) {
+            return q;
+        }
+        if (t < 2 / 3) {
+            return p + (q - p) * (2 / 3 - t) * 6;
+        }
+        return p;
+    }
+    CanvasRender.hue2rgb = hue2rgb;
+    function hslToRgb(h, s, l) {
+        // h, s, l: 0~1
+        h *= 5 / 6;
+        if (h < 0) {
+            h = 0;
+        }
+        if (5 / 6 < h) {
+            h = 5 / 6;
+        }
+        var r, g, b;
+        if (s === 0) {
+            r = g = b = l;
+        }
+        else {
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        return [r * 255, g * 255, b * 255];
+    }
+    CanvasRender.hslToRgb = hslToRgb;
+})(CanvasRender || (CanvasRender = {}));
+module.exports = CanvasRender;
+
+},{"duxca.lib.signal.js":14,"duxca.lib.statistics.js":15}],10:[function(require,module,exports){
+"use strict";
 var Chord = (function () {
     function Chord(opt) {
         this.host = opt.host || location.hostname;
@@ -303,10 +883,10 @@ var Chord = (function () {
                 // response
                 case "This is my predecessor.":
                     var min = 0;
-                    var max = distance("zzzzzzzzzzzzzzzz");
-                    var myid = distance(_this.peer.id);
-                    var succ = distance(conn.peer);
-                    var succ_says_pred = distance(data.id);
+                    var max = Chord.distance("zzzzzzzzzzzzzzzz");
+                    var myid = Chord.distance(_this.peer.id);
+                    var succ = Chord.distance(conn.peer);
+                    var succ_says_pred = Chord.distance(data.id);
                     if (_this.debug)
                         console.log(_this.peer.id, "conn:distance1", { min: min, max: max, myid: myid, succ: succ, succ_says_pred: succ_says_pred });
                     if (data.id === _this.peer.id) {
@@ -333,11 +913,11 @@ var Chord = (function () {
                     break;
                 case "Check your predecessor.":
                     var min = 0;
-                    var max = distance("zzzzzzzzzzzzzzzz");
-                    var myid = distance(_this.peer.id);
-                    var succ = distance(_this.successor.peer);
-                    var pred = distance(_this.predecessor.peer);
-                    var newbee = distance(conn.peer);
+                    var max = Chord.distance("zzzzzzzzzzzzzzzz");
+                    var myid = Chord.distance(_this.peer.id);
+                    var succ = Chord.distance(_this.successor.peer);
+                    var pred = Chord.distance(_this.predecessor.peer);
+                    var newbee = Chord.distance(conn.peer);
                     if (_this.debug)
                         console.log(_this.peer.id, "conn:distance2", { min: min, max: max, myid: myid, succ: succ, pred: pred, newbee: newbee });
                     if ((myid > newbee && newbee > pred)) {
@@ -374,510 +954,16 @@ var Chord = (function () {
     };
     return Chord;
 }());
-exports.Chord = Chord;
-function distance(str) {
-    return Math.sqrt(str.split("").map(function (char) { return char.charCodeAt(0); }).reduce(function (sum, val) { return sum + Math.pow(val, 2); }));
-}
-exports.distance = distance;
-
-},{}],3:[function(require,module,exports){
-"use strict";
-var CanvasRender = require("duxca.lib.canvasrender.js");
-var FDTD = (function () {
-    function FDTD(width, height) {
-        if (width === void 0) { width = 100; }
-        if (height === void 0) { height = 100; }
-        this.DELTA_T = 0.001;
-        this.DELTA_X = 0.001;
-        this.DENSITY = 1;
-        this.BLUK_MODULUS = 0.1;
-        this.BOUNDARY_IMPEDANCE = 0.5;
-        this.width = width;
-        this.height = height;
-        this.pressures = [new Float32Array(width * height), new Float32Array(width * height)];
-        this.velocities = [
-            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))],
-            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))]
-        ];
-        this.counter = 0;
+var Chord;
+(function (Chord) {
+    function distance(str) {
+        return Math.sqrt(str.split("").map(function (char) { return char.charCodeAt(0); }).reduce(function (sum, val) { return sum + Math.pow(val, 2); }));
     }
-    FDTD.prototype.step = function () {
-        var preP = this.pressures[this.counter % this.pressures.length];
-        var curP = this.pressures[(this.counter + 1) % this.pressures.length];
-        var _a = this.velocities[this.counter % this.pressures.length], preVx = _a[0], preVy = _a[1];
-        var _b = this.velocities[(this.counter + 1) % this.pressures.length], curVx = _b[0], curVy = _b[1];
-        //console.assert(preP.length === curP.length);
-        //console.assert(preVx !== curVx);
-        //console.assert(preP.length+1 !== curVx.length);
-        //console.log("x boundary condition");
-        for (var j = 1; j <= this.height; j++) {
-            var ptr = 0 + j * this.width;
-            curVx[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
-            var ptr = this.width + j * this.width;
-            var ptr1 = (this.width + 1) + j * this.width;
-            curVx[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
-        }
-        //console.log("y boundary condition");
-        for (var i = 1; i <= this.width; i++) {
-            var ptr = i + 0 * this.width;
-            curVy[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
-            var ptr = i + this.height * this.width;
-            var ptr1 = i + (this.height + 1) * this.width;
-            curVy[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
-        }
-        for (var j = 0; j < this.height - 1; j++) {
-            for (var i = 0; i < this.width - 1; i++) {
-                var ptr = i + j * this.width;
-                var ptrx = (i + 1) + j * this.width;
-                var ptry = i + (j + 1) * this.height;
-                curVx[ptrx] = curVx[ptrx] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptrx] - preP[ptr]);
-                curVy[ptry] = curVy[ptry] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptry] - preP[ptr]);
-            }
-        }
-        for (var j = 0; j < this.height; j++) {
-            for (var i = 0; i < this.width; i++) {
-                var ptr = i + j * this.width;
-                var ptrx = (i + 1) + j * this.width;
-                var ptry = i + (j + 1) * this.height;
-                curP[ptr] = preP[ptr] - (((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVx[ptrx] - curVx[ptr]) +
-                    ((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVy[ptry] - curVy[ptr]));
-            }
-        }
-        this.counter++;
-        return this;
-    };
-    FDTD.prototype.draw = function (render) {
-        var cnv = render.cnv;
-        var ctx = render.ctx;
-        cnv.width = this.width;
-        cnv.height = this.height;
-        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
-        var curP = this.pressures[(this.counter) % this.pressures.length];
-        for (var j = 0; j < this.height; j++) {
-            for (var i = 0; i < this.width; i++) {
-                var ptr = i + j * this.width;
-                var _a = CanvasRender.hslToRgb(1 - curP[ptr] / 1024, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
-                imgdata.data[ptr * 4 + 0] = r | 0;
-                imgdata.data[ptr * 4 + 1] = g | 0;
-                imgdata.data[ptr * 4 + 2] = b | 0;
-                imgdata.data[ptr * 4 + 3] = 255;
-            }
-        }
-        ctx.putImageData(imgdata, 0, 0);
-        return this;
-    };
-    return FDTD;
-}());
-module.exports = FDTD;
+    Chord.distance = distance;
+})(Chord || (Chord = {}));
+module.exports = Chord;
 
-},{"duxca.lib.canvasrender.js":9}],4:[function(require,module,exports){
-"use strict";
-var FPS = (function () {
-    function FPS(period) {
-        this.period = period;
-        this.lastTime = performance.now();
-        this.fps = 0;
-        this.counter = 0;
-    }
-    FPS.prototype.step = function () {
-        var currentTime = performance.now();
-        this.counter += 1;
-        if (currentTime - this.lastTime > this.period) {
-            this.fps = 1000 * this.counter / (currentTime - this.lastTime);
-            this.counter = 0;
-            this.lastTime = currentTime;
-        }
-    };
-    FPS.prototype.valueOf = function () {
-        return Math.round(this.fps * 1000) / 1000;
-    };
-    return FPS;
-}());
-module.exports = FPS;
-
-},{}],5:[function(require,module,exports){
-"use strict";
-var Metronome = (function () {
-    function Metronome(actx, interval) {
-        this.actx = actx;
-        this.interval = interval;
-        this.lastTime = this.actx.currentTime;
-        this.nextTime = this.interval + this.actx.currentTime;
-        this.nextTick = function () { };
-    }
-    Metronome.prototype.step = function () {
-        if (this.actx.currentTime - this.nextTime >= 0) {
-            this.lastTime = this.nextTime;
-            this.nextTime += this.interval;
-            this.nextTick();
-        }
-    };
-    return Metronome;
-}());
-module.exports = Metronome;
-
-},{}],6:[function(require,module,exports){
-"use strict";
-var Newton = (function () {
-    function Newton(theta, pts, _pts) {
-        this.theta = theta;
-        this.points = pts;
-        this._pts = _pts;
-    }
-    Newton.prototype.step = function () {
-        var _theta = this.theta - this.det(this.theta) / this.der(this.theta);
-        this.theta = _theta;
-    };
-    Newton.prototype.det = function (theta) {
-        var _this = this;
-        return this.points.reduce(function (sum, _, k) {
-            return (_this.points[k].x - Math.pow((_this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)), 2)) +
-                (_this.points[k].y - Math.pow((_this._pts[k].x * Math.sin(theta) + _this._pts[k].y * Math.cos(theta)), 2));
-        }, 0);
-    };
-    Newton.prototype.der = function (theta) {
-        var _this = this;
-        return -2 * this.points.reduce(function (sum, _, k) {
-            return (_this.points[k].x * (-1 * _this._pts[k].x * Math.sin(theta) - _this._pts[k].y * Math.cos(theta))) +
-                (_this.points[k].y * (-1 * _this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)));
-        }, 0);
-    };
-    return Newton;
-}());
-var Newton;
-(function (Newton) {
-    var Point = (function () {
-        function Point(x, y) {
-            this.x = x;
-            this.y = y;
-        }
-        Point.prototype.plus = function (pt) {
-            return new Point(this.x + pt.x, this.y + pt.y);
-        };
-        Point.prototype.minus = function (pt) {
-            return new Point(this.x - pt.x, this.y - pt.y);
-        };
-        Point.prototype.times = function (num) {
-            return new Point(num * this.x, num * this.y);
-        };
-        Point.prototype.distance = function (pt) {
-            return Math.sqrt(Math.pow(pt.x - this.x, 2) +
-                Math.pow(pt.y - this.y, 2));
-        };
-        return Point;
-    }());
-    Newton.Point = Point;
-    var SDM = (function () {
-        function SDM(pts, ds, a) {
-            if (a === void 0) { a = 0.05; }
-            this.points = pts;
-            this.distance = ds;
-            this.a = a;
-        }
-        SDM.prototype.step = function () {
-            var _this = this;
-            var _pts = [];
-            for (var i = 0; i < this.points.length; i++) {
-                var delta = this.distance[i].reduce((function (sumPt, _, j) {
-                    if (i === j) {
-                        return sumPt;
-                    }
-                    else {
-                        return sumPt.plus((_this.points[i].minus(_this.points[j])).times((1 - _this.distance[i][j] / _this.points[i].distance(_this.points[j]))));
-                    }
-                }), new Point(0, 0)).times(2);
-                _pts[i] = this.points[i].minus(delta.times(this.a));
-            }
-            this.points = _pts;
-        };
-        SDM.prototype.det = function () {
-            var _this = this;
-            return this.points.reduce((function (sum, _, i) {
-                return sum + _this.points.reduce((function (sum, _, j) {
-                    return i === j ? sum :
-                        sum + Math.pow(_this.points[i].distance(_this.points[j]) - _this.distance[i][j], 2);
-                }), 0);
-            }), 0);
-        };
-        return SDM;
-    }());
-    Newton.SDM = SDM;
-})(Newton || (Newton = {}));
-module.exports = Newton;
-
-},{}],7:[function(require,module,exports){
-// Generated by CoffeeScript 1.10.0
-(function() {
-  var SignalViewer;
-
-  SignalViewer = (function() {
-    function SignalViewer(width, height) {
-      this.cnv = document.createElement("canvas");
-      this.cnv.width = width;
-      this.cnv.height = height;
-      this.ctx = this.cnv.getContext("2d");
-      this.offsetX = 0;
-      this.offsetY = this.cnv.height / 2;
-      this.zoomX = 1;
-      this.zoomY = 1;
-      this.drawZero = true;
-      this.drawAuto = true;
-      this.drawStatus = true;
-    }
-
-    SignalViewer.prototype.text = function(str, x, y) {
-      var fillStyle, font, lineWidth, o, ref, strokeStyle;
-      ref = this.ctx, font = ref.font, lineWidth = ref.lineWidth, strokeStyle = ref.strokeStyle, fillStyle = ref.fillStyle;
-      this.ctx.font = "35px";
-      this.ctx.lineWidth = 4;
-      this.ctx.strokeStyle = "white";
-      this.ctx.strokeText(str, x, y);
-      this.ctx.fillStyle = "black";
-      this.ctx.fillText(str, x, y);
-      o = {
-        font: font,
-        lineWidth: lineWidth,
-        strokeStyle: strokeStyle,
-        fillStyle: fillStyle
-      };
-      return Object.keys(o).forEach((function(_this) {
-        return function(key) {
-          return _this.ctx[key] = o[key];
-        };
-      })(this));
-    };
-
-    SignalViewer.prototype.draw = function(_arr) {
-      var _, arr, i, max, min, ref, ref1;
-      arr = _arr.map(function(v) {
-        if (isFinite(v)) {
-          return v;
-        } else {
-          return 0;
-        }
-      });
-      ref = Signal.Statictics.findMax(arr), max = ref[0], _ = ref[1];
-      ref1 = Signal.Statictics.findMin(arr), min = ref1[0], _ = ref1[1];
-      if (this.drawAuto) {
-        this.zoomX = this.cnv.width / arr.length;
-        this.zoomY = this.cnv.height / (max - min);
-        this.offsetY = -min;
-      }
-      if (this.drawZero) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, this.cnv.height - this.zoomY * (0 + this.offsetY));
-        this.ctx.lineTo(this.cnv.width, this.cnv.height - this.zoomY * (0 + this.offsetY));
-        this.ctx.stroke();
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.offsetX, this.cnv.height - 0);
-        this.ctx.lineTo(this.offsetX, this.cnv.height - this.cnv.height);
-        this.ctx.stroke();
-      }
-      this.ctx.beginPath();
-      this.ctx.moveTo(this.zoomX * (0 + this.offsetX), this.cnv.height - this.zoomY * (arr[0] + this.offsetY));
-      i = 0;
-      while (i++ < arr.length) {
-        this.ctx.lineTo(this.zoomX * (i + this.offsetX), this.cnv.height - this.zoomY * (arr[i] + this.offsetY));
-      }
-      this.ctx.stroke();
-      if (this.drawStatus) {
-        this.text("min:" + min, 5, 15);
-        this.text("max:" + max, 5, 25);
-        return this.text("len:" + arr.length, 5, 35);
-      }
-    };
-
-    return SignalViewer;
-
-  })();
-
-  module.exports = SignalViewer;
-
-}).call(this);
-
-},{}],8:[function(require,module,exports){
-"use strict";
-var _Statistics = require("duxca.lib.statistics.js");
-var _Signal = require("duxca.lib.signal.js");
-var _RecordBuffer = require("duxca.lib.recordbuffer.js");
-var _Wave = require("duxca.lib.wave.js");
-var _OSC = require("duxca.lib.osc.js");
-var _CanvasRender = require("duxca.lib.canvasrender.js");
-var _Metronome = require("./Metronome");
-var _FPS = require("./FPS");
-var _Newton = require("./Newton");
-var _FDTD = require("./FDTD");
-var _Chord = require("./Chord");
-var _Ajax = require("./Ajax");
-var _SignalViewer = require("./SignalViewer");
-var lib;
-(function (lib) {
-    lib.Statistics = _Statistics;
-    lib.Signal = _Signal;
-    lib.RecordBuffer = _RecordBuffer;
-    lib.Wave = _Wave;
-    lib.OSC = _OSC;
-    lib.CanvasRender = _CanvasRender;
-    lib.Metronome = _Metronome;
-    lib.FPS = _FPS;
-    lib.Newton = _Newton;
-    lib.FDTD = _FDTD;
-    lib.Chord = _Chord;
-    lib.Ajax = _Ajax;
-    //export const QRCode = _QRCode;
-    lib.SignalViewer = _SignalViewer;
-    var Util;
-    (function (Util) {
-        function importObject(hash) {
-            Object.keys(hash).forEach(function (key) {
-                self[key] = hash[key];
-                console.log("some global variables appended: ", Object.keys(hash));
-            });
-        }
-        Util.importObject = importObject;
-    })(Util = lib.Util || (lib.Util = {}));
-})(lib = exports.lib || (exports.lib = {}));
-
-},{"./Ajax":1,"./Chord":2,"./FDTD":3,"./FPS":4,"./Metronome":5,"./Newton":6,"./SignalViewer":7,"duxca.lib.canvasrender.js":9,"duxca.lib.osc.js":10,"duxca.lib.recordbuffer.js":11,"duxca.lib.signal.js":13,"duxca.lib.statistics.js":14,"duxca.lib.wave.js":15}],9:[function(require,module,exports){
-"use strict";
-var Signal = require("duxca.lib.signal.js");
-var Statistics = require("duxca.lib.statistics.js");
-var CanvasRender = (function () {
-    function CanvasRender(width, height) {
-        this.element = this.cnv = document.createElement("canvas");
-        this.cnv.width = width;
-        this.cnv.height = height;
-        this.ctx = this.cnv.getContext("2d");
-    }
-    CanvasRender.prototype.clear = function () {
-        this.cnv.width = this.cnv.width;
-    };
-    CanvasRender.prototype.drawSignal = function (signal, flagX, flagY) {
-        if (flagX === void 0) { flagX = false; }
-        if (flagY === void 0) { flagY = false; }
-        if (flagY) {
-            signal = Signal.normalize(signal, 1);
-        }
-        var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
-        var zoomY = !flagY ? 1 : this.cnv.height / Statistics.findMax(signal)[0];
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
-        for (var i = 1; i < signal.length; i++) {
-            this.ctx.lineTo(zoomX * i, this.cnv.height - signal[i] * zoomY);
-        }
-        this.ctx.stroke();
-    };
-    CanvasRender.prototype.drawColLine = function (x) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, 0);
-        this.ctx.lineTo(x, this.cnv.height);
-        this.ctx.stroke();
-    };
-    CanvasRender.prototype.drawRowLine = function (y) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, y);
-        this.ctx.lineTo(this.cnv.width, y);
-        this.ctx.stroke();
-    };
-    CanvasRender.prototype.cross = function (x, y, size) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x + size, y + size);
-        this.ctx.lineTo(x - size, y - size);
-        this.ctx.moveTo(x - size, y + size);
-        this.ctx.lineTo(x + size, y - size);
-        this.ctx.stroke();
-    };
-    CanvasRender.prototype.arc = function (x, y, size) {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, size, 0, 2 * Math.PI, false);
-        this.ctx.stroke();
-    };
-    CanvasRender.prototype.drawSpectrogram = function (spectrogram, max) {
-        if (max === void 0) { max = 255; }
-        var imgdata = this.ctx.createImageData(spectrogram.length, spectrogram[0].length);
-        for (var i = 0; i < spectrogram.length; i++) {
-            for (var j = 0; j < spectrogram[i].length; j++) {
-                var _a = CanvasRender.hslToRgb(spectrogram[i][j] / max, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
-                var _b = [i, imgdata.height - 1 - j], x = _b[0], y = _b[1];
-                var index = x + y * imgdata.width;
-                imgdata.data[index * 4 + 0] = b | 0;
-                imgdata.data[index * 4 + 1] = g | 0;
-                imgdata.data[index * 4 + 2] = r | 0; // is this bug?
-                imgdata.data[index * 4 + 3] = 255;
-            }
-        }
-        this.ctx.putImageData(imgdata, 0, 0);
-    };
-    CanvasRender.prototype._drawSpectrogram = function (rawdata, sampleRate) {
-        var windowsize = Math.pow(2, 8); // spectrgram height
-        var slidewidth = Math.pow(2, 5); // spectrgram width rate
-        console.log("sampleRate:", sampleRate, "\n", "windowsize:", windowsize, "\n", "slidewidth:", slidewidth, "\n", "windowsize(ms):", windowsize / sampleRate * 1000, "\n", "slidewidth(ms):", slidewidth / sampleRate * 1000, "\n");
-        var spectrums = [];
-        for (var ptr = 0; ptr + windowsize < rawdata.length; ptr += slidewidth) {
-            var buffer = rawdata.subarray(ptr, ptr + windowsize);
-            if (buffer.length !== windowsize)
-                break;
-            var spectrum = Signal.fft(buffer, sampleRate)[2];
-            for (var i = 0; i < spectrum.length; i++) {
-                spectrum[i] = spectrum[i] * 20000;
-            }
-            spectrums.push(spectrum);
-        }
-        console.log("ptr", 0 + "-" + (ptr - 1) + "/" + rawdata.length, "ms", 0 / sampleRate * 1000 + "-" + (ptr - 1) / sampleRate * 1000 + "/" + rawdata.length * 1000 / sampleRate, spectrums.length + "x" + spectrums[0].length);
-        this.cnv.width = spectrums.length;
-        this.cnv.height = spectrums[0].length;
-        this.drawSpectrogram(spectrums);
-    };
-    return CanvasRender;
-}());
-var CanvasRender;
-(function (CanvasRender) {
-    function hue2rgb(p, q, t) {
-        if (t < 0) {
-            t += 1;
-        }
-        if (t > 1) {
-            t -= 1;
-        }
-        if (t < 1 / 6) {
-            return p + (q - p) * 6 * t;
-        }
-        if (t < 1 / 2) {
-            return q;
-        }
-        if (t < 2 / 3) {
-            return p + (q - p) * (2 / 3 - t) * 6;
-        }
-        return p;
-    }
-    CanvasRender.hue2rgb = hue2rgb;
-    function hslToRgb(h, s, l) {
-        // h, s, l: 0~1
-        h *= 5 / 6;
-        if (h < 0) {
-            h = 0;
-        }
-        if (5 / 6 < h) {
-            h = 5 / 6;
-        }
-        var r, g, b;
-        if (s === 0) {
-            r = g = b = l;
-        }
-        else {
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
-        }
-        return [r * 255, g * 255, b * 255];
-    }
-    CanvasRender.hslToRgb = hslToRgb;
-})(CanvasRender || (CanvasRender = {}));
-module.exports = CanvasRender;
-
-},{"duxca.lib.signal.js":13,"duxca.lib.statistics.js":14}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 var CanvasRender = require("duxca.lib.canvasrender.js");
 var Signal = require("duxca.lib.signal.js");
@@ -1020,7 +1106,7 @@ var OSC = (function () {
 }());
 module.exports = OSC;
 
-},{"duxca.lib.canvasrender.js":9,"duxca.lib.recordbuffer.js":11,"duxca.lib.signal.js":13}],11:[function(require,module,exports){
+},{"duxca.lib.canvasrender.js":9,"duxca.lib.recordbuffer.js":12,"duxca.lib.signal.js":14}],12:[function(require,module,exports){
 "use strict";
 var RecordBuffer = (function () {
     function RecordBuffer(sampleRate, bufferSize, channel, maximamRecordSize) {
@@ -1109,7 +1195,7 @@ var RecordBuffer;
 })(RecordBuffer || (RecordBuffer = {}));
 module.exports = RecordBuffer;
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -1560,7 +1646,7 @@ var RFFT = (function (_super) {
 }(FourierTransform));
 exports.RFFT = RFFT;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var FourierTransform_1 = require("./FourierTransform");
 var Statistics = require("duxca.lib.statistics.js");
@@ -2073,7 +2159,7 @@ function first_wave_detection(xs) {
 }
 exports.first_wave_detection = first_wave_detection;
 
-},{"./FourierTransform":12,"duxca.lib.statistics.js":14}],14:[function(require,module,exports){
+},{"./FourierTransform":13,"duxca.lib.statistics.js":15}],15:[function(require,module,exports){
 "use strict";
 function summation(arr) {
     var sum = 0;
@@ -2230,7 +2316,7 @@ function k_means1D(data, k) {
 }
 exports.k_means1D = k_means1D;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 var Wave = (function () {
     function Wave(channel, sampleRate, int16arr) {
