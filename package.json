@@ -1,0 +1,29 @@
+{
+  "name": "duxca.lib.js",
+  "version": "1.0.0",
+  "description": "duxca algorithm sandbox",
+  "main": "lib/index.js",
+  "typings": "src/index.d.ts",
+  "scripts": {
+    "setup": "npm install -g typescript bower typings browserify watchify http-server",
+    "init": "npm run update; npm run start",
+    "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
+    "clean": "rm -rf lib/* dist/*; mkdir -p dist",
+    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone duxca -o dist/duxca.lib.js",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone duxca -o dist/duxca.lib.js -v & http-server -s -p 8000",
+    "stop": "killall -- node */tsc -w -p"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/legokichi/duxca.lib.js.git"
+  },
+  "author": "legokichi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/legokichi/duxca.lib.js/issues"
+  },
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
+  "dependencies": {
+  },
+  "devDependencies": {}
+}
