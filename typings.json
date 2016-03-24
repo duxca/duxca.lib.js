@@ -1,5 +1,11 @@
 {
   "name": "duxca.lib.osc.js",
   "version": false,
-  "dependencies": {}
+  "dependencies": {
+    "bluebird": "registry:npm/bluebird#3.2.1+20160211005852"
+  },
+  "ambientDependencies": {
+    "webaudioapi/waa": "registry:dt/webaudioapi/waa#0.0.0+20160316155526",
+    "webrtc/mediastream": "registry:dt/webrtc/mediastream#0.0.0+20160317120654"
+  }
 }
