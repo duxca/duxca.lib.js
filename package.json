@@ -27,7 +27,7 @@
     "duxca.lib.osc.js": "github:legokichi/duxca.lib.js#osc",
     "duxca.lib.recordbuffer.js": "github:legokichi/duxca.lib.js#recordbuffer",
     "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal",
-    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics",
+    "duxca.lib.statistics.js": "github:legokichi/duxca.lib.js#statistics",
     "duxca.lib.wave.js": "github:legokichi/duxca.lib.js#wave"
   },
   "devDependencies": {}

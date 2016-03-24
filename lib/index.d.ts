@@ -1,12 +1,14 @@
-import _Statictics = require("duxca.lib.statictics.js");
+import _Statistics = require("duxca.lib.statistics.js");
 import _Signal = require("duxca.lib.signal.js");
 import _RecordBuffer = require("duxca.lib.recordbuffer.js");
 import _Wave = require("duxca.lib.wave.js");
 import _OSC = require("duxca.lib.osc.js");
+import _CanvasRender = require("duxca.lib.canvasrender.js");
 export declare namespace lib {
-    var Statictics: typeof _Statictics;
-    var Signal: typeof _Signal;
-    var RecordBuffer: typeof _RecordBuffer;
-    var Wave: typeof _Wave;
-    var OSC: typeof _OSC;
+    const Statistics: typeof _Statistics;
+    const Signal: typeof _Signal;
+    const RecordBuffer: typeof _RecordBuffer;
+    const Wave: typeof _Wave;
+    const OSC: typeof _OSC;
+    const CanvasRender: typeof _CanvasRender;
 }
