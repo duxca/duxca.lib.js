@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "duxca algorithm sandbox",
   "main": "lib/index.js",
-  "typings": "src/index.d.ts",
+  "typings": "lib/index.d.ts",
   "scripts": {
     "setup": "npm install -g typescript bower typings",
     "init": "npm run update; npm run build",
