@@ -18,13 +18,16 @@
     "typings"
   ],
   "dependencies": {
-    "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master"
+    "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
+    "duxca.lib.statictics.js": "legokichi/duxca.lib.js#statictics"
   },
   "devDependencies": {
     "qunit-tap": "^1.5.0",
     "qunit": "~1.17.1",
     "power-assert": "~0.10.2",
     "empower": "~0.10.0",
-    "power-assert-formatter": "~0.10.2"
+    "power-assert-formatter": "~0.10.2",
+    "duxca.lib.canvasrender.js": "legokichi/duxca.lib.js#canvasrender",
+    "duxca.serverworker.js": "legokichi/ServerWorker"
   }
 }

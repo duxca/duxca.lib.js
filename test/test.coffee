@@ -1,3 +1,4 @@
+
 window.craetePictureFrame = (description, target=document.body) ->
   fieldset = document.createElement('fieldset')
   style = document.createElement('style')
@@ -31,7 +32,7 @@ QUnit.test 'ServerWorker test', (assert) ->
   ITERATIONS = 100
   workers = [1..WORKERS].map ->
     new InlineServerWorker [
-      "../dist/Signal.js"
+      "../dist/index.js"
     ], (conn)->
       conn.on "echo", (data, reply)-> reply(data)
   Promise.all(
@@ -85,7 +86,7 @@ QUnit.test 'drawSignal', (assert) ->
   sinWave = new Float32Array(length)
   for _, i in sinWave
     sinWave[i] = Math.sin(i/10)
-  render = new Signal.Render(sinWave.length, 127)
+  render = new CanvasRender(sinWave.length, 127)
   render.drawSignal(sinWave, true, true)
   document.body.appendChild(render.element)
   assert.ok true
@@ -97,10 +98,10 @@ QUnit.test 'naive_correlation', (assert) ->
   for i in [0..length-1]
     signal[i] = if 64 > i > 32 then 1 else 0
   correl = Signal.naive_correlation(signal, signal)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "auto-correl")
   correlLen = correl.length
@@ -114,10 +115,10 @@ QUnit.test 'naive_convolution', (assert) ->
   for i in [1..length]
     signal[i] = if 64 > i > 32 then 1 else 0
   conv = Signal.naive_convolution(signal, signal)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(conv.length, 127)
+  render = new CanvasRender(conv.length, 127)
   render.drawSignal(conv, true, true)
   frame.add(render.element, "auto-conv")
   convLen = conv.length
@@ -131,10 +132,10 @@ QUnit.test 'fft_correlation', (assert) ->
   for _, i in signal
     signal[i] = if 64 > i > 32 then 1 else 0
   correl = Signal.fft_correlation(signal, signal)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "auto-correl")
   correlLen = correl.length
@@ -149,10 +150,10 @@ QUnit.test 'fft_convolution', (assert) ->
   for _, i in signal
     signal[i] = if 64 > i > 32 then 1 else 0
   conv = Signal.fft_convolution(signal, signal)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(conv.length, 127)
+  render = new CanvasRender(conv.length, 127)
   render.drawSignal(conv, true, true)
   frame.add(render.element, "auto-conv")
   convLen = conv.length
@@ -170,16 +171,16 @@ QUnit.test 'mseqGen -> fft_correlation', (assert) ->
     _signal.set(signal, signal.length*i)
   correl = Signal.smartCorrelation(_signal, signal)
   correl2 = Signal.fft_smart_overwrap_correlation(_signal, signal)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(_signal.length, 127)
+  render = new CanvasRender(_signal.length, 127)
   render.drawSignal(_signal, true, true)
   frame.add(render.element, "sigal")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "auto-correl")
-  render = new Signal.Render(correl2.length, 127)
+  render = new CanvasRender(correl2.length, 127)
   render.drawSignal(correl2, true, true)
   frame.add(render.element, "auto-correl2(POF)")
   correlLen = correl.length
@@ -196,19 +197,19 @@ QUnit.test 'phase_only_filter', (assert) ->
     signal_noized[i] = signal[i] + Math.random()
   correl = Signal.phase_only_filter(signal, signal_noized)
   _correl = Signal.correlation(signal, signal_noized)
-  render = new Signal.Render(signal.length, 127)
+  render = new CanvasRender(signal.length, 127)
   render.drawSignal(signal, true, true)
   frame.add(render.element, "signal")
-  render = new Signal.Render(signal_noized.length, 127)
+  render = new CanvasRender(signal_noized.length, 127)
   render.drawSignal(signal_noized, true, true)
   frame.add(render.element, "signal_noized")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "pof_correl")
-  render = new Signal.Render(_correl.length, 127)
+  render = new CanvasRender(_correl.length, 127)
   render.drawSignal(_correl, true, true)
   frame.add(render.element, "fft_correl")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   render.drawSignal(_correl, true, true)
   frame.add(render.element, "pof+fft_correl")
@@ -224,7 +225,7 @@ QUnit.test 'encode_chipcode, fft_smart_overwrap_correlation', (assert) ->
   mseqLen = mseq.length
   bitsLen = bits.length
   seqLen = seq.length
-  render = new Signal.Render(seq.length, 127)
+  render = new CanvasRender(seq.length, 127)
   render.drawSignal(seq, true, true)
   frame.add(render.element, "encode_chipcode")
   assert.ok seqLen is mseqLen * bitsLen
@@ -240,7 +241,7 @@ QUnit.test 'encode_chipcode, fft_smart_overwrap_correlation', (assert) ->
   peaks.forEach (i)->
     peak = correl[i]
     assert.ok i % mseqLen is 0 && (Math.abs(peak) > threshold)
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "fft_smart_overwrap_correlation")
 
@@ -254,10 +255,10 @@ QUnit.test 'carrierGen, BPSK', (assert) ->
   assert.ok sigLen is len
   assert.ok sig2Len is 1024
   assert.ok sig[sigLen-1] - sig2[0] < 0.1
-  render = new Signal.Render(sig.length, 127)
+  render = new CanvasRender(sig.length, 127)
   render.drawSignal(sig, true, true)
   frame.add(render.element, "sig")
-  render = new Signal.Render(sig2.length, 127)
+  render = new CanvasRender(sig2.length, 127)
   render.drawSignal(sig2, true, true)
   frame.add(render.element, "sig2")
 
@@ -280,33 +281,33 @@ QUnit.test 'encode_chipcode, fft_smart_overwrap_correlation, carrierGen, BPSK', 
   console.log sig.length
   console.log sig_long.length
   console.log correl.length
-  render = new Signal.Render(matched.length, 127)
+  render = new CanvasRender(matched.length, 127)
   render.drawSignal(mseq, true, true)
   frame.add(render.element, "mseq")
   frame.add(document.createElement("br"))
-  render = new Signal.Render(matched.length, 127)
+  render = new CanvasRender(matched.length, 127)
   render.drawSignal(matched, true, true)
   frame.add(render.element, "matched")
   frame.add(document.createElement("br"))
-  render = new Signal.Render(sig.length, 127)
+  render = new CanvasRender(sig.length, 127)
   render.drawSignal(bits, true, true)
   frame.add(render.element, "bits")
   frame.add(document.createElement("br"))
-  render = new Signal.Render(sig.length, 127)
+  render = new CanvasRender(sig.length, 127)
   render.drawSignal(code, true, true)
   frame.add(render.element, "code")
   frame.add(document.createElement("br"))
-  render = new Signal.Render(sig.length, 127)
+  render = new CanvasRender(sig.length, 127)
   render.drawSignal(sig, true, true)
   frame.add(render.element, "sig")
   frame.add(document.createElement("br"))
-  render = new Signal.Render(sig_long.length, 127)
+  render = new CanvasRender(sig_long.length, 127)
   render.drawSignal(sig_long, true, true)
   frame.add(render.element, "sig_long")
-  render = new Signal.Render(sig_noized.length, 127)
+  render = new CanvasRender(sig_noized.length, 127)
   render.drawSignal(sig_noized, true, true)
   frame.add(render.element, "sig_noized")
-  render = new Signal.Render(correl.length, 127)
+  render = new CanvasRender(correl.length, 127)
   render.drawSignal(correl, true, true)
   frame.add(render.element, "correl")
   assert.ok true
@@ -319,21 +320,21 @@ QUnit.test 'goldSeqGen', (assert) ->
   signalB = Signal.goldSeqGen(7, [0, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1], 4);
   T = 16
   correlAA = Signal.fft_smart_overwrap_correlation(signalA, signalA)
-  render = new Signal.Render(signalA.length, 127)
+  render = new CanvasRender(signalA.length, 127)
   render.drawSignal(signalA, true, true)
   frame.add(render.element, "sigalA")
-  render = new Signal.Render(correlAA.length, 127)
+  render = new CanvasRender(correlAA.length, 127)
   render.drawSignal(correlAA, true, true)
   frame.add(render.element, "correlAA")
   correlBB = Signal.fft_smart_overwrap_correlation(signalB, signalB)
-  render = new Signal.Render(signalB.length, 127)
+  render = new CanvasRender(signalB.length, 127)
   render.drawSignal(signalB, true, true)
   frame.add(render.element, "sigalA")
-  render = new Signal.Render(correlBB.length, 127)
+  render = new CanvasRender(correlBB.length, 127)
   render.drawSignal(correlBB, true, true)
   frame.add(render.element, "correlBB")
   correlAB = Signal.fft_smart_overwrap_correlation(signalA, signalB)
-  render = new Signal.Render(correlAB.length, 127)
+  render = new CanvasRender(correlAB.length, 127)
   render.drawSignal(correlAB, true, true)
   frame.add(render.element, "correlAB")
   correlLen = correlAA.length
@@ -344,14 +345,14 @@ QUnit.test 'goldSeqGen', (assert) ->
   mixed = sig_longA.map (v, i)-> sig_longA[(i+149)%sig_longA.length] + sig_longB[(i+133)%sig_longB.length]
   correl_longMB = Signal.fft_smart_overwrap_correlation(mixed, sig_longB)
   correl_longMA = Signal.fft_smart_overwrap_correlation(mixed, sig_longA)
-  [_, idA] = Signal.Statictics.findMax(correl_longMA)
-  [_, idB] = Signal.Statictics.findMax(correl_longMB)
+  [_, idA] = Statictics.findMax(correl_longMA)
+  [_, idB] = Statictics.findMax(correl_longMB)
   assert.ok idA is 149
   assert.ok idB is 133
-  render = new Signal.Render(correl_longMA.length, 127)
+  render = new CanvasRender(correl_longMA.length, 127)
   render.drawSignal(correl_longMA, true, true)
   frame.add(render.element, "correl_longAB")
-  render = new Signal.Render(correl_longMB.length, 127)
+  render = new CanvasRender(correl_longMB.length, 127)
   render.drawSignal(correl_longMB, true, true)
   frame.add(render.element, "correl_longAB")
 
@@ -376,7 +377,7 @@ QUnit.test 'phase_shift_detection', (assert) ->
   B = signal.subarray(T+1, T*2+1)
   C = signal.subarray(T*2+2, T*3+2)
   [[signal, "signal"], [A, "A"], [C, "C"], [C, "C"]].forEach ([sig, title])->
-    render = new Signal.Render(sig.length, 255)
+    render = new CanvasRender(sig.length, 255)
     render.drawSignal(sig)
     frame.add(render.element, title)
     frame.add document.createElement "br"
@@ -408,10 +409,10 @@ QUnit.test 'phase_shift_detection', (assert) ->
       [maxes, false, true]
       [_maxes, false, true]
     ]
-    renders = (new Signal.Render(A.length, 64) for _ in coms)
+    renders = (new CanvasRender(A.length, 64) for _ in coms)
     renders.forEach (render)-> render.clear()
     renders.forEach (_, i)->
-      Signal.Render::drawSignal.apply(renders[i], coms[i])
+      CanvasRender::drawSignal.apply(renders[i], coms[i])
     renders.forEach (render)->
       frame.add(render.element)
       frame.add document.createElement "br"
@@ -423,7 +424,7 @@ QUnit.test 'phase_shift_detection2', (assert) ->
   assert.ok true
   frame = craetePictureFrame("phase_shift_detection")
   view = (sig, title="")->
-    render = new Signal.Render(sig.length, 255)
+    render = new CanvasRender(sig.length, 255)
     render.drawSignal(sig, true, true)
     frame.add(render.element, title)
     frame.add document.createElement "br"
@@ -478,7 +479,7 @@ QUnit.test 'picture', (assert) ->
     sig = new Int8Array(ss_code.length*2)
     sig.forEach (_, i)->
       sig[i] = if i < ss_code.length then 1 else 0
-    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render = new CanvasRender(chip_width*sig.length*zoom, 128)
     render.ctx.beginPath()
     render.ctx.moveTo(0, render.cnv.height/2)
     lastPosX = chip_width*0
@@ -495,7 +496,7 @@ QUnit.test 'picture', (assert) ->
     sig = new Int8Array(ss_code.length*2)
     sig.set(ss_code, 0)
     sig.set(ss_code, ss_code.length)
-    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render = new CanvasRender(chip_width*sig.length*zoom, 128)
     render.ctx.beginPath()
     render.ctx.moveTo(0, render.cnv.height/2)
     lastPosX = chip_width*0
@@ -511,7 +512,7 @@ QUnit.test 'picture', (assert) ->
   sig_coded = Signal.encode_chipcode(n("10"), ss_code)
   do ->
     sig = sig_coded
-    render = new Signal.Render(chip_width*sig.length*zoom, 128)
+    render = new CanvasRender(chip_width*sig.length*zoom, 128)
     render.ctx.beginPath()
     render.ctx.moveTo(0, render.cnv.height/2)
     lastPosX = chip_width*0
@@ -526,7 +527,7 @@ QUnit.test 'picture', (assert) ->
     document.body.appendChild document.createElement "br"
   do ->
     sig = Signal.BPSK(sig_coded.map(->1), carrier_freq, sampleRate, 0)
-    render = new Signal.Render(sig.length*zoom, 128)
+    render = new CanvasRender(sig.length*zoom, 128)
     render.drawSignal(sig, true, true)
     document.body.appendChild render.element
     document.body.appendChild document.createElement "br"
@@ -534,21 +535,21 @@ QUnit.test 'picture', (assert) ->
   ss_sig = Signal.BPSK(sig_coded, carrier_freq, sampleRate, 0)
   do ->
     sig = ss_sig
-    render = new Signal.Render(sig.length*zoom, 128)
+    render = new CanvasRender(sig.length*zoom, 128)
     render.drawSignal(sig, true, true)
     document.body.appendChild render.element
     document.body.appendChild document.createElement "br"
   matched = Signal.BPSK(ss_code, carrier_freq, sampleRate, 0)
   ->
     sig = matched
-    render = new Signal.Render(sig.length*zoom, 128)
+    render = new CanvasRender(sig.length*zoom, 128)
     render.drawSignal(sig, true, true)
     document.body.appendChild render.element
     document.body.appendChild document.createElement "br"
   console.log corr = Signal.fft_smart_overwrap_correlation(ss_sig, matched)
   do ->
     sig = corr
-    render = new Signal.Render(sig.length*zoom, 128)
+    render = new CanvasRender(sig.length*zoom, 128)
     render.drawSignal(sig, true, true)
     document.body.appendChild render.element
     document.body.appendChild document.createElement "br"

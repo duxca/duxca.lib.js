@@ -44,7 +44,7 @@ QUnit.test('ServerWorker test', function (assert) {
         }
         return results1;
     }.apply(this).map(function () {
-        return new InlineServerWorker(['../dist/Signal.js'], function (conn) {
+        return new InlineServerWorker(['../dist/index.js'], function (conn) {
             return conn.on('echo', function (data, reply) {
                 return reply(data);
             });
@@ -178,7 +178,7 @@ QUnit.test('drawSignal', function (assert) {
         _ = sinWave[i];
         sinWave[i] = Math.sin(i / 10);
     }
-    render = new Signal.Render(sinWave.length, 127);
+    render = new CanvasRender(sinWave.length, 127);
     render.drawSignal(sinWave, true, true);
     document.body.appendChild(render.element);
     return assert.ok(true);
@@ -192,10 +192,10 @@ QUnit.test('naive_correlation', function (assert) {
         signal[i] = 64 > i && i > 32 ? 1 : 0;
     }
     correl = Signal.naive_correlation(signal, signal);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     frame.add(render.element, 'auto-correl');
     correlLen = correl.length;
@@ -215,10 +215,10 @@ QUnit.test('naive_convolution', function (assert) {
         signal[i] = 64 > i && i > 32 ? 1 : 0;
     }
     conv = Signal.naive_convolution(signal, signal);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(conv.length, 127);
+    render = new CanvasRender(conv.length, 127);
     render.drawSignal(conv, true, true);
     frame.add(render.element, 'auto-conv');
     convLen = conv.length;
@@ -239,10 +239,10 @@ QUnit.test('fft_correlation', function (assert) {
         signal[i] = 64 > i && i > 32 ? 1 : 0;
     }
     correl = Signal.fft_correlation(signal, signal);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     frame.add(render.element, 'auto-correl');
     correlLen = correl.length;
@@ -263,10 +263,10 @@ QUnit.test('fft_convolution', function (assert) {
         signal[i] = 64 > i && i > 32 ? 1 : 0;
     }
     conv = Signal.fft_convolution(signal, signal);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(conv.length, 127);
+    render = new CanvasRender(conv.length, 127);
     render.drawSignal(conv, true, true);
     frame.add(render.element, 'auto-conv');
     convLen = conv.length;
@@ -297,16 +297,16 @@ QUnit.test('mseqGen -> fft_correlation', function (assert) {
     }
     correl = Signal.smartCorrelation(_signal, signal);
     correl2 = Signal.fft_smart_overwrap_correlation(_signal, signal);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(_signal.length, 127);
+    render = new CanvasRender(_signal.length, 127);
     render.drawSignal(_signal, true, true);
     frame.add(render.element, 'sigal');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     frame.add(render.element, 'auto-correl');
-    render = new Signal.Render(correl2.length, 127);
+    render = new CanvasRender(correl2.length, 127);
     render.drawSignal(correl2, true, true);
     frame.add(render.element, 'auto-correl2(POF)');
     correlLen = correl.length;
@@ -330,19 +330,19 @@ QUnit.test('phase_only_filter', function (assert) {
     }
     correl = Signal.phase_only_filter(signal, signal_noized);
     _correl = Signal.correlation(signal, signal_noized);
-    render = new Signal.Render(signal.length, 127);
+    render = new CanvasRender(signal.length, 127);
     render.drawSignal(signal, true, true);
     frame.add(render.element, 'signal');
-    render = new Signal.Render(signal_noized.length, 127);
+    render = new CanvasRender(signal_noized.length, 127);
     render.drawSignal(signal_noized, true, true);
     frame.add(render.element, 'signal_noized');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     frame.add(render.element, 'pof_correl');
-    render = new Signal.Render(_correl.length, 127);
+    render = new CanvasRender(_correl.length, 127);
     render.drawSignal(_correl, true, true);
     frame.add(render.element, 'fft_correl');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     render.drawSignal(_correl, true, true);
     frame.add(render.element, 'pof+fft_correl');
@@ -384,7 +384,7 @@ QUnit.test('encode_chipcode, fft_smart_overwrap_correlation', function (assert) 
     mseqLen = mseq.length;
     bitsLen = bits.length;
     seqLen = seq.length;
-    render = new Signal.Render(seq.length, 127);
+    render = new CanvasRender(seq.length, 127);
     render.drawSignal(seq, true, true);
     frame.add(render.element, 'encode_chipcode');
     assert.ok(assert._expr(assert._capt(assert._capt(seqLen, 'arguments/0/left') === assert._capt(assert._capt(mseqLen, 'arguments/0/right/left') * assert._capt(bitsLen, 'arguments/0/right/right'), 'arguments/0/right'), 'arguments/0'), {
@@ -425,7 +425,7 @@ QUnit.test('encode_chipcode, fft_smart_overwrap_correlation', function (assert) 
             line: 308
         }));
     });
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     return frame.add(render.element, 'fft_smart_overwrap_correlation');
 });
@@ -460,10 +460,10 @@ QUnit.test('carrierGen, BPSK', function (assert) {
         filepath: 'test/test.js',
         line: 325
     }));
-    render = new Signal.Render(sig.length, 127);
+    render = new CanvasRender(sig.length, 127);
     render.drawSignal(sig, true, true);
     frame.add(render.element, 'sig');
-    render = new Signal.Render(sig2.length, 127);
+    render = new CanvasRender(sig2.length, 127);
     render.drawSignal(sig2, true, true);
     return frame.add(render.element, 'sig2');
 });
@@ -500,33 +500,33 @@ QUnit.test('encode_chipcode, fft_smart_overwrap_correlation, carrierGen, BPSK', 
     console.log(sig.length);
     console.log(sig_long.length);
     console.log(correl.length);
-    render = new Signal.Render(matched.length, 127);
+    render = new CanvasRender(matched.length, 127);
     render.drawSignal(mseq, true, true);
     frame.add(render.element, 'mseq');
     frame.add(document.createElement('br'));
-    render = new Signal.Render(matched.length, 127);
+    render = new CanvasRender(matched.length, 127);
     render.drawSignal(matched, true, true);
     frame.add(render.element, 'matched');
     frame.add(document.createElement('br'));
-    render = new Signal.Render(sig.length, 127);
+    render = new CanvasRender(sig.length, 127);
     render.drawSignal(bits, true, true);
     frame.add(render.element, 'bits');
     frame.add(document.createElement('br'));
-    render = new Signal.Render(sig.length, 127);
+    render = new CanvasRender(sig.length, 127);
     render.drawSignal(code, true, true);
     frame.add(render.element, 'code');
     frame.add(document.createElement('br'));
-    render = new Signal.Render(sig.length, 127);
+    render = new CanvasRender(sig.length, 127);
     render.drawSignal(sig, true, true);
     frame.add(render.element, 'sig');
     frame.add(document.createElement('br'));
-    render = new Signal.Render(sig_long.length, 127);
+    render = new CanvasRender(sig_long.length, 127);
     render.drawSignal(sig_long, true, true);
     frame.add(render.element, 'sig_long');
-    render = new Signal.Render(sig_noized.length, 127);
+    render = new CanvasRender(sig_noized.length, 127);
     render.drawSignal(sig_noized, true, true);
     frame.add(render.element, 'sig_noized');
-    render = new Signal.Render(correl.length, 127);
+    render = new CanvasRender(correl.length, 127);
     render.drawSignal(correl, true, true);
     frame.add(render.element, 'correl');
     return assert.ok(true);
@@ -571,21 +571,21 @@ QUnit.test('goldSeqGen', function (assert) {
     ], 4);
     T = 16;
     correlAA = Signal.fft_smart_overwrap_correlation(signalA, signalA);
-    render = new Signal.Render(signalA.length, 127);
+    render = new CanvasRender(signalA.length, 127);
     render.drawSignal(signalA, true, true);
     frame.add(render.element, 'sigalA');
-    render = new Signal.Render(correlAA.length, 127);
+    render = new CanvasRender(correlAA.length, 127);
     render.drawSignal(correlAA, true, true);
     frame.add(render.element, 'correlAA');
     correlBB = Signal.fft_smart_overwrap_correlation(signalB, signalB);
-    render = new Signal.Render(signalB.length, 127);
+    render = new CanvasRender(signalB.length, 127);
     render.drawSignal(signalB, true, true);
     frame.add(render.element, 'sigalA');
-    render = new Signal.Render(correlBB.length, 127);
+    render = new CanvasRender(correlBB.length, 127);
     render.drawSignal(correlBB, true, true);
     frame.add(render.element, 'correlBB');
     correlAB = Signal.fft_smart_overwrap_correlation(signalA, signalB);
-    render = new Signal.Render(correlAB.length, 127);
+    render = new CanvasRender(correlAB.length, 127);
     render.drawSignal(correlAB, true, true);
     frame.add(render.element, 'correlAB');
     correlLen = correlAA.length;
@@ -602,8 +602,8 @@ QUnit.test('goldSeqGen', function (assert) {
     });
     correl_longMB = Signal.fft_smart_overwrap_correlation(mixed, sig_longB);
     correl_longMA = Signal.fft_smart_overwrap_correlation(mixed, sig_longA);
-    ref = Signal.Statictics.findMax(correl_longMA), _ = ref[0], idA = ref[1];
-    ref1 = Signal.Statictics.findMax(correl_longMB), _ = ref1[0], idB = ref1[1];
+    ref = Statictics.findMax(correl_longMA), _ = ref[0], idA = ref[1];
+    ref1 = Statictics.findMax(correl_longMB), _ = ref1[0], idB = ref1[1];
     assert.ok(assert._expr(assert._capt(assert._capt(idA, 'arguments/0/left') === 149, 'arguments/0'), {
         content: 'assert.ok(idA === 149)',
         filepath: 'test/test.js',
@@ -614,10 +614,10 @@ QUnit.test('goldSeqGen', function (assert) {
         filepath: 'test/test.js',
         line: 426
     }));
-    render = new Signal.Render(correl_longMA.length, 127);
+    render = new CanvasRender(correl_longMA.length, 127);
     render.drawSignal(correl_longMA, true, true);
     frame.add(render.element, 'correl_longAB');
-    render = new Signal.Render(correl_longMB.length, 127);
+    render = new CanvasRender(correl_longMB.length, 127);
     render.drawSignal(correl_longMB, true, true);
     return frame.add(render.element, 'correl_longAB');
 });
@@ -663,7 +663,7 @@ QUnit.test('phase_shift_detection', function (assert) {
     ].forEach(function (arg) {
         var render, sig, title;
         sig = arg[0], title = arg[1];
-        render = new Signal.Render(sig.length, 255);
+        render = new CanvasRender(sig.length, 255);
         render.drawSignal(sig);
         frame.add(render.element, title);
         return frame.add(document.createElement('br'));
@@ -719,7 +719,7 @@ QUnit.test('phase_shift_detection', function (assert) {
             results1 = [];
             for (j = 0, len1 = coms.length; j < len1; j++) {
                 _ = coms[j];
-                results1.push(new Signal.Render(A.length, 64));
+                results1.push(new CanvasRender(A.length, 64));
             }
             return results1;
         }();
@@ -727,7 +727,7 @@ QUnit.test('phase_shift_detection', function (assert) {
             return render.clear();
         });
         renders.forEach(function (_, i) {
-            return Signal.Render.prototype.drawSignal.apply(renders[i], coms[i]);
+            return CanvasRender.prototype.drawSignal.apply(renders[i], coms[i]);
         });
         renders.forEach(function (render) {
             frame.add(render.element);
@@ -746,7 +746,7 @@ QUnit.test('phase_shift_detection2', function (assert) {
         if (title == null) {
             title = '';
         }
-        render = new Signal.Render(sig.length, 255);
+        render = new CanvasRender(sig.length, 255);
         render.drawSignal(sig, true, true);
         frame.add(render.element, title);
         return frame.add(document.createElement('br'));
@@ -793,7 +793,7 @@ QUnit.test('picture', function (assert) {
         sig.forEach(function (_, i) {
             return sig[i] = i < ss_code.length ? 1 : 0;
         });
-        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render = new CanvasRender(chip_width * sig.length * zoom, 128);
         render.ctx.beginPath();
         render.ctx.moveTo(0, render.cnv.height / 2);
         lastPosX = chip_width * 0;
@@ -813,7 +813,7 @@ QUnit.test('picture', function (assert) {
         sig = new Int8Array(ss_code.length * 2);
         sig.set(ss_code, 0);
         sig.set(ss_code, ss_code.length);
-        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render = new CanvasRender(chip_width * sig.length * zoom, 128);
         render.ctx.beginPath();
         render.ctx.moveTo(0, render.cnv.height / 2);
         lastPosX = chip_width * 0;
@@ -832,7 +832,7 @@ QUnit.test('picture', function (assert) {
     (function () {
         var lastPosX, lastPosY, render, sig;
         sig = sig_coded;
-        render = new Signal.Render(chip_width * sig.length * zoom, 128);
+        render = new CanvasRender(chip_width * sig.length * zoom, 128);
         render.ctx.beginPath();
         render.ctx.moveTo(0, render.cnv.height / 2);
         lastPosX = chip_width * 0;
@@ -852,7 +852,7 @@ QUnit.test('picture', function (assert) {
         sig = Signal.BPSK(sig_coded.map(function () {
             return 1;
         }), carrier_freq, sampleRate, 0);
-        render = new Signal.Render(sig.length * zoom, 128);
+        render = new CanvasRender(sig.length * zoom, 128);
         render.drawSignal(sig, true, true);
         document.body.appendChild(render.element);
         document.body.appendChild(document.createElement('br'));
@@ -862,7 +862,7 @@ QUnit.test('picture', function (assert) {
     (function () {
         var render, sig;
         sig = ss_sig;
-        render = new Signal.Render(sig.length * zoom, 128);
+        render = new CanvasRender(sig.length * zoom, 128);
         render.drawSignal(sig, true, true);
         document.body.appendChild(render.element);
         return document.body.appendChild(document.createElement('br'));
@@ -871,7 +871,7 @@ QUnit.test('picture', function (assert) {
     (function () {
         var render, sig;
         sig = matched;
-        render = new Signal.Render(sig.length * zoom, 128);
+        render = new CanvasRender(sig.length * zoom, 128);
         render.drawSignal(sig, true, true);
         document.body.appendChild(render.element);
         return document.body.appendChild(document.createElement('br'));
@@ -880,7 +880,7 @@ QUnit.test('picture', function (assert) {
     return function () {
         var render, sig;
         sig = corr;
-        render = new Signal.Render(sig.length * zoom, 128);
+        render = new CanvasRender(sig.length * zoom, 128);
         render.drawSignal(sig, true, true);
         document.body.appendChild(render.element);
         return document.body.appendChild(document.createElement('br'));
