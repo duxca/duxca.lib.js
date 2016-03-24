@@ -3,7 +3,6 @@
 import * as CanvasRender from "./CanvasRender";
 import * as Signal from "duxca.lib.signal.js";
 import * as RecordBuffer from "duxca.lib.recordbuffer.js";
-import * as Promise from "bluebird";
 
 function screenshot (cnv: HTMLCanvasElement){
   document.body.appendChild(cnv);

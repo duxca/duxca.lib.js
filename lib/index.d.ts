@@ -1,5 +1,4 @@
 /// <reference path="../typings/browser.d.ts" />
-import * as Promise from "bluebird";
 declare class OSC {
     actx: AudioContext;
     constructor(actx: AudioContext);
