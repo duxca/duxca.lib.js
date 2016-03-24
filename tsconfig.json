@@ -22,7 +22,6 @@
     },
     "files": [
         "./src/index.ts",
-        "./src/CanvasRender.ts",
         "./typings/browser.d.ts"
     ],
     "exclude": [

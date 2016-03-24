@@ -1,4 +1,4 @@
-import * as CanvasRender from "./CanvasRender";
+import CanvasRender = require("duxca.lib.canvasrender.js");
 import Signal = require("duxca.lib.signal.js");
 import RecordBuffer = require("duxca.lib.recordbuffer.js");
 
