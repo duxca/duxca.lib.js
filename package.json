@@ -9,8 +9,8 @@
     "init": "npm update -g; npm run update; npm run build",
     "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
-    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone Signal -o dist/Signal.js    ; gulp build",
-    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone Signal -o dist/Signal.js -v & gulp watch & http-server -s -p 8000",
+    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone Signal -o dist/index.js    ; gulp build",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone Signal -o dist/index.js -v & gulp watch & http-server -s -p 8000",
     "stop": "killall -- node */tsc -w -p",
     "test": "phantomjs test/run-qunit.js test/test.html"
   },
