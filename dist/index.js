@@ -1,6 +1,7 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.CanvasRender = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 var Signal = require("duxca.lib.signal.js");
+var Statistics = require("duxca.lib.statistics.js");
 var CanvasRender = (function () {
     function CanvasRender(width, height) {
         this.element = this.cnv = document.createElement("canvas");
@@ -18,7 +19,7 @@ var CanvasRender = (function () {
             signal = Signal.normalize(signal, 1);
         }
         var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
-        var zoomY = !flagY ? 1 : this.cnv.height / Statictics.findMax(signal)[0];
+        var zoomY = !flagY ? 1 : this.cnv.height / Statistics.findMax(signal)[0];
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
         for (var i = 1; i < signal.length; i++) {
@@ -136,7 +137,7 @@ var CanvasRender;
 })(CanvasRender || (CanvasRender = {}));
 module.exports = CanvasRender;
 
-},{"duxca.lib.signal.js":3}],2:[function(require,module,exports){
+},{"duxca.lib.signal.js":3,"duxca.lib.statistics.js":4}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -590,11 +591,11 @@ exports.RFFT = RFFT;
 },{}],3:[function(require,module,exports){
 "use strict";
 var FourierTransform_1 = require("./FourierTransform");
-var Statictics = require("duxca.lib.statictics.js");
+var Statistics = require("duxca.lib.statistics.js");
 function normalize(arr, max_val) {
     if (max_val === void 0) { max_val = 1; }
-    var min = Statictics.findMin(arr)[0];
-    var max = Statictics.findMax(arr)[0];
+    var min = Statistics.findMin(arr)[0];
+    var max = Statistics.findMax(arr)[0];
     var _arr = new Float32Array(arr.length);
     for (var j = 0; j < arr.length; j++) {
         _arr[j] = (arr[j] - min) / (max - min) * max_val;
@@ -1095,12 +1096,12 @@ function first_wave_detection(xs) {
         i++;
     while (conv[i - 1] - conv[i] > 0)
         i++;
-    var _a = Statictics.findMax(conv.subarray(i, conv.length)), _ = _a[0], idx = _a[1];
+    var _a = Statistics.findMax(conv.subarray(i, conv.length)), _ = _a[0], idx = _a[1];
     return i + idx;
 }
 exports.first_wave_detection = first_wave_detection;
 
-},{"./FourierTransform":2,"duxca.lib.statictics.js":4}],4:[function(require,module,exports){
+},{"./FourierTransform":2,"duxca.lib.statistics.js":4}],4:[function(require,module,exports){
 "use strict";
 function summation(arr) {
     var sum = 0;
