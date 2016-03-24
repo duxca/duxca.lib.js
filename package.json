@@ -8,8 +8,9 @@
     "setup": "npm install -g bower typings http-server typescript watchify",
     "init": "npm run update; npm run start",
     "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
-    "clean": "rm lib/*.js dist/*.js",
-    "start": "http-server -s -p 8000 & tsc -w -p src & watchify lib/index.js -o dist/duxca.lib.js -v"
+    "clean": "rm -rf lib/* dist/*",
+    "start": "npm run clean; http-server -s -p 8000 & tsc -w -p ./ & watchify lib/index.js --standalone duxca -o dist/duxca.lib.js -v",
+    "stop": "killall -- node */http-server -s -p 8000"
   },
   "repository": {
     "type": "git",
@@ -22,7 +23,7 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
+    "signal": "github:legokichi/duxca.lib.js#signal.ts"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
