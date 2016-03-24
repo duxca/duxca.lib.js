@@ -23,8 +23,8 @@ class SignalViewer
     Object.keys(o).forEach (key)=> @ctx[key] = o[key]
   draw: (_arr)->
     arr = _arr.map (v)-> if isFinite(v) then v else 0
-    [max, _] = Signal.Statictics.findMax(arr)
-    [min, _] = Signal.Statictics.findMin(arr)
+    [max, _] = Signal.Statistics.findMax(arr)
+    [min, _] = Signal.Statistics.findMin(arr)
     if @drawAuto
       @zoomX = @cnv.width / arr.length
       @zoomY = @cnv.height / (max - min)
@@ -100,7 +100,7 @@ QUnit.test 'splated echo', (assert) ->
   view cepstrum = Signal.ifft(_real, _imag)
   view correl = Signal.fft_smart_overwrap_correlation(cepstrum, pn)
   view _correl = correl.map (v)->v*v
-  console.log Signal.Statictics.findMax(_correl)
+  console.log Signal.Statistics.findMax(_correl)
 
 n = (a)-> a.split("").map(Number)
 QUnit.test 'Gold', (assert) ->

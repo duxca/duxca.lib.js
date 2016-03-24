@@ -602,8 +602,8 @@ QUnit.test('goldSeqGen', function (assert) {
     });
     correl_longMB = Signal.fft_smart_overwrap_correlation(mixed, sig_longB);
     correl_longMA = Signal.fft_smart_overwrap_correlation(mixed, sig_longA);
-    ref = Statictics.findMax(correl_longMA), _ = ref[0], idA = ref[1];
-    ref1 = Statictics.findMax(correl_longMB), _ = ref1[0], idB = ref1[1];
+    ref = Statistics.findMax(correl_longMA), _ = ref[0], idA = ref[1];
+    ref1 = Statistics.findMax(correl_longMB), _ = ref1[0], idB = ref1[1];
     assert.ok(assert._expr(assert._capt(assert._capt(idA, 'arguments/0/left') === 149, 'arguments/0'), {
         content: 'assert.ok(idA === 149)',
         filepath: 'test/test.js',
@@ -681,13 +681,13 @@ QUnit.test('phase_shift_detection', function (assert) {
         _C = new Int16Array(T);
         _C.set(C.subarray(T - i, T), 0);
         corr = Signal.fft_smart_overwrap_correlation(B, _A);
-        ref = Signal.Statictics.findMax(corr), a = ref[0], b = ref[1];
+        ref = Signal.Statistics.findMax(corr), a = ref[0], b = ref[1];
         maxes[i] = b > 0 ? a : 0;
         _corr = Signal.fft_smart_overwrap_correlation(B, _C);
-        ref1 = Signal.Statictics.findMax(_corr), a = ref1[0], b = ref1[1];
+        ref1 = Signal.Statistics.findMax(_corr), a = ref1[0], b = ref1[1];
         _maxes[i] = b > 0 ? a : 0;
-        console.log((ref2 = Signal.Statictics.findMax(maxes), _ = ref2[0], a = ref2[1], ref2));
-        console.log((ref3 = Signal.Statictics.findMax(_maxes), _ = ref3[0], b = ref3[1], ref3));
+        console.log((ref2 = Signal.Statistics.findMax(maxes), _ = ref2[0], a = ref2[1], ref2));
+        console.log((ref3 = Signal.Statistics.findMax(_maxes), _ = ref3[0], b = ref3[1], ref3));
         console.log((a + b) / 2);
         coms = [
             [B],

@@ -1,10 +1,10 @@
 import {FFT} from "./FourierTransform";
-import Statictics = require("duxca.lib.statictics.js");
+import Statistics = require("duxca.lib.statistics.js");
 
 
 export function normalize(arr: Float32Array, max_val=1):Float32Array {
-  var min = Statictics.findMin(arr)[0];
-  var max = Statictics.findMax(arr)[0];
+  var min = Statistics.findMin(arr)[0];
+  var max = Statistics.findMax(arr)[0];
   var _arr = new Float32Array(arr.length);
   for(var j=0; j<arr.length; j++){
     _arr[j] = (arr[j] - min) / (max - min) * max_val;
@@ -487,6 +487,6 @@ export function first_wave_detection(xs: Float32Array): number {
   let i = 1;
   while (conv[0]/2 < conv[i] ) i++;
   while (conv[i-1] - conv[i] > 0 ) i++;
-  let [_,idx] = Statictics.findMax(conv.subarray(i, conv.length));
+  let [_,idx] = Statistics.findMax(conv.subarray(i, conv.length));
   return i+idx;
 }

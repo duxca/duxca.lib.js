@@ -43,8 +43,8 @@ SignalViewer = function () {
                 return 0;
             }
         });
-        ref = Signal.Statictics.findMax(arr), max = ref[0], _ = ref[1];
-        ref1 = Signal.Statictics.findMin(arr), min = ref1[0], _ = ref1[1];
+        ref = Signal.Statistics.findMax(arr), max = ref[0], _ = ref[1];
+        ref1 = Signal.Statistics.findMin(arr), min = ref1[0], _ = ref1[1];
         if (this.drawAuto) {
             this.zoomX = this.cnv.width / arr.length;
             this.zoomY = this.cnv.height / (max - min);
@@ -142,7 +142,7 @@ QUnit.test('splated echo', function (assert) {
     view(_correl = correl.map(function (v) {
         return v * v;
     }));
-    return console.log(Signal.Statictics.findMax(_correl));
+    return console.log(Signal.Statistics.findMax(_correl));
 });
 n = function (a) {
     return a.split('').map(Number);

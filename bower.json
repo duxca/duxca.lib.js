@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
-    "duxca.lib.statictics.js": "legokichi/duxca.lib.js#statictics"
+    "duxca.lib.statistics.js": "legokichi/duxca.lib.js#statistics"
   },
   "devDependencies": {
     "qunit-tap": "^1.5.0",

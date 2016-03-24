@@ -345,8 +345,8 @@ QUnit.test 'goldSeqGen', (assert) ->
   mixed = sig_longA.map (v, i)-> sig_longA[(i+149)%sig_longA.length] + sig_longB[(i+133)%sig_longB.length]
   correl_longMB = Signal.fft_smart_overwrap_correlation(mixed, sig_longB)
   correl_longMA = Signal.fft_smart_overwrap_correlation(mixed, sig_longA)
-  [_, idA] = Statictics.findMax(correl_longMA)
-  [_, idB] = Statictics.findMax(correl_longMB)
+  [_, idA] = Statistics.findMax(correl_longMA)
+  [_, idB] = Statistics.findMax(correl_longMB)
   assert.ok idA is 149
   assert.ok idB is 133
   render = new CanvasRender(correl_longMA.length, 127)
@@ -392,13 +392,13 @@ QUnit.test 'phase_shift_detection', (assert) ->
     _C = new Int16Array(T)
     _C.set(C.subarray(T-i, T), 0)
     corr = Signal.fft_smart_overwrap_correlation(B, _A)
-    [a, b]=Signal.Statictics.findMax(corr)
+    [a, b]=Signal.Statistics.findMax(corr)
     maxes[i] = if b>0 then a else 0
     _corr = Signal.fft_smart_overwrap_correlation(B, _C)
-    [a, b]=Signal.Statictics.findMax(_corr)
+    [a, b]=Signal.Statistics.findMax(_corr)
     _maxes[i] = if b>0 then a else 0
-    console.log [_,a] = Signal.Statictics.findMax(maxes)
-    console.log [_,b] = Signal.Statictics.findMax(_maxes)
+    console.log [_,a] = Signal.Statistics.findMax(maxes)
+    console.log [_,b] = Signal.Statistics.findMax(_maxes)
     console.log (a+b)/2
     coms = [
       [B]
@@ -456,7 +456,7 @@ QUnit.test 'phase_shift_detection2', (assert) ->
   i = 1
   while conv[0]/2 < conv[i] then i++
   while conv[i-1] - conv[i] > 0 then i++
-  [_,idx] = Signal.Statictics.findMax(conv.subarray(i, conv.length))
+  [_,idx] = Signal.Statistics.findMax(conv.subarray(i, conv.length))
   console.log i+idx
   ###
   console.log Signal.first_wave_detection(xs)
