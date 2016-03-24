@@ -1,11 +1,11 @@
 {
-  "name": "Signal.ts",
+  "name": "duxca.lib.js",
   "description": "duxca algorithm and code sandbox",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "moduleType": [
     "browser"
   ],
-  "homepage": "https://github.com/legokichi/Signal.ts",
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
   "authors": [
     "Legokichi Duckscallion <legokichi@duxca.com>"
   ],
@@ -23,12 +23,10 @@
   ],
   "dependencies": {
     "dsp.js": "git://github.com/corbanbrook/dsp.js.git#master",
-    "console.snapshot": "git://github.com/adriancooney/console.snapshot.git",
-    "qrcodejs": "git://github.com/davidshimjs/qrcodejs.git",
-    "qrcode-decoder-js": "git://github.com/umbrella-web/qrcode-decoder-js.git#feature/cleanup",
-    "peerjs": "~0.3.14"
+    "bluebird": "^3.3.4"
   },
   "devDependencies": {
+    "qunit-tap": "^1.5.0",
     "qunit": "~1.17.1",
     "power-assert": "~0.10.2",
     "empower": "~0.10.0",

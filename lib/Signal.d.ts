@@ -1,6 +1,5 @@
-/// <reference path="../typings/tsd.d.ts" />
 import _Render = require("./Render");
-import * as _Statictics from "./Statictics";
+import * as _Statictics from "duxca.lib.statictics.js";
 export declare var Render: typeof _Render;
 export declare var Statictics: typeof _Statictics;
 export declare function normalize(arr: Float32Array, max_val?: number): Float32Array;

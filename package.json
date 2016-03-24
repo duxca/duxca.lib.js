@@ -1,22 +1,36 @@
 {
-  "name": "duxca.lib.signal",
+  "name": "duxca.lib.signal.js",
   "version": "1.0.0",
-  "description": "",
+  "description": "duxca algorithm sandbox",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "setup": "npm install -g bower dtsm http-server typescript coffee-script watchify",
-    "init": "npm update -g; npm run update; npm run start",
-    "update": "rm -rf bower_components typings; npm update; bower update; dtsm fetch; dtsm update --save",
-    "clean": "rm lib/*.js dist/*.js",
-    "ts-w": "tsc -w -p src",
-    "coffee-w": "coffee -c -w -o lib src",
-    "watchify": "watchify lib/index.js --standalone Signal -o dist/Signal.js -v",
-    "start": "http-server --silent -p 8000 & npm run ts-w & npm run coffee-w & npm run watchify & gulp watch",
-    "stop": "killall -- node */http-server -p 8000",
+    "setup": "npm install -g typescript bower typings browserify watchify http-server gulp-cli",
+    "init": "npm update -g; npm run update; npm run build",
+    "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
+    "clean": "rm -rf lib/* dist/*; mkdir -p dist",
+    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone Signal -o dist/Signal.js    ; gulp build",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone Signal -o dist/Signal.js -v & gulp watch & http-server -s -p 8000",
+    "stop": "killall -- node */tsc -w -p",
     "test": "phantomjs test/run-qunit.js test/test.html"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/legokichi/duxca.lib.js.git"
+  },
   "keywords": [],
-  "author": "",
-  "license": "MIT"
+  "author": "legokichi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/legokichi/duxca.lib.js/issues"
+  },
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
+  "dependencies": {
+    "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-coffee": "^2.3.1",
+    "gulp-espower": "^1.0.2"
+  }
 }

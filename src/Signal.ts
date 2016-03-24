@@ -1,7 +1,5 @@
-/// <reference path="../typings/tsd.d.ts"/>
-
 import _Render = require("./Render");
-import * as _Statictics from "./Statictics";
+import * as _Statictics from "duxca.lib.statictics.js";
 import {FFT} from "./FourierTransform";
 
 export var Render = _Render;

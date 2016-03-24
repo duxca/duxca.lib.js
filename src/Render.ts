@@ -1,7 +1,5 @@
-/// <reference path="../typings/tsd.d.ts"/>
-
 import Signal = require("./Signal");
-import Statictics = require("./Statictics");
+import Statictics = require("duxca.lib.statictics.js");
 
 class Render {
   element: HTMLCanvasElement;

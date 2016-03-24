@@ -1,4 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Signal = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -42,7 +43,7 @@ var FourierTransform = (function () {
         return this.spectrum;
     };
     return FourierTransform;
-})();
+}());
 exports.FourierTransform = FourierTransform;
 /**
  * DFT is a class for calculating the Discrete Fourier Transform of a signal.
@@ -88,7 +89,7 @@ var DFT = (function (_super) {
         return this.calculateSpectrum();
     };
     return DFT;
-})(FourierTransform);
+}(FourierTransform));
 exports.DFT = DFT;
 /**
  * FFT is a class for calculating the Discrete Fourier Transform of a signal
@@ -218,7 +219,7 @@ var FFT = (function (_super) {
         return buffer;
     };
     return FFT;
-})(FourierTransform);
+}(FourierTransform));
 exports.FFT = FFT;
 /**
  * RFFT is a class for calculating the Discrete Fourier Transform of a signal
@@ -445,13 +446,13 @@ var RFFT = (function (_super) {
         return spectrum;
     };
     return RFFT;
-})(FourierTransform);
+}(FourierTransform));
 exports.RFFT = RFFT;
 
 },{}],2:[function(require,module,exports){
-/// <reference path="../typings/tsd.d.ts"/>
+"use strict";
 var Signal = require("./Signal");
-var Statictics = require("./Statictics");
+var Statictics = require("duxca.lib.statictics.js");
 var Render = (function () {
     function Render(width, height) {
         this.element = this.cnv = document.createElement("canvas");
@@ -539,7 +540,7 @@ var Render = (function () {
         this.drawSpectrogram(spectrums);
     };
     return Render;
-})();
+}());
 var CanvasRender;
 (function (CanvasRender) {
     function hue2rgb(p, q, t) {
@@ -587,10 +588,10 @@ var CanvasRender;
 })(CanvasRender || (CanvasRender = {}));
 module.exports = Render;
 
-},{"./Signal":3,"./Statictics":4}],3:[function(require,module,exports){
-/// <reference path="../typings/tsd.d.ts"/>
+},{"./Signal":3,"duxca.lib.statictics.js":5}],3:[function(require,module,exports){
+"use strict";
 var _Render = require("./Render");
-var _Statictics = require("./Statictics");
+var _Statictics = require("duxca.lib.statictics.js");
 var FourierTransform_1 = require("./FourierTransform");
 exports.Render = _Render;
 exports.Statictics = _Statictics;
@@ -1103,8 +1104,13 @@ function first_wave_detection(xs) {
 }
 exports.first_wave_detection = first_wave_detection;
 
-},{"./FourierTransform":1,"./Render":2,"./Statictics":4}],4:[function(require,module,exports){
-/// <reference path="../typings/tsd.d.ts"/>
+},{"./FourierTransform":1,"./Render":2,"duxca.lib.statictics.js":5}],4:[function(require,module,exports){
+"use strict";
+var Signal = require("./Signal");
+module.exports = Signal;
+
+},{"./Signal":3}],5:[function(require,module,exports){
+"use strict";
 function summation(arr) {
     var sum = 0;
     for (var j = 0; j < arr.length; j++) {
@@ -1260,9 +1266,5 @@ function k_means1D(data, k) {
 }
 exports.k_means1D = k_means1D;
 
-},{}],5:[function(require,module,exports){
-var Signal = require("./Signal");
-module.exports = Signal;
-
-},{"./Signal":3}]},{},[5])(5)
+},{}]},{},[4])(4)
 });
