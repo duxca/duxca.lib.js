@@ -1,6 +1,7 @@
+import Token = Chord.Token;
 
 class Chord {
-
+    
   successor: PeerJs.DataConnection;
   predecessor: PeerJs.DataConnection;
   successors: string[];
@@ -35,7 +36,7 @@ class Chord {
   }
 
   _init(): Promise<void>{
-    if(!!this.peer) return Promise.resolve();
+    if(!!this.peer) return Promise.resolve<void>(undefined);
     this.peer = new Peer({host: this.host, port: this.port, debug: 2});
     this.peer.on('open', (id)=>{ if(this.debug) console.log(this.peer.id, "peer:open", id); });
     // open
@@ -82,14 +83,14 @@ class Chord {
         this.peer.off('error', _error);
         this.peer.off('open', _open);
       };
-      function _open(id:string){ off(); resolve(Promise.resolve()); }
+      function _open(id:string){ off(); resolve(Promise.resolve<void>(undefined)); }
       function _error(err:any){ off(); reject(err); }
     });
   }
 
   create(): Promise<Chord>{
     return this._init().then(()=>{
-      if(this.peer.destroyed) return Promise.reject<Chord>(new Error(this.peer.id+" is already destroyed"));
+      if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
       if(this.debug) console.log(this.peer.id, "create:done");
       return this;
     });
@@ -97,8 +98,8 @@ class Chord {
 
   join(id: string): Promise<Chord>{
     return this._init().then(()=>{
-      if(this.peer.destroyed) return Promise.reject<Chord>(new Error(this.peer.id+" is already destroyed"));
-      if(typeof id !== "string") return Promise.reject<Chord>(new Error("peer id is not string."));
+      if(this.peer.destroyed) return Promise.reject(new Error(this.peer.id+" is already destroyed"));
+      if(typeof id !== "string") return Promise.reject(new Error("peer id is not string."));
       var conn = this.peer.connect(id);
       this._connectionHandler(conn);
       return new Promise<void>((resolve, reject)=>{
@@ -108,7 +109,7 @@ class Chord {
           conn.off('error', _error);
           conn.off('open', _open);
         };
-        function _open(){ off(); resolve(Promise.resolve()); }
+        function _open(){ off(); resolve(Promise.resolve<void>(undefined)); }
         function _error(err:any){ off(); reject(err); }
       }).then(()=>{
         if(this.debug) console.log(this.peer.id, "join:done", "to", id);
@@ -264,10 +265,10 @@ class Chord {
         // response
         case "This is my predecessor.":
           var min = 0;
-          var max =  distance("zzzzzzzzzzzzzzzz");
-          var myid = distance(this.peer.id);
-          var succ = distance(conn.peer);
-          var succ_says_pred = distance(data.id);
+          var max =  Chord.distance("zzzzzzzzzzzzzzzz");
+          var myid = Chord.distance(this.peer.id);
+          var succ = Chord.distance(conn.peer);
+          var succ_says_pred = Chord.distance(data.id);
           if(this.debug) console.log(this.peer.id, "conn:distance1", {min, max, myid, succ, succ_says_pred});
 
           if(data.id === this.peer.id){ // no probrem
@@ -293,11 +294,11 @@ class Chord {
           break;
         case "Check your predecessor.":
           var min = 0;
-          var max =  distance("zzzzzzzzzzzzzzzz");
-          var myid = distance(this.peer.id);
-          var succ = distance(this.successor.peer);
-          var pred = distance(this.predecessor.peer);
-          var newbee = distance(conn.peer);
+          var max =  Chord.distance("zzzzzzzzzzzzzzzz");
+          var myid = Chord.distance(this.peer.id);
+          var succ = Chord.distance(this.successor.peer);
+          var pred = Chord.distance(this.predecessor.peer);
+          var newbee = Chord.distance(conn.peer);
           if(this.debug) console.log(this.peer.id, "conn:distance2", {min, max, myid, succ, pred, newbee});
 
           if( (myid > newbee && newbee > pred) ){ // change my predecessor
@@ -323,10 +324,13 @@ class Chord {
         default:
           console.warn("something wrong3", data.msg);
           debugger;
+          break;
       }
     });
   }
 }
+
+
 namespace Chord {
   export function distance(str:string){
     return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
