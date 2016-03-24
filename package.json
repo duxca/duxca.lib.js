@@ -1,5 +1,5 @@
 {
-  "name": "duxca.hoge.js",
+  "name": "duxca.lib.hoge.js",
   "version": "1.0.0",
   "description": "duxca algorithm sandbox",
   "main": "lib/index.js",
