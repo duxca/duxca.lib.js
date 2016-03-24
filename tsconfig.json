@@ -20,8 +20,10 @@
         "experimentalDecorators": true,
         "suppressImplicitAnyIndexErrors": true
     },
+    "filesGlob": [
+    ],
     "files": [
-        "./src/index.ts"
+      "src/index.ts"
     ],
     "exclude": [
         "./node_modules"
