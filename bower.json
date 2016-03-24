@@ -18,6 +18,7 @@
     "typings"
   ],
   "dependencies": {
+    "peerjs": "~0.3.14"
   },
   "devDependencies": {
   }

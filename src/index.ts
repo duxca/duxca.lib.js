@@ -1,6 +1,5 @@
-/// <reference path="../typings/tsd.d.ts"/>
 
-export class Chord {
+class Chord {
 
   successor: PeerJs.DataConnection;
   predecessor: PeerJs.DataConnection;
@@ -328,15 +327,17 @@ export class Chord {
     });
   }
 }
-
-
-
-export function distance(str:string){
-  return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
+namespace Chord {
+  export function distance(str:string){
+    return Math.sqrt(str.split("").map((char)=> char.charCodeAt(0) ).reduce((sum, val)=> sum+Math.pow(val, 2) ));
+  }
+  export interface Token {
+    payload: {event: string, addressee :string[], data: any};
+    requestId: number;
+    route: string[];
+    time: number[];
+  }
 }
-export interface Token {
-  payload: {event: string, addressee :string[], data: any};
-  requestId: number;
-  route: string[];
-  time: number[];
-}
+
+
+export = Chord;
