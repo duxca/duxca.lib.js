@@ -1,8 +1,8 @@
-import * as _Statictics from "duxca.lib.statictics.js";
-import * as _Signal from "duxca.lib.signal.js";
-import * as _RecordBuffer from "duxca.lib.recordbuffer.js";
-import * as _Wave from "duxca.lib.wave.js";
-import * as _OSC from "duxca.lib.osc.js";
+import _Statictics = require("duxca.lib.statictics.js");
+import _Signal = require("duxca.lib.signal.js");
+import _RecordBuffer = require("duxca.lib.recordbuffer.js");
+import _Wave = require("duxca.lib.wave.js");
+import _OSC = require("duxca.lib.osc.js");
 
 export namespace lib {
   export var Statictics = _Statictics;
