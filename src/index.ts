@@ -1,0 +1,4 @@
+class Hoge {
+
+}
+export = Hoge;
