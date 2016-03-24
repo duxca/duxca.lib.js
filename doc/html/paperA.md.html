@@ -1,0 +1,64 @@
+<html>
+<head>
+<meta charset='utf-8'>
+<script type='text/x-mathjax-config'>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\(','\)']] } });</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'>
+</script>
+</head>
+<body>
+<h1>位置推定と同期手法</h1>
+
+<p>信号伝播による測距と測位は様々な分野で利用されている。
+例えば、電波を用いたレーダー、海中における音波を利用したソーナーがある。
+(測位には測距が重要、測距には時間同期が重要であることのウンチクをつらつら。GPSとか。)
+この章では測距測位の基本原理について説明する。</p>
+
+<h2>測位方法</h2>
+
+<p>信号伝播による測位は、基本的には三角測量の原理を利用している。
+すなわち、三角形のある一辺の長さと二つの頂点の角度、二つの辺の長さと一つの頂点の角度、三つの辺の長さ。
+これらのいずれかが分かれば、相対位置が算出できる。</p>
+
+<p>信号源の角度、到来方向(DOA; direction of arrival, AOA: angle of arrival)を求めるには、指向性を持つ受信機を回転させて角度を求めたり、大量の受信機を並べて受信機ごとの位相差から角度を求めるフェイズドアレイシステムがある。
+しかしながら、この手法は人がその場で回らなければならないため、本研究のような多数の端末を使う上では欠点になる。
+携帯端末の音と角度を用いて測位を行うシステムに、(ここに関連研究、持ったままその場で回転するやつ)がある。
+また、複数の携帯端末を利用してフェイズドアレイシステムを構築する研究は(ワイヤレスアドホックマイクロホンアレイとかなんとか）と呼ばれ、2010年頃から盛んに研究されている[関連研究ほげほげ]。
+この手法も!!!!!!!!!!????????
+よって通常の携帯端末のみを使って相対位置を求めるには、端末間の相対距離がわかれば良い。</p>
+
+<h2>位置推定技術の分類</h2>
+
+<p>信号をつかって距離を求めるには、
+信号の距離減衰を元に信号源の相対位置を推定する信号強度法(RSS:Received Signal Strength)、
+信号の到来時刻を元に推定する(TOA:Time of Arrival)、
+到着時間差法(TDOA:time difference of arrival)、
+到着周波数偏差法(FDOA; frequency diffrence of arrival)
+がある。</p>
+
+<h3>RSS:Received Signal Strength</h3>
+
+<ul><li>例: BLE</li><li>この辺に波動方程式</li></ul>
+
+<h3>TOA:Time of Arrival</h3>
+
+<ul><li>パルスレーダー AOA+TOA</li><li>アクティブソナー AOA+TOA</li></ul>
+
+<h3>TDOA:time difference of arrival</h3>
+
+<ul><li>フェイズドアレイレーダー</li><li>GPS</li></ul>
+
+<h3>FDOA</h3>
+
+<ul><li>トーン測距</li></ul>
+
+<h2>到来時間による測距と同期</h2>
+
+<p>TOAを用いたトランスポンダによる測距を詳しく説明する。</p>
+
+<p>各端末のスピーカの位置とマイクロホンの位置を近似的に等しいと仮定する。
+空間上に分布する$N \in \mathbb{N}$個の端末の位置を、
+$n$次元ユークリッド空間の元の族${x<em>i \mid i \in {1,N} }$として表す。
+また、端末$x</em>i x_j$間の距離をユークリッド距離を</p>
+
+<p>$$
+d<em>{ij} \overset{\mathrm{def}}{=} \|x</em>i - x<em>j\| = \sqrt{(x</em>i - x<em>j)

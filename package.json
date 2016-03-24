@@ -30,5 +30,6 @@
     "duxca.lib.statistics.js": "github:legokichi/duxca.lib.js#statistics",
     "duxca.lib.wave.js": "github:legokichi/duxca.lib.js#wave"
   },
-  "devDependencies": {}
+  "devDependencies": {
+  }
 }
