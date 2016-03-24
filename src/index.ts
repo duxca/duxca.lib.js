@@ -1,7 +1,7 @@
-import Signal = require("duxca.lib.signal.js");
+import Statictics = require("duxca.lib.statictics.js");
 
 export namespace duxca {
   export namespace lib {
-    Signal;
+    Statictics;
   }
 }

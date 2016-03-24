@@ -2,7 +2,7 @@
     "version": "1.8.9",
     "compilerOptions": {
         "target": "ES5",
-        "outDir": "../lib",
+        "outDir": "./lib",
         "module": "commonjs",
         "newLine": "LF",
         "declaration": true,
@@ -20,11 +20,11 @@
         "experimentalDecorators": true,
         "suppressImplicitAnyIndexErrors": true
     },
-    "fileGlob": [
-        "./"
+    "files": [
+        "./src/index.ts"
     ],
     "exclude": [
-        "node_modules"
+        "./node_modules"
     ],
     "atom": {
         "rewriteTsconfig": true,
