@@ -1,5 +1,5 @@
 {
-  "name": "duxca.recordbuffer.js",
+  "name": "duxca.lib.recordbuffer.js",
   "version": "1.0.0",
   "description": "duxca algorithm sandbox",
   "main": "lib/index.js",
