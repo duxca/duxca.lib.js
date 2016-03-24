@@ -1,11 +1,715 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.duxca = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
+var Ajax;
+(function (Ajax) {
+    function getArrayBuffer(url) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", function () {
+                if (200 <= xhr.status && xhr.status < 300) {
+                    if (xhr.response.error == null) {
+                        return resolve(xhr.response);
+                    }
+                    else {
+                        return reject(new Error("message: " + xhr.response.error.message));
+                    }
+                }
+                else {
+                    return reject(new Error("status: " + xhr.status));
+                }
+            });
+            xhr["open"]("GET", url);
+            xhr["responseType"] = "arraybuffer";
+            return xhr["send"]();
+        });
+    }
+    Ajax.getArrayBuffer = getArrayBuffer;
+    ;
+})(Ajax || (Ajax = {}));
+module.exports = Ajax;
+
+},{}],2:[function(require,module,exports){
+"use strict";
+var Chord = (function () {
+    function Chord(opt) {
+        this.host = opt.host || location.hostname;
+        this.port = opt.port || 9000;
+        this.joined = false;
+        this.successor = null;
+        this.successors = [];
+        this.predecessor = null;
+        this.predecessors = [];
+        this.peer = null;
+        this.debug = true;
+        this.tid = null;
+        this.peer = null;
+        this.listeners = {};
+        this.requests = {};
+        this.lastRequestId = 0;
+        this.STABILIZE_INTERVAL = 5000;
+    }
+    Chord.prototype._init = function () {
+        var _this = this;
+        if (!!this.peer)
+            return Promise.resolve(undefined);
+        this.peer = new Peer({ host: this.host, port: this.port, debug: 2 });
+        this.peer.on('open', function (id) { if (_this.debug)
+            console.log(_this.peer.id, "peer:open", id); });
+        // open
+        // Emitted when a connection to the PeerServer is established.
+        // You may use the peer before this is emitted, but messages to the server will be queued.
+        // id is the brokering ID of the peer (which was either provided in the constructor or assigned by the server).
+        //   You should not wait for this event before connecting to other peers if connection speed is important.
+        this.peer.on('error', function (err) { if (_this.debug)
+            console.error(_this.peer.id, "peer:error", err); });
+        // error
+        // Errors on the peer are almost always fatal and will destroy the peer.
+        // Errors from the underlying socket and PeerConnections are forwarded here.
+        this.peer.on('close', function () {
+            if (_this.debug)
+                console.log(_this.peer.id, "peer:close");
+            clearInterval(_this.tid);
+            _this.joined = false;
+        });
+        // close
+        // Emitted when the peer is destroyed and can no longer accept or create any new connections.
+        // At this time, the peer's connections will all be closed.
+        //   To be extra certain that peers clean up correctly,
+        //   we recommend calling peer.destroy() on a peer when it is no longer needed.
+        this.peer.on('disconnected', function () { if (_this.debug)
+            console.log(_this.peer.id, "peer:disconnected"); });
+        // disconnected
+        // Emitted when the peer is disconnected from the signalling server,
+        // either manually or because the connection to the signalling server was lost.
+        // When a peer is disconnected, its existing connections will stay alive,
+        // but the peer cannot accept or create any new connections.
+        // You can reconnect to the server by calling peer.reconnect().
+        this.peer.on('connection', function (conn) {
+            // Emitted when a new data connection is established from a remote peer.
+            if (_this.debug)
+                console.log(_this.peer.id, "peer:connection", "from", conn.peer);
+            _this._connectionHandler(conn);
+        });
+        this.tid = setInterval(function () {
+            if (_this.successor) {
+                if (_this.debug)
+                    console.log(_this.peer.id, "setInterval");
+                _this.stabilize();
+            }
+        }, this.STABILIZE_INTERVAL);
+        return new Promise(function (resolve, reject) {
+            _this.peer.on('error', _error);
+            _this.peer.on('open', _open);
+            var off = function () {
+                _this.peer.off('error', _error);
+                _this.peer.off('open', _open);
+            };
+            function _open(id) { off(); resolve(Promise.resolve(undefined)); }
+            function _error(err) { off(); reject(err); }
+        });
+    };
+    Chord.prototype.create = function () {
+        var _this = this;
+        return this._init().then(function () {
+            if (_this.peer.destroyed)
+                return Promise.reject(new Error(_this.peer.id + " is already destroyed"));
+            if (_this.debug)
+                console.log(_this.peer.id, "create:done");
+            return _this;
+        });
+    };
+    Chord.prototype.join = function (id) {
+        var _this = this;
+        return this._init().then(function () {
+            if (_this.peer.destroyed)
+                return Promise.reject(new Error(_this.peer.id + " is already destroyed"));
+            if (typeof id !== "string")
+                return Promise.reject(new Error("peer id is not string."));
+            var conn = _this.peer.connect(id);
+            _this._connectionHandler(conn);
+            return new Promise(function (resolve, reject) {
+                conn.on('error', _error);
+                conn.on('open', _open);
+                var off = function () {
+                    conn.off('error', _error);
+                    conn.off('open', _open);
+                };
+                function _open() { off(); resolve(Promise.resolve(undefined)); }
+                function _error(err) { off(); reject(err); }
+            }).then(function () {
+                if (_this.debug)
+                    console.log(_this.peer.id, "join:done", "to", id);
+                _this.successor = conn;
+                _this.joined = true;
+                setTimeout(function () { return _this.stabilize(); }, 0);
+                return _this;
+            });
+        });
+    };
+    Chord.prototype.stabilize = function () {
+        if (!this.peer)
+            throw new Error("this node does not join yet");
+        if (this.peer.destroyed)
+            throw new Error(this.peer.id + " is already destroyed");
+        if (this.debug)
+            console.log(this.peer.id, "stabilize:to", this.successor.peer);
+        if (!!this.successor && this.successor.open) {
+            this.successor.send({ msg: "What is your predecessor?" });
+        }
+        if (this.joined && !!this.successor && !this.successor.open) {
+            if (typeof this.successors[1] !== "string") {
+                if (!!this.predecessor && this.predecessor.open) {
+                    // when all successor are died, try predecessor as new successor
+                    if (this.debug)
+                        console.log(this.peer.id, "stabilize:successor", this.successor.peer, "is died. fail back to predecessor", this.predecessor.peer);
+                    //this.successor.close();
+                    this.successor = null;
+                    this.join(this.predecessor.peer);
+                }
+                if (this.debug)
+                    console.log(this.peer.id, "stabilize:all connects are lost. Nothing to do");
+                this.joined = false;
+                clearInterval(this.tid);
+                return;
+            }
+            if (this.successors[1] !== this.peer.id) {
+                if (this.debug)
+                    console.log(this.peer.id, "stabilize:successor", this.successor.peer, "is died. try successor[1]", this.successors[1], this.successors);
+                //this.successor.close();
+                this.successor = null;
+                this.join(this.successors[1]);
+            }
+            else {
+                this.successors.shift();
+                this.stabilize();
+                return;
+            }
+        }
+        if (this.joined && !!this.predecessor && !this.predecessor.open) {
+            if (this.debug)
+                console.log(this.peer.id, "stabilize:predecessor", this.predecessor.peer, "is died.");
+            //this.predecessor.close();
+            this.predecessor = null;
+        }
+    };
+    Chord.prototype.request = function (event, data, addressee, timeout) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            if (!_this.peer)
+                throw new Error("this node does not join yet");
+            if (_this.peer.destroyed)
+                reject(new Error(_this.peer.id + " is already destroyed"));
+            if (!_this.successor && !!_this.predecessor)
+                throw new Error(_this.peer.id + " does not have successor.");
+            var token = {
+                payload: { event: event, addressee: addressee, data: data },
+                requestId: _this.lastRequestId++,
+                route: [_this.peer.id],
+                time: [Date.now()]
+            };
+            _this.requests[token.requestId] = function (_token) {
+                delete _this.requests[token.requestId];
+                resolve(Promise.resolve(_token));
+            };
+            if (typeof timeout === "number") {
+                setTimeout(function () { return reject(new Error(_this.peer.id + "request(" + event + "):timeout(" + timeout + ")")); }, timeout);
+            }
+            if (_this.listeners[token.payload.event] instanceof Function
+                && (!Array.isArray(token.payload.addressee) // broadcast
+                    || token.payload.addressee.indexOf(_this.peer.id) >= 0)) {
+                if (!_this.successor && !_this.predecessor) {
+                    setTimeout(function () {
+                        _this.listeners[token.payload.event](token, function (token) {
+                            _this.requests[token.requestId](token);
+                        });
+                    }, 0);
+                }
+                else {
+                    _this.listeners[token.payload.event](token, function (token) {
+                        if (!_this.successor.open)
+                            throw new Error(_this.peer.id + " has successor, but not open.");
+                        _this.successor.send({ msg: "Token", token: token });
+                    });
+                }
+            }
+        });
+    };
+    Chord.prototype.on = function (event, listener) {
+        this.listeners[event] = listener;
+    };
+    Chord.prototype.off = function (event, listener) {
+        delete this.listeners[event];
+    };
+    Chord.prototype._connectionHandler = function (conn) {
+        var _this = this;
+        conn.on('open', function () { if (_this.debug)
+            console.log(_this.peer.id, "conn:open", "to", conn.peer); });
+        conn.on('close', function () {
+            // Emitted when either you or the remote peer closes the data connection.
+            //  Firefox does not yet support this event.
+            if (_this.debug)
+                console.log(_this.peer.id, "conn:close", "to", conn.peer);
+        });
+        conn.on('error', function (err) {
+            if (_this.debug)
+                console.error(_this.peer.id, "conn:error", "to", conn.peer, err);
+            _this.stabilize();
+        });
+        var ondata = null;
+        conn.on('data', ondata = function (data) {
+            if (!_this.successor) {
+                _this.join(conn.peer).then(function () {
+                    ondata(data);
+                });
+                return;
+            }
+            if (!_this.predecessor) {
+                _this.predecessor = conn;
+            }
+            if (_this.debug)
+                console.log(_this.peer.id, "conn:data", data, "from", conn.peer);
+            switch (data.msg) {
+                // ring network trafic
+                case "Token":
+                    if (data.token.route[0] === _this.peer.id && _this.requests[data.token.requestId] instanceof Function) {
+                        _this.requests[data.token.requestId](data.token);
+                        break;
+                    }
+                    if (data.token.route.indexOf(_this.peer.id) !== -1) {
+                        if (_this.debug)
+                            console.log(_this.peer.id, "conn:token", "dead token detected.", data.token);
+                        break;
+                    }
+                    data.token.route.push(_this.peer.id);
+                    data.token.time.push(Date.now());
+                    var tokenpassing = function (token) {
+                        if (_this.successor.open) {
+                            _this.successor.send({ msg: "Token", token: token });
+                        }
+                        else {
+                            _this.stabilize();
+                            setTimeout(function () { return tokenpassing(token); }, 1000);
+                        }
+                    };
+                    if (_this.listeners[data.token.payload.event] instanceof Function
+                        && (!Array.isArray(data.token.payload.addressee) // broadcast
+                            || data.token.payload.addressee.indexOf(_this.peer.id) >= 0)) {
+                        _this.listeners[data.token.payload.event](data.token, tokenpassing);
+                    }
+                    else {
+                        tokenpassing(data.token);
+                    }
+                    break;
+                // response
+                case "This is my predecessor.":
+                    var min = 0;
+                    var max = distance("zzzzzzzzzzzzzzzz");
+                    var myid = distance(_this.peer.id);
+                    var succ = distance(conn.peer);
+                    var succ_says_pred = distance(data.id);
+                    if (_this.debug)
+                        console.log(_this.peer.id, "conn:distance1", { min: min, max: max, myid: myid, succ: succ, succ_says_pred: succ_says_pred });
+                    if (data.id === _this.peer.id) {
+                        _this.successors = [conn.peer].concat(data.successors).slice(0, 4);
+                    }
+                    else if (succ > succ_says_pred && succ_says_pred > myid) {
+                        conn.close();
+                        _this.join(data.id);
+                    }
+                    else {
+                        conn.send({ msg: "Check your predecessor." });
+                    }
+                    break;
+                case "Your successor is worng.":
+                    conn.close();
+                    _this.join(data.id);
+                    break;
+                case "You need stabilize now.":
+                    _this.stabilize();
+                    break;
+                // request
+                case "What is your predecessor?":
+                    conn.send({ msg: "This is my predecessor.", id: _this.predecessor.peer, successors: _this.successors });
+                    break;
+                case "Check your predecessor.":
+                    var min = 0;
+                    var max = distance("zzzzzzzzzzzzzzzz");
+                    var myid = distance(_this.peer.id);
+                    var succ = distance(_this.successor.peer);
+                    var pred = distance(_this.predecessor.peer);
+                    var newbee = distance(conn.peer);
+                    if (_this.debug)
+                        console.log(_this.peer.id, "conn:distance2", { min: min, max: max, myid: myid, succ: succ, pred: pred, newbee: newbee });
+                    if ((myid > newbee && newbee > pred)) {
+                        if (_this.predecessor.open) {
+                            _this.predecessor.send({ msg: "You need stabilize now." });
+                        }
+                        _this.predecessor = conn;
+                    }
+                    else if ((myid > pred && pred > newbee)) {
+                        conn.send({ msg: "Your successor is worng.", id: _this.predecessor.peer });
+                    }
+                    else if ((pred > myid && ((max > newbee && newbee > pred) || (myid > newbee && newbee > min)))) {
+                        if (_this.predecessor.open) {
+                            _this.predecessor.send({ msg: "You need stabilize now." });
+                        }
+                        _this.predecessor = conn;
+                    }
+                    else if (pred !== newbee && newbee > myid) {
+                        conn.send({ msg: "Your successor is worng.", id: _this.predecessor.peer });
+                    }
+                    else if (newbee === pred) {
+                    }
+                    else {
+                        console.warn("something wrong2");
+                        debugger;
+                    }
+                    break;
+                default:
+                    console.warn("something wrong3", data.msg);
+                    debugger;
+                    break;
+            }
+        });
+    };
+    return Chord;
+}());
+exports.Chord = Chord;
+function distance(str) {
+    return Math.sqrt(str.split("").map(function (char) { return char.charCodeAt(0); }).reduce(function (sum, val) { return sum + Math.pow(val, 2); }));
+}
+exports.distance = distance;
+
+},{}],3:[function(require,module,exports){
+"use strict";
+var CanvasRender = require("duxca.lib.canvasrender.js");
+var FDTD = (function () {
+    function FDTD(width, height) {
+        if (width === void 0) { width = 100; }
+        if (height === void 0) { height = 100; }
+        this.DELTA_T = 0.001;
+        this.DELTA_X = 0.001;
+        this.DENSITY = 1;
+        this.BLUK_MODULUS = 0.1;
+        this.BOUNDARY_IMPEDANCE = 0.5;
+        this.width = width;
+        this.height = height;
+        this.pressures = [new Float32Array(width * height), new Float32Array(width * height)];
+        this.velocities = [
+            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))],
+            [new Float32Array((width + 1) * (height + 1)), new Float32Array((width + 1) * (height + 1))]
+        ];
+        this.counter = 0;
+    }
+    FDTD.prototype.step = function () {
+        var preP = this.pressures[this.counter % this.pressures.length];
+        var curP = this.pressures[(this.counter + 1) % this.pressures.length];
+        var _a = this.velocities[this.counter % this.pressures.length], preVx = _a[0], preVy = _a[1];
+        var _b = this.velocities[(this.counter + 1) % this.pressures.length], curVx = _b[0], curVy = _b[1];
+        //console.assert(preP.length === curP.length);
+        //console.assert(preVx !== curVx);
+        //console.assert(preP.length+1 !== curVx.length);
+        //console.log("x boundary condition");
+        for (var j = 1; j <= this.height; j++) {
+            var ptr = 0 + j * this.width;
+            curVx[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+            var ptr = this.width + j * this.width;
+            var ptr1 = (this.width + 1) + j * this.width;
+            curVx[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+        }
+        //console.log("y boundary condition");
+        for (var i = 1; i <= this.width; i++) {
+            var ptr = i + 0 * this.width;
+            curVy[ptr] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+            var ptr = i + this.height * this.width;
+            var ptr1 = i + (this.height + 1) * this.width;
+            curVy[ptr1] = preP[ptr] / this.BOUNDARY_IMPEDANCE;
+        }
+        for (var j = 0; j < this.height - 1; j++) {
+            for (var i = 0; i < this.width - 1; i++) {
+                var ptr = i + j * this.width;
+                var ptrx = (i + 1) + j * this.width;
+                var ptry = i + (j + 1) * this.height;
+                curVx[ptrx] = curVx[ptrx] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptrx] - preP[ptr]);
+                curVy[ptry] = curVy[ptry] - this.DELTA_T / (this.DELTA_X * this.DENSITY) * (preP[ptry] - preP[ptr]);
+            }
+        }
+        for (var j = 0; j < this.height; j++) {
+            for (var i = 0; i < this.width; i++) {
+                var ptr = i + j * this.width;
+                var ptrx = (i + 1) + j * this.width;
+                var ptry = i + (j + 1) * this.height;
+                curP[ptr] = preP[ptr] - (((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVx[ptrx] - curVx[ptr]) +
+                    ((this.DELTA_T * this.BLUK_MODULUS) / this.DELTA_X) * (curVy[ptry] - curVy[ptr]));
+            }
+        }
+        this.counter++;
+        return this;
+    };
+    FDTD.prototype.draw = function (render) {
+        var cnv = render.cnv;
+        var ctx = render.ctx;
+        cnv.width = this.width;
+        cnv.height = this.height;
+        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+        var curP = this.pressures[(this.counter) % this.pressures.length];
+        for (var j = 0; j < this.height; j++) {
+            for (var i = 0; i < this.width; i++) {
+                var ptr = i + j * this.width;
+                var _a = CanvasRender.hslToRgb(1 - curP[ptr] / 1024, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
+                imgdata.data[ptr * 4 + 0] = r | 0;
+                imgdata.data[ptr * 4 + 1] = g | 0;
+                imgdata.data[ptr * 4 + 2] = b | 0;
+                imgdata.data[ptr * 4 + 3] = 255;
+            }
+        }
+        ctx.putImageData(imgdata, 0, 0);
+        return this;
+    };
+    return FDTD;
+}());
+module.exports = FDTD;
+
+},{"duxca.lib.canvasrender.js":9}],4:[function(require,module,exports){
+"use strict";
+var FPS = (function () {
+    function FPS(period) {
+        this.period = period;
+        this.lastTime = performance.now();
+        this.fps = 0;
+        this.counter = 0;
+    }
+    FPS.prototype.step = function () {
+        var currentTime = performance.now();
+        this.counter += 1;
+        if (currentTime - this.lastTime > this.period) {
+            this.fps = 1000 * this.counter / (currentTime - this.lastTime);
+            this.counter = 0;
+            this.lastTime = currentTime;
+        }
+    };
+    FPS.prototype.valueOf = function () {
+        return Math.round(this.fps * 1000) / 1000;
+    };
+    return FPS;
+}());
+module.exports = FPS;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+var Metronome = (function () {
+    function Metronome(actx, interval) {
+        this.actx = actx;
+        this.interval = interval;
+        this.lastTime = this.actx.currentTime;
+        this.nextTime = this.interval + this.actx.currentTime;
+        this.nextTick = function () { };
+    }
+    Metronome.prototype.step = function () {
+        if (this.actx.currentTime - this.nextTime >= 0) {
+            this.lastTime = this.nextTime;
+            this.nextTime += this.interval;
+            this.nextTick();
+        }
+    };
+    return Metronome;
+}());
+module.exports = Metronome;
+
+},{}],6:[function(require,module,exports){
+"use strict";
+var Newton = (function () {
+    function Newton(theta, pts, _pts) {
+        this.theta = theta;
+        this.points = pts;
+        this._pts = _pts;
+    }
+    Newton.prototype.step = function () {
+        var _theta = this.theta - this.det(this.theta) / this.der(this.theta);
+        this.theta = _theta;
+    };
+    Newton.prototype.det = function (theta) {
+        var _this = this;
+        return this.points.reduce(function (sum, _, k) {
+            return (_this.points[k].x - Math.pow((_this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)), 2)) +
+                (_this.points[k].y - Math.pow((_this._pts[k].x * Math.sin(theta) + _this._pts[k].y * Math.cos(theta)), 2));
+        }, 0);
+    };
+    Newton.prototype.der = function (theta) {
+        var _this = this;
+        return -2 * this.points.reduce(function (sum, _, k) {
+            return (_this.points[k].x * (-1 * _this._pts[k].x * Math.sin(theta) - _this._pts[k].y * Math.cos(theta))) +
+                (_this.points[k].y * (-1 * _this._pts[k].x * Math.cos(theta) - _this._pts[k].y * Math.sin(theta)));
+        }, 0);
+    };
+    return Newton;
+}());
+var Newton;
+(function (Newton) {
+    var Point = (function () {
+        function Point(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        Point.prototype.plus = function (pt) {
+            return new Point(this.x + pt.x, this.y + pt.y);
+        };
+        Point.prototype.minus = function (pt) {
+            return new Point(this.x - pt.x, this.y - pt.y);
+        };
+        Point.prototype.times = function (num) {
+            return new Point(num * this.x, num * this.y);
+        };
+        Point.prototype.distance = function (pt) {
+            return Math.sqrt(Math.pow(pt.x - this.x, 2) +
+                Math.pow(pt.y - this.y, 2));
+        };
+        return Point;
+    }());
+    Newton.Point = Point;
+    var SDM = (function () {
+        function SDM(pts, ds, a) {
+            if (a === void 0) { a = 0.05; }
+            this.points = pts;
+            this.distance = ds;
+            this.a = a;
+        }
+        SDM.prototype.step = function () {
+            var _this = this;
+            var _pts = [];
+            for (var i = 0; i < this.points.length; i++) {
+                var delta = this.distance[i].reduce((function (sumPt, _, j) {
+                    if (i === j) {
+                        return sumPt;
+                    }
+                    else {
+                        return sumPt.plus((_this.points[i].minus(_this.points[j])).times((1 - _this.distance[i][j] / _this.points[i].distance(_this.points[j]))));
+                    }
+                }), new Point(0, 0)).times(2);
+                _pts[i] = this.points[i].minus(delta.times(this.a));
+            }
+            this.points = _pts;
+        };
+        SDM.prototype.det = function () {
+            var _this = this;
+            return this.points.reduce((function (sum, _, i) {
+                return sum + _this.points.reduce((function (sum, _, j) {
+                    return i === j ? sum :
+                        sum + Math.pow(_this.points[i].distance(_this.points[j]) - _this.distance[i][j], 2);
+                }), 0);
+            }), 0);
+        };
+        return SDM;
+    }());
+    Newton.SDM = SDM;
+})(Newton || (Newton = {}));
+module.exports = Newton;
+
+},{}],7:[function(require,module,exports){
+// Generated by CoffeeScript 1.10.0
+(function() {
+  var SignalViewer;
+
+  SignalViewer = (function() {
+    function SignalViewer(width, height) {
+      this.cnv = document.createElement("canvas");
+      this.cnv.width = width;
+      this.cnv.height = height;
+      this.ctx = this.cnv.getContext("2d");
+      this.offsetX = 0;
+      this.offsetY = this.cnv.height / 2;
+      this.zoomX = 1;
+      this.zoomY = 1;
+      this.drawZero = true;
+      this.drawAuto = true;
+      this.drawStatus = true;
+    }
+
+    SignalViewer.prototype.text = function(str, x, y) {
+      var fillStyle, font, lineWidth, o, ref, strokeStyle;
+      ref = this.ctx, font = ref.font, lineWidth = ref.lineWidth, strokeStyle = ref.strokeStyle, fillStyle = ref.fillStyle;
+      this.ctx.font = "35px";
+      this.ctx.lineWidth = 4;
+      this.ctx.strokeStyle = "white";
+      this.ctx.strokeText(str, x, y);
+      this.ctx.fillStyle = "black";
+      this.ctx.fillText(str, x, y);
+      o = {
+        font: font,
+        lineWidth: lineWidth,
+        strokeStyle: strokeStyle,
+        fillStyle: fillStyle
+      };
+      return Object.keys(o).forEach((function(_this) {
+        return function(key) {
+          return _this.ctx[key] = o[key];
+        };
+      })(this));
+    };
+
+    SignalViewer.prototype.draw = function(_arr) {
+      var _, arr, i, max, min, ref, ref1;
+      arr = _arr.map(function(v) {
+        if (isFinite(v)) {
+          return v;
+        } else {
+          return 0;
+        }
+      });
+      ref = Signal.Statictics.findMax(arr), max = ref[0], _ = ref[1];
+      ref1 = Signal.Statictics.findMin(arr), min = ref1[0], _ = ref1[1];
+      if (this.drawAuto) {
+        this.zoomX = this.cnv.width / arr.length;
+        this.zoomY = this.cnv.height / (max - min);
+        this.offsetY = -min;
+      }
+      if (this.drawZero) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.cnv.height - this.zoomY * (0 + this.offsetY));
+        this.ctx.lineTo(this.cnv.width, this.cnv.height - this.zoomY * (0 + this.offsetY));
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.offsetX, this.cnv.height - 0);
+        this.ctx.lineTo(this.offsetX, this.cnv.height - this.cnv.height);
+        this.ctx.stroke();
+      }
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.zoomX * (0 + this.offsetX), this.cnv.height - this.zoomY * (arr[0] + this.offsetY));
+      i = 0;
+      while (i++ < arr.length) {
+        this.ctx.lineTo(this.zoomX * (i + this.offsetX), this.cnv.height - this.zoomY * (arr[i] + this.offsetY));
+      }
+      this.ctx.stroke();
+      if (this.drawStatus) {
+        this.text("min:" + min, 5, 15);
+        this.text("max:" + max, 5, 25);
+        return this.text("len:" + arr.length, 5, 35);
+      }
+    };
+
+    return SignalViewer;
+
+  })();
+
+  module.exports = SignalViewer;
+
+}).call(this);
+
+},{}],8:[function(require,module,exports){
+"use strict";
 var _Statistics = require("duxca.lib.statistics.js");
 var _Signal = require("duxca.lib.signal.js");
 var _RecordBuffer = require("duxca.lib.recordbuffer.js");
 var _Wave = require("duxca.lib.wave.js");
 var _OSC = require("duxca.lib.osc.js");
 var _CanvasRender = require("duxca.lib.canvasrender.js");
+var _Metronome = require("./Metronome");
+var _FPS = require("./FPS");
+var _Newton = require("./Newton");
+var _FDTD = require("./FDTD");
+var _Chord = require("./Chord");
+var _Ajax = require("./Ajax");
+var _SignalViewer = require("./SignalViewer");
 var lib;
 (function (lib) {
     lib.Statistics = _Statistics;
@@ -14,9 +718,27 @@ var lib;
     lib.Wave = _Wave;
     lib.OSC = _OSC;
     lib.CanvasRender = _CanvasRender;
+    lib.Metronome = _Metronome;
+    lib.FPS = _FPS;
+    lib.Newton = _Newton;
+    lib.FDTD = _FDTD;
+    lib.Chord = _Chord;
+    lib.Ajax = _Ajax;
+    //export const QRCode = _QRCode;
+    lib.SignalViewer = _SignalViewer;
+    var Util;
+    (function (Util) {
+        function importObject(hash) {
+            Object.keys(hash).forEach(function (key) {
+                self[key] = hash[key];
+                console.log("some global variables appended: ", Object.keys(hash));
+            });
+        }
+        Util.importObject = importObject;
+    })(Util = lib.Util || (lib.Util = {}));
 })(lib = exports.lib || (exports.lib = {}));
 
-},{"duxca.lib.canvasrender.js":2,"duxca.lib.osc.js":3,"duxca.lib.recordbuffer.js":4,"duxca.lib.signal.js":6,"duxca.lib.statistics.js":7,"duxca.lib.wave.js":8}],2:[function(require,module,exports){
+},{"./Ajax":1,"./Chord":2,"./FDTD":3,"./FPS":4,"./Metronome":5,"./Newton":6,"./SignalViewer":7,"duxca.lib.canvasrender.js":9,"duxca.lib.osc.js":10,"duxca.lib.recordbuffer.js":11,"duxca.lib.signal.js":13,"duxca.lib.statistics.js":14,"duxca.lib.wave.js":15}],9:[function(require,module,exports){
 "use strict";
 var Signal = require("duxca.lib.signal.js");
 var Statistics = require("duxca.lib.statistics.js");
@@ -155,7 +877,7 @@ var CanvasRender;
 })(CanvasRender || (CanvasRender = {}));
 module.exports = CanvasRender;
 
-},{"duxca.lib.signal.js":6,"duxca.lib.statistics.js":7}],3:[function(require,module,exports){
+},{"duxca.lib.signal.js":13,"duxca.lib.statistics.js":14}],10:[function(require,module,exports){
 "use strict";
 var CanvasRender = require("duxca.lib.canvasrender.js");
 var Signal = require("duxca.lib.signal.js");
@@ -298,7 +1020,7 @@ var OSC = (function () {
 }());
 module.exports = OSC;
 
-},{"duxca.lib.canvasrender.js":2,"duxca.lib.recordbuffer.js":4,"duxca.lib.signal.js":6}],4:[function(require,module,exports){
+},{"duxca.lib.canvasrender.js":9,"duxca.lib.recordbuffer.js":11,"duxca.lib.signal.js":13}],11:[function(require,module,exports){
 "use strict";
 var RecordBuffer = (function () {
     function RecordBuffer(sampleRate, bufferSize, channel, maximamRecordSize) {
@@ -387,7 +1109,7 @@ var RecordBuffer;
 })(RecordBuffer || (RecordBuffer = {}));
 module.exports = RecordBuffer;
 
-},{}],5:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -838,7 +1560,7 @@ var RFFT = (function (_super) {
 }(FourierTransform));
 exports.RFFT = RFFT;
 
-},{}],6:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 var FourierTransform_1 = require("./FourierTransform");
 var Statistics = require("duxca.lib.statistics.js");
@@ -1351,7 +2073,7 @@ function first_wave_detection(xs) {
 }
 exports.first_wave_detection = first_wave_detection;
 
-},{"./FourierTransform":5,"duxca.lib.statistics.js":7}],7:[function(require,module,exports){
+},{"./FourierTransform":12,"duxca.lib.statistics.js":14}],14:[function(require,module,exports){
 "use strict";
 function summation(arr) {
     var sum = 0;
@@ -1508,7 +2230,7 @@ function k_means1D(data, k) {
 }
 exports.k_means1D = k_means1D;
 
-},{}],8:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 var Wave = (function () {
     function Wave(channel, sampleRate, int16arr) {
@@ -1562,5 +2284,5 @@ var Wave;
 })(Wave || (Wave = {}));
 module.exports = Wave;
 
-},{}]},{},[1])(1)
+},{}]},{},[8])(8)
 });
