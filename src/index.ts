@@ -1,6 +1,4 @@
-/// <reference path="../typings/browser.d.ts" />
-
-import Signal = require("signal");
+import Signal = require("duxca.lib.signal.js");
 
 export namespace duxca {
   export namespace lib {

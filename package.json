@@ -9,7 +9,7 @@
     "init": "npm run update; npm run start",
     "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
     "clean": "rm -rf lib/* dist/*",
-    "start": "npm run clean; http-server -s -p 8000 & tsc -w -p ./ & watchify lib/index.js --standalone duxca -o dist/duxca.lib.js -v",
+    "start": "npm run clean; http-server -s -p 8000 & tsc -w -p src & watchify lib/index.js --standalone duxca -o dist/duxca.lib.js -v",
     "stop": "killall -- node */http-server -s -p 8000"
   },
   "repository": {
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
-    "signal": "github:legokichi/duxca.lib.js#signal.ts"
+    "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal"
   },
   "devDependencies": {}
 }
