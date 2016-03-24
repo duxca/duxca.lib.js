@@ -1,0 +1,23 @@
+{
+  "name": "duxca.lib.js",
+  "description": "duxca algorithm and code sandbox",
+  "version": "1.0.0",
+  "moduleType": [
+    "browser"
+  ],
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
+  "authors": [
+    "Legokichi Duckscallion <legokichi@duxca.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}

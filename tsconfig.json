@@ -21,13 +21,13 @@
         "suppressImplicitAnyIndexErrors": true
     },
     "files": [
-        "src/index.ts"
+        "./src/index.ts"
     ],
     "exclude": [
-        "node_modules"
+        "./node_modules"
     ],
     "atom": {
-        "rewriteTsconfig": true,
-        "compileOnSave": false
-    }
+        "rewriteTsconfig": true
+    },
+    "compileOnSave": false
 }
