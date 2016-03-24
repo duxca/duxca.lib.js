@@ -1,4 +1,3 @@
-/// <reference path="../typings/browser.d.ts" />
 declare class OSC {
     actx: AudioContext;
     constructor(actx: AudioContext);

@@ -138,7 +138,6 @@ var CanvasRender;
 module.exports = CanvasRender;
 
 },{"duxca.lib.signal.js":7,"duxca.lib.statictics.js":8}],2:[function(require,module,exports){
-/// <reference path="../typings/browser.d.ts"/>
 "use strict";
 var CanvasRender = require("./CanvasRender");
 var Signal = require("duxca.lib.signal.js");

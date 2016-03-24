@@ -1,5 +1,3 @@
-/// <reference path="../typings/browser.d.ts"/>
-
 import * as CanvasRender from "./CanvasRender";
 import * as Signal from "duxca.lib.signal.js";
 import * as RecordBuffer from "duxca.lib.recordbuffer.js";
