@@ -7,4 +7,5 @@ export declare namespace lib {
     var Signal: typeof _Signal;
     var RecordBuffer: typeof _RecordBuffer;
     var Wave: typeof _Wave;
+    var OSC: any;
 }

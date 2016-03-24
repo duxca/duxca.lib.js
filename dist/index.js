@@ -4,15 +4,300 @@ var _Statictics = require("duxca.lib.statictics.js");
 var _Signal = require("duxca.lib.signal.js");
 var _RecordBuffer = require("duxca.lib.recordbuffer.js");
 var _Wave = require("duxca.lib.wave.js");
+var _OSC = require("duxca.lib.osc.js");
 var lib;
 (function (lib) {
     lib.Statictics = _Statictics;
     lib.Signal = _Signal;
     lib.RecordBuffer = _RecordBuffer;
     lib.Wave = _Wave;
+    lib.OSC = _OSC;
 })(lib = exports.lib || (exports.lib = {}));
 
-},{"duxca.lib.recordbuffer.js":2,"duxca.lib.signal.js":6,"duxca.lib.statictics.js":7,"duxca.lib.wave.js":8}],2:[function(require,module,exports){
+},{"duxca.lib.osc.js":3,"duxca.lib.recordbuffer.js":4,"duxca.lib.signal.js":8,"duxca.lib.statictics.js":9,"duxca.lib.wave.js":10}],2:[function(require,module,exports){
+"use strict";
+var Signal = require("duxca.lib.signal.js");
+var Statictics = require("duxca.lib.statictics.js");
+var CanvasRender = (function () {
+    function CanvasRender(width, height) {
+        this.element = this.cnv = document.createElement("canvas");
+        this.cnv.width = width;
+        this.cnv.height = height;
+        this.ctx = this.cnv.getContext("2d");
+    }
+    CanvasRender.prototype.clear = function () {
+        this.cnv.width = this.cnv.width;
+    };
+    CanvasRender.prototype.drawSignal = function (signal, flagX, flagY) {
+        if (flagX === void 0) { flagX = false; }
+        if (flagY === void 0) { flagY = false; }
+        if (flagY) {
+            signal = Signal.normalize(signal, 1);
+        }
+        var zoomX = !flagX ? 1 : this.cnv.width / signal.length;
+        var zoomY = !flagY ? 1 : this.cnv.height / Statictics.findMax(signal)[0];
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.cnv.height - signal[0] * zoomY);
+        for (var i = 1; i < signal.length; i++) {
+            this.ctx.lineTo(zoomX * i, this.cnv.height - signal[i] * zoomY);
+        }
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawColLine = function (x) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, 0);
+        this.ctx.lineTo(x, this.cnv.height);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawRowLine = function (y) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, y);
+        this.ctx.lineTo(this.cnv.width, y);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.cross = function (x, y, size) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + size, y + size);
+        this.ctx.lineTo(x - size, y - size);
+        this.ctx.moveTo(x - size, y + size);
+        this.ctx.lineTo(x + size, y - size);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.arc = function (x, y, size) {
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, size, 0, 2 * Math.PI, false);
+        this.ctx.stroke();
+    };
+    CanvasRender.prototype.drawSpectrogram = function (spectrogram, max) {
+        if (max === void 0) { max = 255; }
+        var imgdata = this.ctx.createImageData(spectrogram.length, spectrogram[0].length);
+        for (var i = 0; i < spectrogram.length; i++) {
+            for (var j = 0; j < spectrogram[i].length; j++) {
+                var _a = CanvasRender.hslToRgb(spectrogram[i][j] / max, 0.5, 0.5), r = _a[0], g = _a[1], b = _a[2];
+                var _b = [i, imgdata.height - 1 - j], x = _b[0], y = _b[1];
+                var index = x + y * imgdata.width;
+                imgdata.data[index * 4 + 0] = b | 0;
+                imgdata.data[index * 4 + 1] = g | 0;
+                imgdata.data[index * 4 + 2] = r | 0; // is this bug?
+                imgdata.data[index * 4 + 3] = 255;
+            }
+        }
+        this.ctx.putImageData(imgdata, 0, 0);
+    };
+    CanvasRender.prototype._drawSpectrogram = function (rawdata, sampleRate) {
+        var windowsize = Math.pow(2, 8); // spectrgram height
+        var slidewidth = Math.pow(2, 5); // spectrgram width rate
+        console.log("sampleRate:", sampleRate, "\n", "windowsize:", windowsize, "\n", "slidewidth:", slidewidth, "\n", "windowsize(ms):", windowsize / sampleRate * 1000, "\n", "slidewidth(ms):", slidewidth / sampleRate * 1000, "\n");
+        var spectrums = [];
+        for (var ptr = 0; ptr + windowsize < rawdata.length; ptr += slidewidth) {
+            var buffer = rawdata.subarray(ptr, ptr + windowsize);
+            if (buffer.length !== windowsize)
+                break;
+            var spectrum = Signal.fft(buffer, sampleRate)[2];
+            for (var i = 0; i < spectrum.length; i++) {
+                spectrum[i] = spectrum[i] * 20000;
+            }
+            spectrums.push(spectrum);
+        }
+        console.log("ptr", 0 + "-" + (ptr - 1) + "/" + rawdata.length, "ms", 0 / sampleRate * 1000 + "-" + (ptr - 1) / sampleRate * 1000 + "/" + rawdata.length * 1000 / sampleRate, spectrums.length + "x" + spectrums[0].length);
+        this.cnv.width = spectrums.length;
+        this.cnv.height = spectrums[0].length;
+        this.drawSpectrogram(spectrums);
+    };
+    return CanvasRender;
+}());
+var CanvasRender;
+(function (CanvasRender) {
+    function hue2rgb(p, q, t) {
+        if (t < 0) {
+            t += 1;
+        }
+        if (t > 1) {
+            t -= 1;
+        }
+        if (t < 1 / 6) {
+            return p + (q - p) * 6 * t;
+        }
+        if (t < 1 / 2) {
+            return q;
+        }
+        if (t < 2 / 3) {
+            return p + (q - p) * (2 / 3 - t) * 6;
+        }
+        return p;
+    }
+    CanvasRender.hue2rgb = hue2rgb;
+    function hslToRgb(h, s, l) {
+        // h, s, l: 0~1
+        h *= 5 / 6;
+        if (h < 0) {
+            h = 0;
+        }
+        if (5 / 6 < h) {
+            h = 5 / 6;
+        }
+        var r, g, b;
+        if (s === 0) {
+            r = g = b = l;
+        }
+        else {
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        return [r * 255, g * 255, b * 255];
+    }
+    CanvasRender.hslToRgb = hslToRgb;
+})(CanvasRender || (CanvasRender = {}));
+module.exports = CanvasRender;
+
+},{"duxca.lib.signal.js":8,"duxca.lib.statictics.js":9}],3:[function(require,module,exports){
+/// <reference path="../typings/browser.d.ts"/>
+"use strict";
+var CanvasRender = require("./CanvasRender");
+var Signal = require("duxca.lib.signal.js");
+var RecordBuffer = require("duxca.lib.recordbuffer.js");
+function screenshot(cnv) {
+    document.body.appendChild(cnv);
+}
+;
+var OSC = (function () {
+    function OSC(actx) {
+        this.actx = actx;
+    }
+    OSC.prototype.tone = function (freq, startTime, duration) {
+        var osc = this.actx.createOscillator();
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+        var gain = this.actx.createGain();
+        gain.gain.value = 0;
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(1, startTime + 0.01);
+        gain.gain.setValueAtTime(1, startTime + duration - 0.01);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
+        osc.connect(gain);
+        return gain;
+    };
+    OSC.prototype.createAudioBufferFromArrayBuffer = function (arr, sampleRate) {
+        var abuf = this.actx.createBuffer(1, arr.length, sampleRate);
+        var buf = abuf.getChannelData(0);
+        buf.set(arr);
+        return abuf;
+    };
+    OSC.prototype.createAudioNodeFromAudioBuffer = function (abuf) {
+        var asrc = this.actx.createBufferSource();
+        asrc.buffer = abuf;
+        return asrc;
+    };
+    OSC.prototype.createBarkerCodedChirp = function (barkerCodeN, powN, powL) {
+        if (powL === void 0) { powL = 14; }
+        var actx = this.actx;
+        var osc = this;
+        var code = Signal.createBarkerCode(barkerCodeN);
+        var chirp = Signal.createCodedChirp(code, powN);
+        return this.resampling(chirp, powL);
+    };
+    // todo: https://developer.mozilla.org/ja/docs/Web/API/AudioBuffer
+    // sync resampling
+    OSC.prototype.createAudioBufferFromURL = function (url) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.addEventListener("load", function () {
+                var buf = xhr.response;
+                _this.actx.decodeAudioData(buf, function (abuf) { return resolve(Promise.resolve(abuf)); }, function () { return console.error("decode error"); });
+            });
+            xhr.send();
+        });
+    };
+    OSC.prototype.resampling = function (sig, pow, sampleRate) {
+        var _this = this;
+        if (pow === void 0) { pow = 14; }
+        if (sampleRate === void 0) { sampleRate = 44100; }
+        return new Promise(function (resolve, reject) {
+            var abuf = _this.createAudioBufferFromArrayBuffer(sig, sampleRate); // fix rate
+            var anode = _this.createAudioNodeFromAudioBuffer(abuf);
+            var processor = _this.actx.createScriptProcessor(Math.pow(2, pow), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+            var recbuf = new RecordBuffer(_this.actx.sampleRate, processor.bufferSize, processor.channelCount);
+            anode.start(_this.actx.currentTime);
+            anode.connect(processor);
+            processor.connect(_this.actx.destination);
+            var actx = _this.actx;
+            processor.addEventListener("audioprocess", function handler(ev) {
+                recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+                if (recbuf.count * recbuf.bufferSize > sig.length) {
+                    processor.removeEventListener("audioprocess", handler);
+                    processor.disconnect();
+                    next();
+                }
+            });
+            function next() {
+                var rawdata = recbuf.merge();
+                recbuf.clear();
+                resolve(Promise.resolve(rawdata));
+            }
+        });
+    };
+    OSC.prototype.inpulseResponce = function (TEST_INPUT_MYSELF) {
+        var _this = this;
+        if (TEST_INPUT_MYSELF === void 0) { TEST_INPUT_MYSELF = false; }
+        var up = Signal.createChirpSignal(Math.pow(2, 17), false);
+        var down = Signal.createChirpSignal(Math.pow(2, 17), true);
+        //up = up.subarray(up.length*1/4|0, up.length*3/4|0);
+        //down = up.subarray(up.length*1/4|0, up.length*3/4|0);
+        new Promise(function (resolbe, reject) { return navigator.getUserMedia({ video: false, audio: true }, resolbe, reject); })
+            .then(function (stream) {
+            var source = _this.actx.createMediaStreamSource(stream);
+            var processor = _this.actx.createScriptProcessor(Math.pow(2, 14), 1, 1); // between Math.pow(2,8) and Math.pow(2,14).
+            var abuf = _this.createAudioBufferFromArrayBuffer(up, _this.actx.sampleRate); // fix rate
+            var anode = _this.createAudioNodeFromAudioBuffer(abuf);
+            anode.start(_this.actx.currentTime + 0);
+            anode.connect(TEST_INPUT_MYSELF ? processor : _this.actx.destination);
+            !TEST_INPUT_MYSELF && source.connect(processor);
+            processor.connect(_this.actx.destination);
+            var recbuf = new RecordBuffer(_this.actx.sampleRate, processor.bufferSize, 1);
+            var actx = _this.actx;
+            processor.addEventListener("audioprocess", function handler(ev) {
+                recbuf.add([new Float32Array(ev.inputBuffer.getChannelData(0))], actx.currentTime);
+                console.log(recbuf.count);
+                if (recbuf.count * recbuf.bufferSize > up.length * 2) {
+                    console.log("done");
+                    processor.removeEventListener("audioprocess", handler);
+                    processor.disconnect();
+                    stream.stop();
+                    next();
+                }
+            });
+            function next() {
+                var rawdata = recbuf.merge();
+                var corr = Signal.overwarpCorr(down, rawdata);
+                var render = new CanvasRender(128, 128);
+                console.log("raw", rawdata.length);
+                render.cnv.width = rawdata.length / 256;
+                render.drawSignal(rawdata, true, true);
+                screenshot(render.element);
+                console.log("corr", corr.length);
+                render.cnv.width = corr.length / 256;
+                render.drawSignal(corr, true, true);
+                screenshot(render.element);
+                console.log("up", up.length);
+                render.cnv.width = up.length / 256;
+                render.drawSignal(up, true, true);
+                screenshot(render.element);
+                render._drawSpectrogram(rawdata, recbuf.sampleRate);
+                screenshot(render.cnv);
+            }
+        });
+    };
+    return OSC;
+}());
+module.exports = OSC;
+
+},{"./CanvasRender":2,"duxca.lib.recordbuffer.js":4,"duxca.lib.signal.js":8}],4:[function(require,module,exports){
 "use strict";
 var RecordBuffer = (function () {
     function RecordBuffer(sampleRate, bufferSize, channel, maximamRecordSize) {
@@ -101,7 +386,7 @@ var RecordBuffer;
 })(RecordBuffer || (RecordBuffer = {}));
 module.exports = RecordBuffer;
 
-},{}],3:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -552,7 +837,7 @@ var RFFT = (function (_super) {
 }(FourierTransform));
 exports.RFFT = RFFT;
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 var Signal = require("./Signal");
 var Statictics = require("duxca.lib.statictics.js");
@@ -691,7 +976,7 @@ var CanvasRender;
 })(CanvasRender || (CanvasRender = {}));
 module.exports = Render;
 
-},{"./Signal":5,"duxca.lib.statictics.js":7}],5:[function(require,module,exports){
+},{"./Signal":7,"duxca.lib.statictics.js":9}],7:[function(require,module,exports){
 "use strict";
 var _Render = require("./Render");
 var _Statictics = require("duxca.lib.statictics.js");
@@ -1207,12 +1492,12 @@ function first_wave_detection(xs) {
 }
 exports.first_wave_detection = first_wave_detection;
 
-},{"./FourierTransform":3,"./Render":4,"duxca.lib.statictics.js":7}],6:[function(require,module,exports){
+},{"./FourierTransform":5,"./Render":6,"duxca.lib.statictics.js":9}],8:[function(require,module,exports){
 "use strict";
 var Signal = require("./Signal");
 module.exports = Signal;
 
-},{"./Signal":5}],7:[function(require,module,exports){
+},{"./Signal":7}],9:[function(require,module,exports){
 "use strict";
 function summation(arr) {
     var sum = 0;
@@ -1369,7 +1654,7 @@ function k_means1D(data, k) {
 }
 exports.k_means1D = k_means1D;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 var Wave = (function () {
     function Wave(channel, sampleRate, int16arr) {
