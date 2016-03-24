@@ -24,7 +24,6 @@
   },
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
-    "bluebird": "^3.3.4",
     "duxca.lib.recordbuffer.js": "github:legokichi/duxca.lib.js#recordbuffer",
     "duxca.lib.signal.js": "github:legokichi/duxca.lib.js#signal",
     "duxca.lib.statictics.js": "github:legokichi/duxca.lib.js#statictics"

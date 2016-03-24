@@ -1,6 +1,6 @@
 import * as CanvasRender from "./CanvasRender";
-import * as Signal from "duxca.lib.signal.js";
-import * as RecordBuffer from "duxca.lib.recordbuffer.js";
+import Signal = require("duxca.lib.signal.js");
+import RecordBuffer = require("duxca.lib.recordbuffer.js");
 
 function screenshot (cnv: HTMLCanvasElement){
   document.body.appendChild(cnv);
