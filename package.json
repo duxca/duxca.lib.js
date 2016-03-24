@@ -25,5 +25,6 @@
   "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
   },
-  "devDependencies": {}
+  "devDependencies": {
+  }
 }
