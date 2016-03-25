@@ -31,8 +31,8 @@ class SignalViewer
     {sampleRate} = opt
     arr = f32arr.map (v)-> if isFinite(v) then v else 0
     sampleRate ?= 44100
-    [max, _] = Signal.Statictics.findMax(arr)
-    [min, _] = Signal.Statictics.findMin(arr)
+    [max, _] = Statistics.findMax(arr)
+    [min, _] = Statistics.findMin(arr)
     fillStyle = @ctx.fillStyle
     @ctx.fillStyle = "white"
     @ctx.fillRect(0, 0, @cnv.width, @cnv.height)

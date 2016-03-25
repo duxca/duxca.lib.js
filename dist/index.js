@@ -628,8 +628,8 @@ module.exports = Newton;
       if (sampleRate == null) {
         sampleRate = 44100;
       }
-      ref = Signal.Statictics.findMax(arr), max = ref[0], _ = ref[1];
-      ref1 = Signal.Statictics.findMin(arr), min = ref1[0], _ = ref1[1];
+      ref = Statistics.findMax(arr), max = ref[0], _ = ref[1];
+      ref1 = Statistics.findMin(arr), min = ref1[0], _ = ref1[1];
       fillStyle = this.ctx.fillStyle;
       this.ctx.fillStyle = "white";
       this.ctx.fillRect(0, 0, this.cnv.width, this.cnv.height);
