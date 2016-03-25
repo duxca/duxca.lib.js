@@ -151,7 +151,7 @@ export function createCodedChirp(code: number[], bitWithBinaryPower=10): Float32
 }
 
 export function createBarkerCodedChirp(barkerCodeN: number, bitWithBinaryPower=10): Float32Array{
-  return createCodedChirp(createBarkerCode(barkerCodeN));
+  return createCodedChirp(createBarkerCode(barkerCodeN), bitWithBinaryPower);
 }
 
 // Signal.createM([3, 1], 7, [0,0,1])
