@@ -1,18 +1,25 @@
 {
-  "name": "PNG.ts",
-  "version": "0.0.0",
+  "name": "duxca.lib.png.js",
   "description": "JavaScript PNG decoder written in TypeScript",
+  "version": "1.0.0",
+  "moduleType": [
+    "browser"
+  ],
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
+  "authors": [
+    "Legokichi Duckscallion <legokichi@duxca.com>"
+  ],
   "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "typings"
+  ],
   "dependencies": {
     "jszip": "*"
   },
   "devDependencies": {
-  },
-  "main": "./dist/PNG.js",
-  "ignore": [
-    "**/.*",
-    "bower_components",
-    "node_modules",
-    "typings"
-  ]
+  }
 }

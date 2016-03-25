@@ -1,42 +1,30 @@
 {
-  "name": "PNG.ts",
-  "version": "0.0.0",
+  "name": "duxca.lib.png.js",
+  "version": "1.0.0",
   "description": "JavaScript PNG decoder written in TypeScript",
-  "license": "MIT",
-  "url": "https://github.com/legokichi/PNG.ts",
-  "keywords": [
-    "png"
-  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "scripts": {
+    "setup": "npm install -g typescript bower typings browserify watchify http-server",
     "init": "npm run update; npm run build",
-    "update": "npm update; bower update",
-    "clean": "rm -f lib/* dist/* test/*.js",
-    "start": "http-server -p 8000 & watchify lib/index.js --standalone PNG -o dist/PNG.js -v & gulp watch;",
-    "stop": "killall -- node */http-server -p 8000",
-    "build": "npm run clean; gulp build; browserify lib/index.js --outfile dist/PNG.js --standalone PNG",
-    "dts": "tsc --declaration --target es6 --outDir lib src/*.ts"
+    "update": "rm -rf bower_components typings node_modules; npm update; bower update; typings install",
+    "clean": "rm -rf lib/* dist/* test/*.js; mkdir -p dist",
+    "build": "npm run clean; tsc    -p ./ ; browserify lib/index.js --standalone PNG -o dist/index.js",
+    "start": "npm run build; tsc -w -p ./ & watchify   lib/index.js --standalone PNG -o dist/index.js -v & http-server -s -p 8000",
+    "stop": "killall -- node */tsc -w -p"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/legokichi/PNG.ts.git"
+    "url": "https://github.com/legokichi/duxca.lib.js.git"
   },
+  "author": "legokichi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/legokichi/duxca.lib.js/issues"
+  },
+  "homepage": "https://github.com/legokichi/duxca.lib.js",
   "dependencies": {
   },
   "devDependencies": {
-    "watchify": "^3.4.0",
-    "coffee-script": "^1.10.0",
-    "gulp": "^3.9.0",
-    "gulp-babel": "^5.2.1",
-    "gulp-espower": "^1.0.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-typescript": "^2.9.2",
-    "typescript": "^1.6.2"
-  },
-  "bugs": {
-    "url": "https://github.com/legokichi/PNG.ts/issues"
-  },
-  "main": "./lib/index.js",
-  "typings": "./lib/index.d.ts",
-  "author": "legokichi",
-  "contributors": []
+  }
 }
