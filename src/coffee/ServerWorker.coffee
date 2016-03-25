@@ -171,8 +171,6 @@ getArrayBuffer = (url)->
     xhr.responseType = "arraybuffer"
     xhr.send()
 
-if typeof module isnt 'undefined' and typeof module.exports isnt 'undefined'
-  module.exports.InlineServerWorker = InlineServerWorker
-  module.exports.IFrameServerWorker = IFrameServerWorker
-this.InlineServerWorker = InlineServerWorker
-this.IFrameServerWorker = IFrameServerWorker
+
+module.exports.InlineServerWorker = InlineServerWorker
+module.exports.IFrameServerWorker = IFrameServerWorker

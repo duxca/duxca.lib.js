@@ -16,7 +16,8 @@ import _Ajax = require("./Ajax");
 declare function require<T>(path: string): T;
 
 const _SignalViewer= require<any>("./SignalViewer");
-const _SGSmooth= require<any>("./SGSmooth");
+const _SGSmooth = require<any>("./SGSmooth");
+const _ServerWorker= require<any>("./ServerWorker");
 
 export namespace lib {
   export const Statistics = _Statistics;
@@ -35,6 +36,7 @@ export namespace lib {
   //export const QRCode = _QRCode;
   export const SignalViewer = _SignalViewer;
   export const SGSmooth = _SGSmooth;
+  export const ServerWorker = _ServerWorker;
   export namespace Util {
     export function importObject (hash: {[key:string]: any;}): void {
       Object.keys(hash).forEach((key)=>{

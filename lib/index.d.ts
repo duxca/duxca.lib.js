@@ -27,6 +27,7 @@ export declare namespace lib {
     const PNG: typeof _PNG;
     const SignalViewer: any;
     const SGSmooth: any;
+    const ServerWorker: any;
     namespace Util {
         function importObject(hash: {
             [key: string]: any;
