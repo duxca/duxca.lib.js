@@ -28,6 +28,7 @@ export declare namespace lib {
     const SignalViewer: any;
     const SGSmooth: any;
     const ServerWorker: any;
+    const TimeSpreadEcho: any;
     namespace Util {
         function importObject(hash: {
             [key: string]: any;

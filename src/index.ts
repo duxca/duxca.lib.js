@@ -18,6 +18,8 @@ declare function require<T>(path: string): T;
 const _SignalViewer= require<any>("./SignalViewer");
 const _SGSmooth = require<any>("./SGSmooth");
 const _ServerWorker= require<any>("./ServerWorker");
+const _TimeSpreadEcho= require<any>("./TimeSpreadEcho");
+
 
 export namespace lib {
   export const Statistics = _Statistics;
@@ -37,6 +39,7 @@ export namespace lib {
   export const SignalViewer = _SignalViewer;
   export const SGSmooth = _SGSmooth;
   export const ServerWorker = _ServerWorker;
+  export const TimeSpreadEcho = _TimeSpreadEcho;
   export namespace Util {
     export function importObject (hash: {[key:string]: any;}): void {
       Object.keys(hash).forEach((key)=>{
