@@ -4,6 +4,7 @@ import _RecordBuffer = require("duxca.lib.recordbuffer.js");
 import _Wave = require("duxca.lib.wave.js");
 import _OSC = require("duxca.lib.osc.js");
 import _CanvasRender = require("duxca.lib.canvasrender.js");
+import _PNG = require("duxca.lib.png.js");
 import _Metronome = require("./Metronome");
 import _FPS = require("./FPS");
 import _Newton = require("./Newton");
@@ -23,6 +24,7 @@ export declare namespace lib {
     const FDTD: typeof _FDTD;
     const Chord: typeof _Chord;
     const Ajax: typeof _Ajax;
+    const PNG: typeof _PNG;
     const SignalViewer: any;
     const SGSmooth: any;
     namespace Util {
