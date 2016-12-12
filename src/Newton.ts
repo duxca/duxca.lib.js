@@ -1,13 +1,10 @@
 
-
-import Point = Newton.Point;
-
-class Newton{
+export class Newton{
   theta: number;
-  points: Point[];
-  _pts: Point[];
+  points: Newton.Point[];
+  _pts: Newton.Point[];
 
-  constructor(theta:number, pts:Point[], _pts:Point[]){
+  constructor(theta:number, pts:Newton.Point[], _pts:Newton.Point[]){
     this.theta = theta;
     this.points = pts;
     this._pts = _pts;
@@ -38,7 +35,7 @@ class Newton{
 
 
 
-namespace Newton {
+export namespace Newton {
   export class Point{
     x: number;
     y: number;
@@ -107,4 +104,3 @@ namespace Newton {
 
 }
 
-export = Newton;

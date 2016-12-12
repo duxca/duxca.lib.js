@@ -1,5 +1,5 @@
 
-class FPS {
+export class FPS {
 
   period: number
   lastTime: number;
@@ -28,4 +28,3 @@ class FPS {
   }
 }
 
-export = FPS;

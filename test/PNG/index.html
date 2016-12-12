@@ -1,0 +1,30 @@
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../dist/PNG.js"></script>
+<script>
+getBuffer("./Lenna.png").then(function(buffer){
+  var reader = new PNG.PNGReader(buffer);
+  reader.deflate = JSZip.compressions.DEFLATE.uncompress;
+  var png = reader.parse();
+  var decoded = png.getUint8ClampedArray();
+  var cnv = document.createElement('canvas');
+  var ctx = cnv.getContext('2d');
+  var width = cnv.width = png.width;
+  var height = cnv.height = png.height;
+  var imageData = ctx.getImageData(0, 0, width, height);
+  imageData.data.set(decoded);
+  ctx.putImageData(imageData, 0, 0);
+  document.body.appendChild(cnv);
+});
+function getBuffer(url){
+  return new Promise(function(resolve, reject){
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload = function (ev) {
+      var arrayBuffer = xhr.response;
+      resolve(arrayBuffer);
+    };
+    xhr.send(null);
+  });
+}
+</script>

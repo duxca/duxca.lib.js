@@ -1,6 +1,6 @@
-import CanvasRender = require("duxca.lib.canvasrender.js");
+import {CanvasRenderer} from "./CanvasRenderer";
 
-class FDTD {
+export class FDTD {
 
   DELTA_T: number;//sec
   DELTA_X: number;//m
@@ -84,7 +84,7 @@ class FDTD {
     return this;
   }
 
-  draw(render: CanvasRender){
+  draw(render: CanvasRenderer){
     var cnv = render.cnv;
     var ctx = render.ctx;
     cnv.width = this.width;
@@ -94,7 +94,7 @@ class FDTD {
     for(var j=0;j<this.height;j++){
       for(var i=0;i<this.width;i++){
         var ptr = i + j*this.width;
-        var [r,g,b] = CanvasRender.hslToRgb(1 - curP[ptr] / 1024, 0.5, 0.5);
+        var [r,g,b] = CanvasRenderer.hslToRgb(1 - curP[ptr] / 1024, 0.5, 0.5);
         imgdata.data[ptr * 4 + 0] = r | 0;
         imgdata.data[ptr * 4 + 1] = g | 0;
         imgdata.data[ptr * 4 + 2] = b | 0;
@@ -107,4 +107,3 @@ class FDTD {
 }
 
 
-export = FDTD;

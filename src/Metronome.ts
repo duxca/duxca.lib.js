@@ -1,5 +1,5 @@
 
-class Metronome{
+export class Metronome{
 
   actx: AudioContext;
   interval: number;
@@ -25,4 +25,3 @@ class Metronome{
 }
 
 
-export = Metronome;
