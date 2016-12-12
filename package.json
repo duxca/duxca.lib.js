@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "duxca algorithm sandbox",
   "scripts": {
-    "setup": "npm install -g typings http-server; mkdir lib dist",
+    "setup": "npm install -g http-server; mkdir lib dist",
     "init": "npm run update; npm run build",
-    "update": "npm run reset; npm update; typings install",
-    "reset": "rm -rf node_modules typings",
+    "update": "npm run reset; npm update",
+    "reset": "rm -rf node_modules",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
     "build": "npm run clean   && tsc    -p . && coffee    -c -o lib src/coffee/*.coffee",
     "start": "http-server . -s & tsc -w -p .  & coffee -w -c -o lib src/coffee/*.coffee",
@@ -15,8 +15,8 @@
     "watchify": "watchify lib/index.js --standalone duxca -o dist/index.js -v",
     "check": "tsc -w --noEmit -p ./",
     "lint": "tslint -c ./tslint.json --project ./tsconfig.json --type-check",
-    "push": "git push origin hoge",
-    "pull": "git pull origin hoge"
+    "push": "git push origin master",
+    "pull": "git pull origin master"
   },
   "dependencies": {
     "@types/deep-diff": "0.0.29",
