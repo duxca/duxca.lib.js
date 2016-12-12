@@ -1,4 +1,4 @@
-
+/// <reference path="./decls/globals.d.ts" />
 
 export class VideoRecorder {
   chunks: Blob[];

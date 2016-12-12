@@ -1,23 +1,6 @@
-/// <reference types="jquery" />
-/// <reference types="hammerjs" />
 /// <reference types="node" />
 import xs, { Stream } from 'xstream';
 import { EventEmitter } from "events";
-export declare type HammerEvents = "tap" | "doubletap" | "pan" | "panstart" | "panmove" | "panend" | "pancancel" | "panup" | "pandown" | "panleft" | "panright" | "pinch" | "pinchstart" | "pinchmove" | "pinchend" | "pinchcancel" | "pinchin" | "pinchout" | "rotate" | "rotatestart" | "rotatemove" | "rotateend" | "rotatecancel" | "swipe" | "swipeleft" | "swiperight" | "swipeup" | "swipedown" | "press" | "pressup";
-export declare function ham($elm: JQuery, event: HammerEvents): Stream<HammerInput>;
-export declare function ham($elm: JQuery, event: HammerEvents, selector: string): Stream<HammerInput>;
-export declare function ham($elm: JQuery, event: HammerEvents, options: HammerOptions): Stream<HammerInput>;
-export declare function on($elm: JQuery, event: string, selector?: string): Stream<JQueryEventObject>;
-export declare function createResizeRatioStream($elm: JQuery): Stream<number>;
-export declare function createZoomStream($elm: JQuery): Stream<{
-    centerX: number;
-    centerY: number;
-    scale: number;
-}>;
-export declare function createInertiaScrollStream($elm: JQuery, ACCELERATION?: number, STEP_MILLIS?: number): Stream<{
-    deltaX: number;
-    deltaY: number;
-}>;
 export declare function fromEvent<S>(target: EventTarget | EventEmitter, name: string): Stream<S>;
 export declare function flushable_buffer(flush$: Stream<void>): <T>(input: xs<T>) => xs<T[]>;
 export declare function reconnect<T>(nested$: Stream<Stream<T>>): Stream<T>;
@@ -41,8 +24,6 @@ export declare function fromMediaElement(sources: {
     ended$: Stream<Event>;
     state$: Stream<MediaState>;
 };
-export declare function touchstart($elm: JQuery, selector?: string): Stream<JQueryEventObject>;
-export declare function touchend($elm: JQuery, selector?: string): Stream<JQueryEventObject>;
 export declare function updateCameraRect(canvasSize$: Stream<{
     width: number;
     height: number;
