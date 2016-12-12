@@ -8,10 +8,11 @@
     "update": "npm run reset; npm update; typings install",
     "reset": "rm -rf node_modules typings",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
-    "build": "npm run clean && tsc    -p . && browserify lib/index.js --standalone duxca -o dist/index.js",
-    "start": "http-server . -s & tsc -w -p .  &   watchify lib/index.js --standalone duxca -o dist/index.js -v",
+    "build": "npm run clean   && tsc    -p . && coffee    -c -o lib src/coffee/*.coffee",
+    "start": "http-server . -s & tsc -w -p .  & coffee -w -c -o lib src/coffee/*.coffee",
     "stop": "killall -- node */tsc -w -p",
     "browserify": "browserify lib/index.js --standalone duxca -o dist/index.js",
+    "watchify": "watchify lib/index.js --standalone duxca -o dist/index.js -v",
     "check": "tsc -w --noEmit -p ./",
     "lint": "tslint -c ./tslint.json --project ./tsconfig.json --type-check",
     "push": "git push origin hoge",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/node": "0.0.2",
     "browserify": "^13.1.0",
+    "coffee-script": "^1.12.1",
     "tslint": "^3.15.1",
     "typescript": "^2.0.3",
     "watchify": "^3.7.0"
