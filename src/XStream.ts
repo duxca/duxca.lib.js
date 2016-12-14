@@ -62,6 +62,7 @@ export function reconnect<T>(nested$: Stream<Stream<T>>): Stream<T> {
   // flatten と似ているが...違いは？
   const emitter = new EventEmitter();
   emitter.setMaxListeners(1);
+  console.warn("reconnect is deprecated", new Error("").stack);
   
   runEff(nested$.map((newone$)=>{
     emitter.emit("clear");
@@ -95,8 +96,8 @@ export function reconnect<T>(nested$: Stream<Stream<T>>): Stream<T> {
 }
 
 
-export function adapter<Sources, Sinks>(main: (sources: Sources)=>Sinks){
-  return function (sources: Sources): {[key:string]: Stream<any>;} {
+export function adapter<Sources, Sinks>(main: (sources: Sources)=>Sinks) {
+  return function (sources: Sources): { [key: string]: Stream<any>; } {
     const wrapped = <{[key: string]: Stream<any>}>{};
     const sinks = main(sources);
     Object.keys(sinks).forEach((key)=>{
@@ -126,11 +127,7 @@ export function runEff(eff$: Stream<void>): void {
   eff$.addListener({
     next:     ()=>{},//console.info.bind(console, "next"),
     complete: ()=>{ /*console.warn("runEff: complete");*/ },
-    error:    (err: any)=>{
-      console.error("runEff: error", err);
-      alert(err.message);
-      alert(err.stack); 
-    }
+    error:    (err: any)=>{ setTimeout(()=>{ throw err; }, 0); }
   });
 }
 

@@ -2,63 +2,12 @@
 
 
 
-export function loadMediaStream(opt: {audio: any, video: any}): Promise<MediaStream>{
-  console.info("get user media 2592x1944");
-  opt.video = {
-    mandatory: {
-      minWidth: 2592,
-      minHeight: 1944
-    }
-  };
-  return _loadMediaStream(opt)
-  .catch(()=>{
-    console.warn("fauiled. try 2048x1536");
-    opt.video = {
-      mandatory: {
-        minWidth: 2048,
-        minHeight: 1536
-      }
-    };
-    return _loadMediaStream(opt);
-  }).catch(()=>{
-    console.warn("fauiled. try 640x480");
-    opt.video = {
-      mandatory: {
-        minWidth: 640,
-        minHeight: 480
-      }
-    };
-    return _loadMediaStream(opt);
-  }).catch(()=>{
-    console.warn("fauiled. try 320x240");
-    opt.video = {
-      mandatory: {
-        minWidth: 320,
-        minHeight: 240
-      }
-    };
-    return _loadMediaStream(opt);
-  }).catch(()=>{
-    console.warn("opt.video = true;");
-    opt.video = true;
-    return _loadMediaStream(opt);
-  }).then((mediaStream)=>{
-    console.info("getUserMedia: video option", opt.video);
-    return mediaStream;
-  });
-}
 
-export function _loadMediaStream(opt: {audio: any, video: any}): Promise<MediaStream>{
-  if(navigator.mediaDevices != null){
-    navigator.mediaDevices.enumerateDevices().then(console.log.bind(console, "navigator.mediaDevices.enumerateDevices"));
-  }
-  if(navigator["enumerateDevices"] instanceof Function){
-    navigator["enumerateDevices"]().then(console.log.bind(console, "navigator.enumerateDevices"));
-  }
-  /*if(navigator.mediaDevices != null && navigator.mediaDevices.getUserMedia instanceof Function){
+export function loadMediaStream(opt: {audio: any, video: any}): Promise<MediaStream>{
+  if(navigator.mediaDevices != null && navigator.mediaDevices.getUserMedia instanceof Function){
     console.info("use navigator.mediaDevices.getUserMedia");
     return <Promise<MediaStream>>navigator.mediaDevices.getUserMedia(opt);
-  }else */if(navigator.getUserMedia instanceof Function){
+  }else if(navigator.getUserMedia instanceof Function){
     console.info("use navigator.getUserMedia");
     return new Promise((resolve, reject)=>
       navigator.getUserMedia(opt, resolve, reject) );

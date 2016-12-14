@@ -61,10 +61,10 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
 
 
 export function loadScript(url: string): Promise<Event> {
-    var script = document.createElement("script");
-    script.src = url;
-    document.body.appendChild(script);
-    return new Promise((resolve)=>{
-      script.onload = resolve;
-    })
+  var script = document.createElement("script");
+  script.src = url;
+  document.body.appendChild(script);
+  return new Promise((resolve)=>{
+    script.onload = resolve;
+  })
 }
