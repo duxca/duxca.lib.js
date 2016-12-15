@@ -79,7 +79,7 @@ function evaluate(code: string,
                   env?: {[key: string]: any}): any { 
                          // @ret Any
     var _env = env || {};
-    var vars = Object.keys(env);
+    var vars = Object.keys(_env);
     var vals = vars.map(function(key){ return _env[key]; });
     var args = vars.concat("return " + code + ";");
     var fn = Function.apply(this, args);
