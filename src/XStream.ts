@@ -97,13 +97,13 @@ export function reconnect<T>(nested$: Stream<Stream<T>>): Stream<T> {
 
 
 export function adapter<Sources, Sinks>(main: (sources: Sources)=>Sinks) {
-  return function <K extends keyof Sinks>(sources: Sources) {
-    const wrapped = <{ [P in K]: Stream<Sinks[P]>; }>{};
+  return function (sources: Sources): { [key: string]: Stream<any>; } {
+    const wrapped = <{[key: string]: Stream<any>}>{};
     const sinks = main(sources);
-    for(let key in sinks){
+    Object.keys(sinks).forEach((key)=>{
       const val = sinks[key];
       wrapped[key] = xs.of(val);
-    }
+    });
     return wrapped;
   };
 }
