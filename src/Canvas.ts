@@ -20,11 +20,16 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
 // copy canvas as new object
 // this copy technic is faster than getImageData full copy, but some pixels are bad copy.
 // see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
-export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
+export function copy(cnv: HTMLCanvasElement|HTMLImageElement|HTMLVideoElement): HTMLCanvasElement {
   const _copy = document.createElement("canvas");
   const ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
-  _copy.width = cnv.width;
-  _copy.height = cnv.height;
+  if(cnv instanceof HTMLVideoElement){
+    _copy.width = cnv.videoWidth;
+    _copy.height = cnv.videoHeight;
+  }else{
+    _copy.width = cnv.width;
+    _copy.height = cnv.height;
+  }
   ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
   return _copy;

@@ -2,10 +2,6 @@ export declare function loadMediaStream(opt: {
     audio: any;
     video: any;
 }): Promise<MediaStream>;
-export declare function _loadMediaStream(opt: {
-    audio: any;
-    video: any;
-}): Promise<MediaStream>;
 export declare function getMediaElementState(media: HTMLMediaElement): "playing" | "paused" | "ended" | "seeking";
 export declare function getMediaStreamVideo(opt: {
     video: any;
