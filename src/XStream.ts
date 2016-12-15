@@ -237,7 +237,7 @@ const hoge = xsasync(function * _hoge(a: string): Iterator<Stream<string|number>
   console.log("b", b);
   const c: number = yield xs.of(0);
   console.log("c", c);
-  return xs.of("fin");
+  return "fin";
 });
 
 hoge("a").addListener({next:console.log})
@@ -247,8 +247,10 @@ hoge("a").addListener({next:console.log})
     return <Stream<RET>>next(null);
     function next(arg: T|null): Stream<RET|T>{
       const result = generator.next(arg);
-      if(result.done){ return result.value; }
-      else{ return result.value.map(next).flatten(); }
+      if(result.done){
+        if(result.value instanceof Stream){ return result.value; }
+        else{ return xs.of(result.value); } // return で done されたときは async に習って モナド で包む
+      }else{ return result.value.map(next).flatten(); }
     }
   }
 }
