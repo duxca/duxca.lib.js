@@ -7,7 +7,7 @@ import {EventEmitter} from "events";
 
 import * as $ from "jquery";
 
-
+import {gensym} from "./Algorithm";
 
 
 export function fromEvent<S>(target: EventTarget|EventEmitter, name: string): Stream<S> {
@@ -259,3 +259,16 @@ hoge("a").addListener({next:console.log})
   }
 }
 
+
+export function fromPromise<T>(prm: Promise<T>, replacer=(err:any):T|void=>{ console.error(err); }): Stream<T> {
+  const id = gensym();
+  return <Stream<T>>xs.fromPromise(
+    prm.catch((err)=>{
+      const alt = replacer(err);
+      if(alt !== undefined){
+        return alt;
+      }
+      return id;
+    })
+  ).filter((a)=> a !== id);
+}

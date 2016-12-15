@@ -25,3 +25,4 @@ export declare function fromMediaElement(sources: {
     state$: Stream<MediaState>;
 };
 export declare function xsasync<RET, S, T>(generatorFunc: (arg?: S) => Iterator<Stream<T>>): (arg?: S) => Stream<RET>;
+export declare function fromPromise<T>(prm: Promise<T>, replacer?: (err: any) => void | T): Stream<T>;
