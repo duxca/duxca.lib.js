@@ -8,4 +8,6 @@ export declare function getMediaStreamVideo(opt: {
     audio: any;
 }): Promise<HTMLVideoElement>;
 export declare function getVideoFromMediaStream(stream: MediaStream): Promise<HTMLVideoElement>;
+export declare const loadVideo: typeof load_video;
 export declare function load_video(url: string, use_bugfix?: boolean): Promise<HTMLVideoElement>;
+export declare function getThumbnail(video: HTMLVideoElement, currentTime: number): Promise<Blob>;

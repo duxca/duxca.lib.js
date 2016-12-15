@@ -1,4 +1,5 @@
-
+import {fromEvent} from "./Event";
+import {copy, cnvToBlob} from "./Canvas";
 
 
 
@@ -41,6 +42,7 @@ export function getVideoFromMediaStream(stream: MediaStream): Promise<HTMLVideoE
   });
 }
 
+export const loadVideo = load_video;
 export function load_video(url: string, use_bugfix=false): Promise<HTMLVideoElement> {
   const video = document.createElement("video");
   video.src = url;
@@ -97,4 +99,14 @@ export function load_video(url: string, use_bugfix=false): Promise<HTMLVideoElem
       });
     });
   });
+}
+
+
+export function getThumbnail(video: HTMLVideoElement, currentTime: number): Promise<Blob> {
+  if(currentTime > video.duration){
+    return Promise.reject<Blob>(new Error("currentTime is out of video duration"));
+  }
+  video.currentTime = currentTime;
+  return fromEvent<Event>(video, "seeked")
+    .then(()=> cnvToBlob(copy(video), "image/jpeg", 0.8) );
 }

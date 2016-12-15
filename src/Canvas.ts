@@ -79,11 +79,12 @@ export function createCanvas(width=1, height=1): HTMLCanvasElement {
 }
 
 
-
+export const loadImage = load_image;
 export function load_image(url: string): Promise<HTMLImageElement> {
   return fetchImageFromURL(url);
 }
 
+export const loadCanvas = load_cnv;
 export function load_cnv(src: string){
   return load_image(src).then(copy);
 }
