@@ -65,7 +65,7 @@ export function heredoc(fn: Function) {
 }
 
 
-function space(i: number){
+export function space(i: number){
     var result = "";
     while(i--) result += "  ";
     return result;
@@ -87,7 +87,7 @@ function evaluate(code: string,
 }
 console.assert(evaluate("unko", {unko:0}) === 0, "evaluate");
 
-function getPropertys(o: {[key: string]: any}): string[] {
+export function getPropertys(o: {[key: string]: any}): string[] {
     /*
     var keys1 = (function(o){
         var results = [];
@@ -117,7 +117,7 @@ function getPropertys(o: {[key: string]: any}): string[] {
 }
 console.assert(getPropertys({a:0, b:0}).length === 2, "getPropertys");
 
-function suggest(env: {[key: string]: any},      // @arg Object
+export function suggest(env: {[key: string]: any},      // @arg Object
                  keyword: string ): string[] { // @arg String
                            // @ret StringArray
     var reg = new RegExp("^" + keyword + ".*");
@@ -129,7 +129,7 @@ function suggest(env: {[key: string]: any},      // @arg Object
 }
 console.assert(suggest(self, "sel").length === 1, "suggest");
 
-function autocomplete(code: string): {tokens: [string, string, string], results: string[] } { // @arg String
+export function autocomplete(code: string): {tokens: [string, string, string], results: string[] } { // @arg String
                               // @ret Object
     var reg = /((?:[A-Za-z0-9$_](?:\.(?:[A-Za-z0-9$_]+)?)?)+)$/;
     var exp = (reg.exec(code) || ["", ""])[1]
@@ -154,7 +154,7 @@ console.assert(autocomplete("if"    ).results.length === 0, "autocomplete 1");
 console.assert(autocomplete("if win").results[0] === "window", "autocomplete 2");
 console.assert(autocomplete("if window.sel").results[0] === "self", "autocomplete 2");
 
-function type(o: any): string { // @arg Object
+export function type(o: any): string { // @arg Object
                    // @ret String
     if (o === null) {                   return "null";
     } else if (o === void 0) {          return "undefined";
@@ -185,7 +185,7 @@ console.assert(type(document.createElement("div")) === "node", "type node");
 console.assert(type(new (function Foo(){})) === "foo", "type foo");
 
 
-function dump(o: any,      // @arg Object
+export function dump(o: any,      // @arg Object
               depth=0): string{ // @arg Number?
                       // @ret String
     return recur(o, depth, 0, []);
