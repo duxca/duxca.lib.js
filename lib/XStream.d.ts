@@ -24,4 +24,4 @@ export declare function fromMediaElement(sources: {
     ended$: Stream<Event>;
     state$: Stream<MediaState>;
 };
-export declare function xsasync<S, T>(generatorFunc: (arg: S) => Iterator<Stream<T>>): (arg: S) => Stream<T>;
+export declare function xsasync<S, T>(generatorFunc: (arg?: S) => Iterator<Stream<T>>): (arg?: S) => Stream<T>;

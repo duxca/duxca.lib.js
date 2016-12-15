@@ -227,7 +227,7 @@ export function fromMediaElement(
 
 
 
-export function xsasync<S, T>(generatorFunc: (arg: S)=> Iterator<Stream<T>> ): (arg: S)=> Stream<T> {
+export function xsasync<S, T>(generatorFunc: (arg?: S)=> Iterator<Stream<T>> ): (arg?: S)=> Stream<T> {
   /*
 usage:
 
@@ -242,7 +242,7 @@ const hoge = xsasync(function * _hoge(a: string): Iterator<Stream<string|number>
 
 hoge("a").addListener({next:console.log})
 */
-  return function (arg: S): Stream<T> {
+  return function (arg?: S): Stream<T> {
     const generator = generatorFunc(arg);
     return next(null);
     function next(arg: T|null): Stream<T>{
