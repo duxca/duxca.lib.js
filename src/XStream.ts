@@ -227,7 +227,7 @@ export function fromMediaElement(
 
 
 
-export function xsasync<RET, S, T>(generatorFunc: (arg: S)=> Iterator<Stream<T>> ): (arg: S)=> Stream<RET> {
+export function xsasync<S, T>(generatorFunc: (arg: S)=> Iterator<Stream<T>> ): (arg: S)=> Stream<T> {
   /*
 usage:
 
@@ -242,15 +242,14 @@ const hoge = xsasync(function * _hoge(a: string): Iterator<Stream<string|number>
 
 hoge("a").addListener({next:console.log})
 */
-  return function (arg: S): Stream<RET> {
+  return function (arg: S): Stream<T> {
     const generator = generatorFunc(arg);
-    return <Stream<RET>>next(null);
-    function next(arg: T|null): Stream<RET|T>{
+    return next(null);
+    function next(arg: T|null): Stream<T>{
       const result = generator.next(arg);
-      if(result.done){
-        if(result.value instanceof Stream){ return result.value; }
-        else{ return xs.of(result.value); } // return で done されたときは async に習って モナド で包む
-      }else{ return result.value.map(next).flatten(); }
+      if(result.done){ return result.value; }
+      else{ return result.value.map(next).flatten(); }
     }
   }
 }
+
