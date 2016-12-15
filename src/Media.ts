@@ -66,7 +66,7 @@ export function load_video(url: string, use_bugfix=false): Promise<HTMLVideoElem
     return load();
   }
   // http://www.marushima.info/?eid=3088
-  // MediaRecorder で録画した動画の duration が決定できないというバグ対策。
+  // MediaRecorder で録画した動画の duration が決定できないという<del>バグ</del><add>仕様</add>対策。
   // とりあえず一週間後の時間を指定することでビデオの最後のチャンクを強制的に読み込ませる
   // Infinity はできないので。
   video.currentTime = 60*60*24*7;
@@ -90,7 +90,7 @@ export function load_video(url: string, use_bugfix=false): Promise<HTMLVideoElem
   ]).then(()=>{
     // 最後に currentTime を 0 に戻す
     video.currentTime = 0;
-    return new Promise((resolve, reject)=>{
+    return new Promise<HTMLVideoElement>((resolve, reject)=>{
       video.addEventListener("seeked", function listener(){
         video.removeEventListener("seeked", listener);
         resolve(video);

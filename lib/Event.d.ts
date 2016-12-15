@@ -12,7 +12,10 @@ export interface UIEventPosition {
 }
 export declare function getEventPosition(ev: JQueryEventObject): UIEventPosition | null;
 export declare function relEventPosition(pos1: UIEventPosition, pos2: UIEventPosition): UIEventPosition;
-export declare function prmFromEvent<S>(target: EventTarget | EventEmitter, name: string, error?: string, timeout?: number): Promise<S>;
+export declare function fromEvent<S>(target: EventTarget | EventEmitter, name: string, opt?: {
+    rejectable?: string;
+    timeout?: number;
+}): Promise<S>;
 export declare function stopPrevent<E extends Event>(ev: E): E;
 export declare function stopPropagation<E extends Event>(ev: E): E;
 export declare function preventDefault<E extends Event>(ev: E): E;

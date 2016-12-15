@@ -47,20 +47,41 @@ export function relEventPosition (pos1: UIEventPosition, pos2: UIEventPosition):
 
 
 
-export function prmFromEvent<S>(target: EventTarget|EventEmitter, name: string, error="error", timeout?: number): Promise<S> {
+export function fromEvent<S>(target: EventTarget|EventEmitter, name: string, opt?: {rejectable?: string, timeout?: number}): Promise<S> {
   /*
    * EventTarget からのイベントから Promise を作り出す
    */
+  const _opt       = opt == null ? {} : opt;
+  const timeout    = _opt.timeout;
+  const rejectable = _opt.rejectable == null ? "error" : _opt.rejectable;
   return new Promise<S>(function(resolve, reject){
     if(timeout != null){
       setTimeout(reject.bind(this, new Error("promise timeout")));
     }
     if(target instanceof EventEmitter){
-      target.addListener(name, resolve);
-      target.addListener(error, reject);
+      target.addListener(name, _resolve);
+      target.addListener(rejectable, _reject);
     }else{
-      target.addEventListener(name, <any>resolve);
-      target.addEventListener(error, reject);
+      target.addEventListener(name, <any>_resolve);
+      target.addEventListener(rejectable, _reject);
+    }
+    return;
+    function removeListeners(){
+      if(target instanceof EventEmitter){
+        target.removeListener(name, _resolve);
+        target.removeListener(rejectable, _reject);
+      }else{
+        target.removeEventListener(name, <any>_resolve);
+        target.removeEventListener(rejectable, _reject);
+      }
+    }
+    function _resolve(a: S){
+      removeListeners();
+      return resolve(a);
+    }
+    function _reject(a: any){
+      removeListeners();
+      return reject(a);
     }
   });
 }

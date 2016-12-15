@@ -97,13 +97,13 @@ export function reconnect<T>(nested$: Stream<Stream<T>>): Stream<T> {
 
 
 export function adapter<Sources, Sinks>(main: (sources: Sources)=>Sinks) {
-  return function (sources: Sources): { [key: string]: Stream<any>; } {
-    const wrapped = <{[key: string]: Stream<any>}>{};
+  return function <K extends keyof Sinks>(sources: Sources) {
+    const wrapped = <{ [P in K]: Stream<Sinks[P]>; }>{};
     const sinks = main(sources);
-    Object.keys(sinks).forEach((key)=>{
+    for(let key in sinks){
       const val = sinks[key];
       wrapped[key] = xs.of(val);
-    });
+    }
     return wrapped;
   };
 }
@@ -123,7 +123,7 @@ Cycle.run(adapter(main),  {
 
 */
 
-export function runEff(eff$: Stream<void>): void {
+export function runEff(eff$: Stream<any>): void {
   eff$.addListener({
     next:     ()=>{},//console.info.bind(console, "next"),
     complete: ()=>{ /*console.warn("runEff: complete");*/ },
@@ -226,3 +226,29 @@ export function fromMediaElement(
 }
 
 
+
+export function xsasync<S, T>(generatorFunc: (arg: S)=> Iterator<Stream<T>> ): (arg: S)=> Stream<T> {
+  /*
+usage:
+
+const hoge = xsasync(function * _hoge(a: string): Iterator<Stream<string|number>> {
+  console.log("a", a);
+  const b: string = yield xs.of("b");
+  console.log("b", b);
+  const c: number = yield xs.of(0);
+  console.log("c", c);
+  return xs.of("fin");
+});
+
+hoge("a").addListener({next:console.log})
+*/
+  return function (arg: S): Stream<T> {
+    const generator = generatorFunc(arg);
+    return next(null);
+    function next(arg: T|null): Stream<T>{
+      const result = generator.next(arg);
+      if(result.done){ return result.value; }
+      else{ return result.value.map(next).flatten(); }
+    }
+  }
+}
