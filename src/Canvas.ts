@@ -46,6 +46,21 @@ export function cnvToBlob(cnv: HTMLCanvasElement, mimeType: string, qualityArgum
 }
 
 
+export function createVideoCanvasRenderer(video: HTMLVideoElement): {renderer: ()=>void, ctx: CanvasRenderingContext2D} {
+  const cnv = document.createElement("canvas");
+  const ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
+  const {videoWidth, videoHeight} = video;
+  cnv.width = videoWidth;
+  cnv.height = videoHeight;
+  function renderer(){
+    cnv.width = cnv.width;
+    ctx.drawImage(video, 0, 0);
+  }
+  //document.body.appendChild(video); // for debug
+  //document.body.appendChild(cnv); // for debug
+  return {ctx, renderer};
+}
+
 export function create_video_canvas(video: HTMLVideoElement, step: (cnv: HTMLCanvasElement)=> void): CanvasRenderingContext2D {
   const cnv = document.createElement("canvas");
   const _ctx = cnv.getContext("2d");
