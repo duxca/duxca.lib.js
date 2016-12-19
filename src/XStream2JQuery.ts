@@ -54,6 +54,10 @@ export function touchstart($elm: JQuery, selector?: string): Stream<JQueryEventO
   return xs.merge(on($elm, "mousedown", selector), on($elm, "touchstart", selector));
 }
 
+export function touchmove($elm: JQuery, selector?: string): Stream<JQueryEventObject>{
+  return xs.merge(on($elm,  "touchmove", selector), on($elm,  "mousemove"));
+}
+
 export function touchend($elm: JQuery, selector?: string): Stream<JQueryEventObject>{
   return xs.merge(on($elm,  "touchend", selector), on($elm,  "touchcancel"), on($elm,  "mouseup", selector));
 }
