@@ -1,0 +1,1 @@
+var data = "var data = HXXXH;console.log(data.split('h'.toUpperCase()).join('H').replace('XXX', data));";console.log(data.split('h'.toUpperCase()).join('"').replace('XXX', data));

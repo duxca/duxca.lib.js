@@ -162,13 +162,7 @@ export function timeout(period: number): Stream<void> {
 
 export type MediaState = "play"|"pause"|"ended";
 
-export function fromMediaElement(
-  sources: {
-    play$: Stream<void>;
-    pause$: Stream<void>;
-    seek$?: Stream<number>; // 単位は秒。一気に飛ぶ
-  }
-): (video$: Stream<HTMLMediaElement>)=> {
+export function fromMediaElement(video: HTMLMediaElement): {
   timeupdate$: Stream<Event>;
   seeked$: Stream<Event>;
   playing$: Stream<Event>;
@@ -177,52 +171,20 @@ export function fromMediaElement(
   pause$: Stream<Event>;
   ended$: Stream<Event>;
   state$: Stream<MediaState>;
-} {
-  return function(video$: Stream<HTMLMediaElement>){
-    sources.seek$ = sources.seek$ == null ? xs.never() : sources.seek$;
-    const emitter = new EventEmitter();
+} {    
+  const timeupdate$ = fromEvent<Event>(video, 'timeupdate');
+  const seeked$     = fromEvent<Event>(video, 'seeked'    );
+  const playing$    = fromEvent<Event>(video, 'playing'   );
+  const seeking$    = fromEvent<Event>(video, 'seeking'   );
+  const play$       = fromEvent<Event>(video, 'play'      );
+  const pause$      = fromEvent<Event>(video, 'pause'     );
+  const ended$      = fromEvent<Event>(video, 'ended'     );
+  const state$      = xs.merge(pause$, play$, ended$)
+    .map((ev)=> <MediaState>ev.type )
+    .startWith("pause")
+    .compose(dropRepeats());
 
-    video$ = video$.compose(dropRepeats())
-      .fold<HTMLMediaElement>((old, video)=>{
-        setTimeout(()=>{
-          if(!old.paused){// 古い video は停止
-            old.pause();
-          }
-        });
-        
-        return video;
-      }, document.createElement("video"))
-
-
-    runEff(xs.merge(
-      sources.play$.compose(sampleCombine(video$)).map(([t, video])=>{ if( video.paused) video.play(); }),
-      sources.pause$.compose(sampleCombine(video$)).map(([t, video])=>{ if(!video.paused) video.pause(); }),
-      sources.seek$.compose(sampleCombine(video$)).map(([t, video])=>{
-        if(t === video.duration){
-          // video.currentTime = video.duration すると ended が発動してしまうがこれはシークバーの操作としてはよろしくない
-          video.currentTime = t - 0.001; // ので絶対 ended させないマン
-        }else{
-          video.currentTime = t; // 一気に飛ぶ
-        }
-      }),
-    ));
-    
-    const timeupdate$ = video$.map((video)=> fromEvent<Event>(video, 'timeupdate')).compose(reconnect);
-    const seeked$     = video$.map((video)=> fromEvent<Event>(video, 'seeked'    )).compose(reconnect);
-    const playing$    = video$.map((video)=> fromEvent<Event>(video, 'playing'   )).compose(reconnect);
-    const seeking$    = video$.map((video)=> fromEvent<Event>(video, 'seeking'   )).compose(reconnect);
-    const play$       = video$.map((video)=> fromEvent<Event>(video, 'play'      )).compose(reconnect);
-    const pause$      = video$.map((video)=> fromEvent<Event>(video, 'pause'     )).compose(reconnect);
-    const ended$      = video$.map((video)=> fromEvent<Event>(video, 'ended'     )).compose(reconnect);
-    const state$      = video$.map(()=>
-      xs.merge(pause$, play$, ended$)
-        .map((ev)=> <MediaState>ev.type )
-        .startWith("pause")
-        .compose(dropRepeats()) )
-      .compose(reconnect);
-
-    return {timeupdate$, seeked$, playing$, seeking$, play$, pause$, ended$, state$};
-  }
+  return {timeupdate$, seeked$, playing$, seeking$, play$, pause$, ended$, state$};
 }
 
 

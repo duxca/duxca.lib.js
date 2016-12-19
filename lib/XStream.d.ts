@@ -10,11 +10,7 @@ export declare function adapter<Sources, Sinks>(main: (sources: Sources) => Sink
 export declare function runEff(eff$: Stream<any>): void;
 export declare function timeout(period: number): Stream<void>;
 export declare type MediaState = "play" | "pause" | "ended";
-export declare function fromMediaElement(sources: {
-    play$: Stream<void>;
-    pause$: Stream<void>;
-    seek$?: Stream<number>;
-}): (video$: Stream<HTMLMediaElement>) => {
+export declare function fromMediaElement(video: HTMLMediaElement): {
     timeupdate$: Stream<Event>;
     seeked$: Stream<Event>;
     playing$: Stream<Event>;
