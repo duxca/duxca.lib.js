@@ -69,6 +69,20 @@ export interface JSONStorage {
   setItem(key: string, data: JSONString): void;
 }
 
+export function getItem<T>(storage: JSONStorage, key: string, tester: (a: T)=> boolean, _default: T): T {
+  try{
+    const val = <any>storage.getItem(key);
+    const o   = <T>JSON.parse(val); // パースしてみる
+    if(tester(o)){
+      return o;
+    }else{
+      throw {};
+    }
+  }catch(err){
+    return _default;
+  }
+}
+
 export function getInputStreamWithStorage
 <T>(Storage: JSONStorage, $elm: JQuery, key: string, event="input"): Stream<T> {
   const val = Storage.getItem(key);
