@@ -3,12 +3,12 @@ export type JSONString = string;
 export type QueryString = string;
 export type KV<T> = { [key: string]: T };
 
-export function encode<T extends KV<any>>(data: T): KV<JSONString> {
+export function encodeKVJSON<T extends KV<any>>(data: T): KV<JSONString> {
   return Object
     .keys(data)
     .reduce((o, k)=> (o[k] = JSON.stringify(data[k]), o), <KV<JSONString>>{});
 }
-export function decode<T extends KV<any>>(kv: KV<JSONString>): T {
+export function decodeKVJSON<T extends KV<any>>(kv: KV<JSONString>): T {
   return Object
     .keys(kv)
     .reduce((o, k)=> (o[k] = JSON.parse(kv[k]), o), <T>{});
