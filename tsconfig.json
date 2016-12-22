@@ -84,6 +84,7 @@
         "src/Signal.ts",
         "src/Statistics.ts",
         "src/Time.ts",
+        "src/URL.ts",
         "src/VideoRecorder.ts",
         "src/Wave.ts",
         "src/XStream.ts",
