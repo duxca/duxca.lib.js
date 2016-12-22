@@ -1,12 +1,25 @@
 // URL の get query や hash として使える文字列への変換
 export type JSONString = string;
 export type QueryString = string;
-export function encodeURIQuery(dic: { [key: string]: JSONString }): QueryString {
+export type KV<T> = { [key: string]: T };
+
+export function encode<T extends KV<any>>(data: T): KV<JSONString> {
+  return Object
+    .keys(data)
+    .reduce((o, k)=> (o[k] = JSON.stringify(data[k]), o), <KV<JSONString>>{});
+}
+export function decode<T extends KV<any>>(kv: KV<JSONString>): T {
+  return Object
+    .keys(kv)
+    .reduce((o, k)=> (o[k] = JSON.parse(kv[k]), o), <T>{});
+}
+
+export function encodeURIQuery(dic: KV<JSONString>): QueryString {
   return Object.keys(dic)
     .map((key)=> key + "=" + encodeURIComponent(dic[key]) )
     .join("&");
 }
-export function decodeURIQuery(query: QueryString): { [key: string]: JSONString } {
+export function decodeURIQuery<T extends KV<JSONString>>(query: QueryString): T {
   return query
     .split("&")
     .map((a)=>{
@@ -15,7 +28,7 @@ export function decodeURIQuery(query: QueryString): { [key: string]: JSONString 
     }).reduce(((a, b)=>{
       a[b[0]] = decodeURIComponent(b[1]);
       return a;
-    }), {});
+    }), <T>{});
 }
 // string -> utf8 txt の data uri string への変換
 export type DataURI = string;
