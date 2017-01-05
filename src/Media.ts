@@ -3,6 +3,20 @@ import {copy, cnvToBlob} from "./Canvas";
 
 
 
+export function getThumbnails(video: HTMLVideoElement, period: number): Promise<Blob[]> {
+  const times: number[] = [];
+  if( ! Number.isFinite(video.duration) ){
+    return Promise.reject<Blob[]>(new Error("video duration is not finite"));
+  }
+  for(let currentTime=0; currentTime < video.duration; currentTime+=period){
+    times.push(currentTime);
+  }
+  const thumbs = times
+    .map((currentTime)=> (lst: Blob[])=> getThumbnail(video, currentTime).then((blob)=> lst.concat(blob) )  )
+    .reduce<Promise<Blob[]>>((prm, genPrm)=> prm.then(genPrm), Promise.resolve([]));
+  return thumbs;
+}
+
 
 export function loadMediaStream(opt: {audio: any, video: any}): Promise<MediaStream>{
   if(navigator.mediaDevices != null && navigator.mediaDevices.getUserMedia instanceof Function){

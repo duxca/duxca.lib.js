@@ -38,13 +38,13 @@ export function fromEvent<S>(target: EventTarget|EventEmitter, name: string): St
 
 
 
-export function flushable_buffer(flush$: Stream<void>){
-  return <T>(input: Stream<T>): Stream<T[]> =>{
+export function flushable_buffer<T>(flush$: Stream<void>){
+  return (input: Stream<T>): Stream<T[]> =>{
     /*
      * input を溜め込み flush で溜め込んだのを返して内部状態は空になる
      */
-    return xs.merge(input, flush$)
-      .fold<T[]>((lst, o)=> o != null ? lst.concat(o): [], []) // flush の時に バッファ 初期化
+    return xs.merge(input, <Stream<T>><any>flush$)
+      .fold<(T)[]>((lst, o)=> o != null ? lst.concat(o): [], []) // flush の時に バッファ 初期化
       .fold<T[][]>((que, o)=>{ // 要素数 2 のキューを使って一つ前の値を返す
         que.push(o); // 新しいのを最後に追加
         if(que.length > 2) que.shift(); // 一番先頭 -> 一番古いのを消す
