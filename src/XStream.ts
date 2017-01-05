@@ -38,8 +38,8 @@ export function fromEvent<S>(target: EventTarget|EventEmitter, name: string): St
 
 
 
-export function flushable_buffer<T>(flush$: Stream<void>){
-  return (input: Stream<T>): Stream<T[]> =>{
+export function flushable_buffer(flush$: Stream<void>){
+  return <T>(input: Stream<T>): Stream<T[]> =>{
     /*
      * input を溜め込み flush で溜め込んだのを返して内部状態は空になる
      */

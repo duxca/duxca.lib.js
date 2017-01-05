@@ -76,6 +76,7 @@
         "src/Fisheye2Panorama.ts",
         "src/FourierTransform.ts",
         "src/index.ts",
+        "src/Logger.ts",
         "src/Media.ts",
         //"src/Newton.ts",
         "src/OSC.ts",

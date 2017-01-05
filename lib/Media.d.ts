@@ -1,3 +1,4 @@
+export declare function getThumbnails(video: HTMLVideoElement, period: number): Promise<Blob[]>;
 export declare function loadMediaStream(opt: {
     audio: any;
     video: any;
