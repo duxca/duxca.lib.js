@@ -2,6 +2,16 @@ import * as $ from "jquery";
 import {EventEmitter} from "events";
 
 
+export interface IEventListener<T> {
+  // http://qiita.com/kimamula/items/ee468b1ed5b3f45dee0f
+  addListener<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+  on<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+  once<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+  removeListener<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+  removeAllListeners<K extends keyof T>(event?: K): this;
+  emit<K extends keyof T>(event: K, arg: T[K]): boolean;
+}
+
 export function convertToJQueryEvent(ev: UIEvent): JQueryEventObject {
   return new $.Event(<any>ev);
 }

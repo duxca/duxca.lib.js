@@ -1,6 +1,14 @@
 /// <reference types="jquery" />
 /// <reference types="node" />
 import { EventEmitter } from "events";
+export interface IEventListener<T> {
+    addListener<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+    on<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+    once<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+    removeListener<K extends keyof T>(event: K, listener: (arg: T[K]) => any): this;
+    removeAllListeners<K extends keyof T>(event?: K): this;
+    emit<K extends keyof T>(event: K, arg: T[K]): boolean;
+}
 export declare function convertToJQueryEvent(ev: UIEvent): JQueryEventObject;
 export interface UIEventPosition {
     pageX: number;
