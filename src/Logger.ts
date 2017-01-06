@@ -6,9 +6,9 @@ import {dump} from "./Algorithm";
  */
 export function logger(err?: Error): (obj: any) => void {
   /**
-   * @param obj - 表示したいなにか
+   * @param objs - 表示したいなにか
    */
-  return function (obj: any){
+  return function (...objs: any[]){
     let str = "";
     let lineInfo = "";
     // lineInfo が取れそうなら取得
@@ -19,18 +19,24 @@ export function logger(err?: Error): (obj: any) => void {
         lineInfo = match.trim();
       }
     }
-    // 文字列化を試す
-    try{
-      str = `${obj} ${dump(obj, 2)}`;
-    }catch(err){
-      str = `${obj}`;
-    }
+
+    objs.forEach((obj)=>{
+      // 文字列化を試す
+      try{
+        if(typeof obj === "string") throw {}; // string ならそのまま表示
+        str += `${Object.prototype.toString.call(obj)} ${dump(obj, 2)}`;
+      }catch(err){
+        str += `${obj}`;
+      }
+      str += " ";
+    });
+
     // 出力
     if(typeof lineInfo === "string"){
-      console.log(obj, lineInfo);
+      console.log(objs, lineInfo);
       $("#log").append(`${str} ${lineInfo}\n`);
     }else{
-      console.log(obj);
+      console.log(objs);
       $("#log").append(`${str}\n`);
     }
   }
