@@ -33,7 +33,7 @@ export function logger(err?: Error): (obj: any) => void {
 
     // 出力
     if(typeof lineInfo === "string"){
-      console.log(objs, lineInfo);
+      console.log.apply(console, objs.concat(lineInfo));
       $("#log").append(`${str} ${lineInfo}\n`);
     }else{
       console.log(objs);
