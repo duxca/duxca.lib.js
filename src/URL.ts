@@ -3,6 +3,23 @@ export type JSONString = string;
 export type QueryString = string;
 export type KV<T> = { [key: string]: T };
 
+/**
+ * blob ファイルから data uri scheme を作る
+ */
+export function blobToDataURI(blob: Blob): Promise<DataURI>{
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  return new Promise((resolve, reject)=>{
+    reader.onloadend = ()=>{
+      const dataURI = reader.result;
+      resolve(dataURI);
+    };
+    reader.onerror = (err)=>{
+      reject(err.error);
+    };
+  });
+}
+
 export function encodeKVJSON<T extends KV<any>>(data: T): KV<JSONString> {
   return Object
     .keys(data)

@@ -3,6 +3,10 @@ export declare type QueryString = string;
 export declare type KV<T> = {
     [key: string]: T;
 };
+/**
+ * blob ファイルから data uri scheme を作る
+ */
+export declare function blobToDataURI(blob: Blob): Promise<DataURI>;
 export declare function encodeKVJSON<T extends KV<any>>(data: T): KV<JSONString>;
 export declare function decodeKVJSON<T extends KV<any>>(kv: KV<JSONString>): T;
 export declare function encodeURIQuery(dic: KV<JSONString>): QueryString;
