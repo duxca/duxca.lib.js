@@ -2,6 +2,7 @@
 export type JSONString = string;
 export type QueryString = string;
 export type KV<T> = { [key: string]: T };
+export type DataURI = string;
 
 /**
  * blob ファイルから data uri scheme を作る
@@ -48,7 +49,6 @@ export function decodeURIQuery<T extends KV<JSONString>>(query: QueryString): T 
     }), <T>{});
 }
 // string -> utf8 txt の data uri string への変換
-export type DataURI = string;
 export function encodeDataURI(data: string, mimetype: string): Promise<DataURI> {
   const reader = new FileReader();
   reader.readAsDataURL(new Blob([data], {type: mimetype}))

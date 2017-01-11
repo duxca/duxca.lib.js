@@ -36,8 +36,8 @@ export function loadMediaStream(opt: {audio: any, video: any}): Promise<MediaStr
 }
 
 
-
-export function getMediaElementState(media: HTMLMediaElement): "playing" | "paused" | "ended" | "seeking" {
+export type MediaState = "playing" | "paused" | "ended" | "seeking";
+export function getMediaElementState(media: HTMLMediaElement): MediaState {
   return media.ended   ? "ended"   :
          media.paused  ? "paused"  : 
          media.seeking ? "seeking" :
