@@ -4,11 +4,11 @@ import {dump} from "./Algorithm";
  * @param err - lineInfo を表示するための stack をもつ Error
  * `#log` なる要素と console.log にログを出力する
  */
-export function logger(err?: Error): (obj: any) => void {
+export function logger(err?: Error) {
   /**
    * @param objs - 表示したいなにか
    */
-  return function (...objs: any[]){
+  return function (...objs: any[]): void {
     let str = "";
     let lineInfo = "";
     // lineInfo が取れそうなら取得
