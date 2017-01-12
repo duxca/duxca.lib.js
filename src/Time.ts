@@ -16,7 +16,9 @@ export function formatDate(date: Date, format='YYYY-MM-DD hh:mm:ss.SSS') {
   return format;
 }
 
-
+export function sleep(ms: number): Promise<void> {
+  return new Promise<void>((resolve)=>{ setTimeout(resolve, ms); });
+}
 
 
 export class FPS {

@@ -1,4 +1,5 @@
 export declare function formatDate(date: Date, format?: string): string;
+export declare function sleep(ms: number): Promise<void>;
 export declare class FPS {
     period: number;
     lastTime: number;
