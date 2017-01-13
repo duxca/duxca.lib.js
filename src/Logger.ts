@@ -12,6 +12,7 @@ export function logger(err?: Error) {
   return function (...objs: any[]): void {
     let str = ""; // textarea に表示する string
     let lineInfo = "";
+
     // lineInfo が取れそうなら取得
     if(err != null && err.stack != null){
       const tmp = err.stack.split("\n").slice(1,2);
@@ -38,7 +39,8 @@ export function logger(err?: Error) {
     // 出力
     if(typeof lineInfo === "string"){
       console.log.apply(console, objs.concat(lineInfo));
-      $("#log").append(`${str} ${lineInfo}\n`);
+      const _lineInfo = $("<div>").text(lineInfo).html(); // escape
+      $("#log").append(`${str} ${_lineInfo}\n`);
     }else{
       console.log(objs);
       $("#log").append(`${str}\n`);
