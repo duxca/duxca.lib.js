@@ -1,3 +1,4 @@
+import * as $ from "jquery";
 import {dump} from "./Algorithm";
 
 /**
@@ -9,7 +10,7 @@ export function logger(err?: Error) {
    * @param objs - 表示したいなにか
    */
   return function (...objs: any[]): void {
-    let str = "";
+    let str = ""; // textarea に表示する string
     let lineInfo = "";
     // lineInfo が取れそうなら取得
     if(err != null && err.stack != null){
@@ -30,6 +31,9 @@ export function logger(err?: Error) {
       }
       str += " ";
     });
+
+    // escape html tag
+    str = $("<div>").text(str).html();
 
     // 出力
     if(typeof lineInfo === "string"){
