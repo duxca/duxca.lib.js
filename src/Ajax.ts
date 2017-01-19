@@ -1,40 +1,37 @@
-export function fetchXHR<T>(url: string, responseType: string): Promise<T> {
+export function fetchXHR(url: string, responseType: "text"): Promise<string>;
+export function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
+export function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;
+export function fetchXHR(url: string, responseType: "document"): Promise<Document>;
+export function fetchXHR<T>(url: string, responseType: "text" | "json" | "arraybuffer" | "blob" | "document"): Promise<T> {
   return new Promise<T>((resolve, reject)=>{
-      const xhr = new XMLHttpRequest();
-      const warn = (msg: string)=>{
-        console.warn("fetchArrayBuffer: ", msg, xhr);
-        reject(msg);
-      };
-      xhr.addEventListener("load", function() {
-        // 0 は blob:// とか file:// とか module:// のとき
-        if (xhr.status === 0 || 200 <= xhr.status && xhr.status < 300) {
-
-          if (xhr.response.error == null) {
-            resolve(<T>xhr.response);
-          } else {
-            warn("xhr.response.error.message: "+xhr.response.error.message);
-          }
-        } else {
-          warn("xhr.status: "+xhr.status);
-        }
-      });
-      xhr.addEventListener("error", function() {
-        warn("xhr.response.error.message: "+xhr.response.error.message);
-      });
-      xhr.open("GET", url);
-      xhr.responseType = responseType;
-      return xhr.send();
+    const xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", ()=>{
+      // 0 は blob:// とか file:// とか module:// のとき
+      if (xhr.status === 0 || 200 <= xhr.status && xhr.status < 300) {
+        resolve(<T>xhr.response);
+      } else {
+        console.warn("fetchXHR: ", xhr, xhr.status);
+        reject(xhr.status);
+      }
+    });
+    xhr.addEventListener("error", function(err) {
+      console.warn("fetchXHR: ", xhr, xhr.status, err);
+      reject(err.error);
+    });
+    xhr.open("GET", url);
+    xhr.responseType = responseType;
+    return xhr.send();
   });
 }
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
-  return fetchXHR<ArrayBuffer>(url, "arraybuffer");
+  return fetchXHR(url, "arraybuffer");
 }
 
 // XMLHttpRequest, xhr.responseType = "blob"
 export function fetchBlob(url: string): Promise<Blob> {
-  return fetchXHR<Blob>(url, "blob");
+  return fetchXHR(url, "blob");
 }
 
 export function getArrayBuffer(url: string): Promise<ArrayBuffer> {
