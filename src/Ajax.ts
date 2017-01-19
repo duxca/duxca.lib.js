@@ -2,6 +2,7 @@ export function fetchXHR(url: string, responseType: "text"): Promise<string>;
 export function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
 export function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;
 export function fetchXHR(url: string, responseType: "document"): Promise<Document>;
+export function fetchXHR<T>(url: string, responseType: "json"): Promise<T>;
 export function fetchXHR<T>(url: string, responseType: "text" | "json" | "arraybuffer" | "blob" | "document"): Promise<T> {
   return new Promise<T>((resolve, reject)=>{
     const xhr = new XMLHttpRequest();
