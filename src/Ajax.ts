@@ -11,13 +11,13 @@ export function fetchXHR<T>(url: string, responseType: "text" | "json" | "arrayb
       if (xhr.status === 0 || 200 <= xhr.status && xhr.status < 300) {
         resolve(<T>xhr.response);
       } else {
-        console.warn("fetchXHR: ", xhr, xhr.status);
-        reject(xhr.status);
+        console.warn("fetchXHR: ", xhr);
+        reject(xhr);
       }
     });
-    xhr.addEventListener("error", function(err) {
-      console.warn("fetchXHR: ", xhr, xhr.status, err);
-      reject(err.error);
+    xhr.addEventListener("error", function(ev: ProgressEvent) {
+      console.warn("fetchXHR: ", xhr, ev);
+      reject(ev);
     });
     xhr.open("GET", url);
     xhr.responseType = responseType;
