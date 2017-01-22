@@ -1,2 +1,2 @@
-/// <reference types="node" />
-export declare function decode(buffer: Buffer): string;
+import * as Encoding from "duxca.lib.js/lib/Encoding";
+export declare const decode: typeof Encoding.decode;

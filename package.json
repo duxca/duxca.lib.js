@@ -1,6 +1,6 @@
 {
   "name": "duxca.lib.js",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "duxca algorithm sandbox",
   "scripts": {
     "setup": "npm install -g http-server; mkdir lib dist",
@@ -8,8 +8,8 @@
     "update": "npm run reset; npm update",
     "reset": "rm -rf node_modules",
     "clean": "rm -rf lib/* dist/*; mkdir -p dist",
-    "build": "npm run clean   && tsc    -p . && coffee    -c -o lib src/coffee/*.coffee; cp src/js/*.js lib",
-    "start": "http-server . -s & tsc -w -p .  & coffee -w -c -o lib src/coffee/*.coffee",
+    "build": "npm run clean   && tsc    -p .",
+    "start": "http-server . -s & tsc -w -p .",
     "stop": "killall -- node */tsc -w -p",
     "browserify": "browserify lib/index.js --standalone duxca -o dist/index.js",
     "watchify": "watchify lib/index.js --standalone duxca -o dist/index.js -v",
@@ -29,7 +29,8 @@
     "encoding-japanese": "^1.0.25",
     "events": "^1.1.1",
     "jquery": "^3.1.1",
-    "xstream": "^9.0.0"
+    "xstream": "^9.0.0",
+    "duxca": "duxca/duxca.lib.js#1.x"
   },
   "devDependencies": {
     "@types/node": "0.0.2",

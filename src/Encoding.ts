@@ -1,6 +1,3 @@
-import * as Encoding from "encoding-japanese";
+import * as Encoding from "duxca.lib.js/lib/Encoding";
 
-
-export function decode(buffer: Buffer): string{
-  return Encoding.codeToString(Encoding.convert(buffer, 'UNICODE', 'AUTO'));
-}
+export const decode = Encoding.decode;

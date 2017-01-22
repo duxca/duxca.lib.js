@@ -65,33 +65,17 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
-        "src/decls/globals.d.ts",
         "src/Ajax.ts",
         "src/Algorithm.ts",
         "src/Canvas.ts",
-        "src/CanvasRenderer.ts",
+        "src/Date.ts",
         "src/Encoding.ts",
         "src/Event.ts",
-        //"src/FDTD.ts",
-        "src/Fisheye2Panorama.ts",
-        "src/FourierTransform.ts",
-        "src/index.ts",
-        "src/Logger.ts",
         "src/Media.ts",
-        //"src/Newton.ts",
-        "src/OSC.ts",
-        //"src/QRCode.ts",
-        "src/RecordBuffer.ts",
-        "src/Signal.ts",
-        "src/Statistics.ts",
-        "src/Time.ts",
+        "src/Promise.ts",
+        "src/Semaphore.ts",
         "src/URL.ts",
-        "src/VideoRecorder.ts",
-        "src/Wave.ts",
-        "src/XStream.ts",
-        "src/XStream2Fish.ts",
-        "src/XStream2Hammer.ts",
-        "src/XStream2JQuery.ts"
+        "src/Worker.ts"
     ],
     "exclude": [
         "node_modules"

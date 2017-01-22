@@ -1,14 +1,7 @@
-export declare function fastcopy(cnv: HTMLCanvasElement | HTMLImageElement, tmpctx: CanvasRenderingContext2D): void;
-export declare function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?: string): Promise<HTMLImageElement>;
+/**
+ *  copy canvas as new object
+ * this copy technic is faster than getImageData full copy, but some pixels are bad copy.
+ * see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
+ */
 export declare function copy(cnv: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement): HTMLCanvasElement;
-export declare function cnvToBlob(cnv: HTMLCanvasElement, mimeType: string, qualityArgument: number): Promise<Blob>;
-export declare function createVideoCanvasRenderer(video: HTMLVideoElement): {
-    renderer: () => void;
-    ctx: CanvasRenderingContext2D;
-};
-export declare function create_video_canvas(video: HTMLVideoElement, step: (cnv: HTMLCanvasElement) => void): CanvasRenderingContext2D;
-export declare function createCanvas(width?: number, height?: number): HTMLCanvasElement;
-export declare const loadImage: typeof load_image;
-export declare function load_image(url: string): Promise<HTMLImageElement>;
-export declare const loadCanvas: typeof load_cnv;
-export declare function load_cnv(src: string): Promise<HTMLCanvasElement>;
+export declare function toBlob(cnv: HTMLCanvasElement, mimeType: "image/jpeg" | "image/png", qualityArgument: number): Promise<Blob>;
