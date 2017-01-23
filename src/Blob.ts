@@ -1,6 +1,14 @@
 import {fetchEvent} from "./Event";
 
-export function readAsDataURL(blob: Blob, charset="utf-8"): Promise<string> {
+export function readAsDataURL(blob: Blob): Promise<string> {
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  return fetchEvent(reader, "loadend", "error").then(()=> reader.result );
+}
+/**
+ * utf-8 などの charset つき text を data uri にして xhr すると文字化けするので文字コードを指定する
+ */
+export function readAsDataURLText(blob: Blob, charset="utf-8"): Promise<string> {
   const reader = new FileReader();
   reader.readAsDataURL(blob);
   return fetchEvent(reader, "loadend", "error")

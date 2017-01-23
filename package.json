@@ -17,7 +17,8 @@
     "lint": "tslint -c ./tslint.json --project ./tsconfig.json --type-check",
     "doc": "typedoc --mode modules --out doc --disableOutputCheck",
     "push": "git push origin master",
-    "pull": "git pull origin master"
+    "pull": "git pull origin master",
+    "publish": "subtree push --prefix doc origin gh-pages"
   },
   "dependencies": {
     "@types/deep-diff": "0.0.29",
