@@ -1,9 +1,17 @@
+export interface CustomEventLike<T> extends CustomEvent {
+    detail: T;
+}
 export declare abstract class EventTargetLike implements EventTarget {
     private emitter;
     constructor();
-    addEventListener(event: any, listener: any): void;
-    removeEventListener(event: any, listener: any): void;
+    addEventListener<T>(event: string, listener: (ev: CustomEventLike<T>) => void): void;
+    removeEventListener(event: string, listener: (ev: Event) => void): void;
+    removeAllListener(): void;
     dispatchEvent<E extends Event>(event: E): boolean;
+    /**
+     * EventTargetLike.dispatchEvent(new CustomEvent(type, {detail}))
+     */
+    emit(type: string, detail: any): boolean;
 }
 export declare function fetchEvent<EV extends Event>(target: EventTarget, event: string, error?: string): Promise<EV>;
 /**

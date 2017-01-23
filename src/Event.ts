@@ -1,19 +1,32 @@
 import {EventEmitter} from "events";
 
+export interface CustomEventLike<T> extends CustomEvent {
+  detail: T;
+}
 
 export abstract class EventTargetLike implements EventTarget {
   private emitter: EventEmitter;
   constructor(){
     this.emitter = new EventEmitter();
   }
-  addEventListener(event, listener) {
+  addEventListener<T>(event: string, listener: (ev: CustomEventLike<T>)=> void): void;
+  addEventListener(event: string, listener: (ev: Event)=> void): void {
     this.emitter.addListener(event, listener);
   }
-  removeEventListener(event, listener) {
+  removeEventListener(event: string, listener: (ev: Event)=> void): void {
     this.emitter.removeListener(event, listener);
   }
-  dispatchEvent<E extends Event>(event: E) {
+  removeAllListener(): void {
+    this.emitter.removeAllListeners();
+  }
+  dispatchEvent<E extends Event>(event: E): boolean {
     return this.emitter.emit(event.type, event);
+  }
+  /**
+   * EventTargetLike.dispatchEvent(new CustomEvent(type, {detail}))
+   */
+  emit(type: string, detail: any): boolean {
+    return this.dispatchEvent(new CustomEvent(type, {detail}));
   }
 }
 
