@@ -9,7 +9,6 @@ export abstract class EventTargetLike implements EventTarget {
   constructor(){
     this.emitter = new EventEmitter();
   }
-  addEventListener<T>(event: string, listener: (ev: CustomEventLike<T>)=> void): void;
   addEventListener(event: string, listener: (ev: Event)=> void): void {
     this.emitter.addListener(event, listener);
   }
@@ -23,12 +22,60 @@ export abstract class EventTargetLike implements EventTarget {
     return this.emitter.emit(event.type, event);
   }
   /**
-   * EventTargetLike.dispatchEvent(new CustomEvent(type, {detail}))
+   * equals
+   *  `EventTargetLike.dispatchEvent(new CustomEvent(type, {detail}))`
    */
-  emit(type: string, detail: any): boolean {
+  emit(type: string, detail?: any): boolean {
+    if(detail == null){
+      return this.dispatchEvent(new Event(type));
+    }
     return this.dispatchEvent(new CustomEvent(type, {detail}));
   }
+
+  fetchEvent<EV extends Event>(event: string, error?: string): Promise<EV> {
+    return fetchEvent(this, event, error);
+  }
+
+  /**
+   * addListener|removeListener できる target に対して event 時に自動で removeListener される listener を addListener する
+   * @example
+   * ```ts
+   * const onerror = evTargetLike.autoEventListener("error");
+   * const body = document.body;
+   * const $ = onerror(body.addEventListener, body.removeEventListener);
+   * $(body)
+   *   .on("click", console.log)
+   *   .on("load", console.log);
+   * // document.body.onerror 時に上記イベントハンドラを自動的に removeEventListener する
+   * ```
+   */
+  autoEventListener<T>(remove_event: string): (
+    on: (ev: string, listener: (arg: T)=> any)=> any,
+    off: (ev: string, listener: (arg: T)=> any)=> any,
+  )=> (target: any)=> Onable<T> {
+    return (on, off)=>{
+      return (target)=>{
+        const $ = {
+          on: (ev, listener)=>{
+            on.call(target, ev, listener);
+            this.fetchEvent(remove_event)
+              .then(()=>{
+                off.call(target, ev, listener);
+              });
+            return $;
+          }
+        };
+        return $;
+      };
+    }
+  }
 }
+
+export interface Onable<T> {
+  on(ev: string, listener: (arg: T)=> any): Onable<T>;
+  on<S>(ev: string, listener: (arg: S)=> any): Onable<T>;
+}
+
 
 export function fetchEvent<EV extends Event>(target: EventTarget, event: string, error?: string): Promise<EV> {
   return createFromEvent<EV>(target.addEventListener, target.removeEventListener)(target, event, error);
@@ -75,3 +122,5 @@ export function createFromEvent<EVENT>(
     });
   };
 }
+
+
