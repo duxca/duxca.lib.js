@@ -29,12 +29,14 @@ export function seekTo<M extends HTMLMediaElement>(media: M, currentTime: number
 }
 
 export function fetchMediaStream(opt: MediaStreamConstraints): Promise<MediaStream>{
-  let getUserMedia: any;
+  let getUserMedia: any = null;
   if(navigator.mediaDevices != null){
     getUserMedia = navigator.mediaDevices.getUserMedia
                 || navigator.mediaDevices["webkitGetUserMedia"]
                 || navigator.mediaDevices["mozGetUserMedia"]
                 || navigator.mediaDevices["msGetUserMedia"];
+  }
+  if(getUserMedia != null){
     return getUserMedia.call(navigator.mediaDevices, opt);
   }
   getUserMedia = navigator.getUserMedia
