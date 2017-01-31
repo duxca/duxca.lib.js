@@ -1,3 +1,18 @@
+/**
+ * @param sender - xhr を書き換えつつ open と send を自分で指定します
+ * @example
+ * ```ts
+ * fetchXHR<null>((xhr)=>{
+ *   xhr.onprogress = (ev)=>{
+ *     if(!ev.lengthComputable){ return; }
+ *     console.log(ev.loaded / ev.total);
+ *   };
+ *   xhr.open("POST", "http://example.com/");
+ *   xhr.send("{foo: 0}");
+ * });
+ * ```
+ */
+export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void): Promise<T>;
 export declare function fetchXHR(url: string, responseType: "text"): Promise<string>;
 export declare function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
 export declare function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;

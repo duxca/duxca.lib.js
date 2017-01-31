@@ -1,27 +1,48 @@
 import {fetchEvent} from "./Event";
 
+/**
+ * @param sender - xhr を書き換えつつ open と send を自分で指定します
+ * @example
+ * ```ts
+ * fetchXHR<null>((xhr)=>{
+ *   xhr.onprogress = (ev)=>{
+ *     if(!ev.lengthComputable){ return; }
+ *     console.log(ev.loaded / ev.total);
+ *   };
+ *   xhr.open("POST", "http://example.com/");
+ *   xhr.send("{foo: 0}");
+ * });
+ * ```
+ */
+export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void): Promise<T> {
+  return new Promise<T>((resolve, reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = (ev)=>{
+      if(xhr.readyState !== 4){ return; }
+      if(xhr.status === 0){ return resolve(<T>xhr.response); } // 0 は blob:// とか file:// とか module:// のとき
+      if(200 <= xhr.status && xhr.status < 300){ return resolve(<T>xhr.response); } // 2xx - Success
+      reject(xhr); // 1xx - Information, 3xx - Redirection, 4xx - Client Error , 5xx - Server Error
+    };
+    xhr.onerror = (ev)=>{
+      reject(xhr);
+    };
+    sender(xhr);
+  });
+}
+
 export function fetchXHR(url: string, responseType: "text"): Promise<string>;
 export function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
 export function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;
 export function fetchXHR(url: string, responseType: "document"): Promise<Document>;
 export function fetchXHR<T>(url: string, responseType: "json"): Promise<T>;
-export function fetchXHR<T>(url: string, responseType: "text" | "json" | "arraybuffer" | "blob" | "document"): Promise<T> {
-  return new Promise<T>((resolve, reject)=>{
-    const xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", ()=>{
-      // 0 は blob:// とか file:// とか module:// のとき
-      if (xhr.status === 0 || 200 <= xhr.status && xhr.status < 300) {
-        resolve(<T>xhr.response);
-      } else {
-        reject(xhr);
-      }
-    });
-    xhr.addEventListener("error", function(ev: ProgressEvent) {
-      reject(xhr);
-    });
-    xhr.open("GET", url);
+export function fetchXHR<T>(
+  url: string,
+  responseType: "text" | "json" | "arraybuffer" | "blob" | "document"
+): Promise<T> {
+  return fetch<T>((xhr)=>{
     xhr.responseType = responseType;
-    return xhr.send();
+    xhr.open("GET", url);
+    xhr.send();
   });
 }
 
