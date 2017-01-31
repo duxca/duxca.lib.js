@@ -1,5 +1,6 @@
 /**
  * @param sender - xhr を書き換えつつ open と send を自分で指定します
+ * @param useLocal - `file://` などで xhr.status が 0 になるものも resolve する
  * @example
  * ```ts
  * fetchXHR<null>((xhr)=>{
@@ -12,7 +13,7 @@
  * });
  * ```
  */
-export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void): Promise<T>;
+export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void, useLocal?: boolean): Promise<T>;
 export declare function fetchXHR(url: string, responseType: "text"): Promise<string>;
 export declare function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
 export declare function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;

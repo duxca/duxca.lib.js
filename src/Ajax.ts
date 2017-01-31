@@ -2,6 +2,7 @@ import {fetchEvent} from "./Event";
 
 /**
  * @param sender - xhr を書き換えつつ open と send を自分で指定します
+ * @param useLocal - `file://` などで xhr.status が 0 になるものも resolve する
  * @example
  * ```ts
  * fetchXHR<null>((xhr)=>{
@@ -14,12 +15,12 @@ import {fetchEvent} from "./Event";
  * });
  * ```
  */
-export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void): Promise<T> {
+export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void, useLocal=false): Promise<T> {
   return new Promise<T>((resolve, reject)=>{
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = (ev)=>{
       if(xhr.readyState !== 4){ return; }
-      if(xhr.status === 0){ return resolve(<T>xhr.response); } // 0 は blob:// とか file:// とか module:// のとき
+      if(useLocal && xhr.status === 0){ return resolve(<T>xhr.response); } // 0 は file:// とか のとき
       if(200 <= xhr.status && xhr.status < 300){ return resolve(<T>xhr.response); } // 2xx - Success
       reject(xhr); // 1xx - Information, 3xx - Redirection, 4xx - Client Error , 5xx - Server Error
     };
