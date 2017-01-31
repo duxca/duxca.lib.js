@@ -1,9 +1,12 @@
 /**
+ *
+ *
  * @param sender - xhr を書き換えつつ open と send を自分で指定します
  * @param useLocal - `file://` などで xhr.status が 0 になるものも resolve する
+ * @return 200 なら resolve, その他は reject<XMLHttpRequest>
  * @example
  * ```ts
- * fetchXHR<null>((xhr)=>{
+ * fetch((xhr)=>{
  *   xhr.onprogress = (ev)=>{
  *     if(!ev.lengthComputable){ return; }
  *     console.log(ev.loaded / ev.total);
@@ -14,11 +17,11 @@
  * ```
  */
 export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void, useLocal?: boolean): Promise<T>;
-export declare function fetchXHR(url: string, responseType: "text"): Promise<string>;
-export declare function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
-export declare function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;
-export declare function fetchXHR(url: string, responseType: "document"): Promise<Document>;
-export declare function fetchXHR<T>(url: string, responseType: "json"): Promise<T>;
+export declare function fetchXHR(url: string, responseType: "text", useLocal?: boolean): Promise<string>;
+export declare function fetchXHR(url: string, responseType: "blob", useLocal?: boolean): Promise<Blob>;
+export declare function fetchXHR(url: string, responseType: "arraybuffer", useLocal?: boolean): Promise<ArrayBuffer>;
+export declare function fetchXHR(url: string, responseType: "document", useLocal?: boolean): Promise<Document>;
+export declare function fetchXHR<T>(url: string, responseType: "json", useLocal?: boolean): Promise<T>;
 export declare function fetchText<T>(url: string): Promise<string>;
 export declare function fetchDocument<T>(url: string): Promise<Document>;
 export declare function fetchJSON<T>(url: string): Promise<T>;

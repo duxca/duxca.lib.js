@@ -1,11 +1,14 @@
 import {fetchEvent} from "./Event";
 
 /**
+ * 
+ * 
  * @param sender - xhr を書き換えつつ open と send を自分で指定します
  * @param useLocal - `file://` などで xhr.status が 0 になるものも resolve する
+ * @return 200 なら resolve, その他は reject<XMLHttpRequest>
  * @example
  * ```ts
- * fetchXHR<null>((xhr)=>{
+ * fetch((xhr)=>{
  *   xhr.onprogress = (ev)=>{
  *     if(!ev.lengthComputable){ return; }
  *     console.log(ev.loaded / ev.total);
@@ -20,31 +23,33 @@ export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void, useLocal=false): 
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = (ev)=>{
       if(xhr.readyState !== 4){ return; }
-      if(useLocal && xhr.status === 0){ return resolve(<T>xhr.response); } // 0 は file:// とか のとき
-      if(200 <= xhr.status && xhr.status < 300){ return resolve(<T>xhr.response); } // 2xx - Success
-      reject(xhr); // 1xx - Information, 3xx - Redirection, 4xx - Client Error , 5xx - Server Error
+      if(useLocal && xhr.status === 0){ // 0 は file:// とか のとき
+        if(xhr.response === null){ return reject(xhr); }
+        return resolve(<T>xhr.response);
+      }
+      if(200 === xhr.status){ return resolve(<T>xhr.response); } // only 200
+      return reject(xhr); // 1xx - Information, 3xx - Redirection, 4xx - Client Error , 5xx - Server Error
     };
-    xhr.onerror = (ev)=>{
-      reject(xhr);
-    };
+    xhr.onerror = (ev)=>{ reject(xhr); };
     sender(xhr);
   });
 }
 
-export function fetchXHR(url: string, responseType: "text"): Promise<string>;
-export function fetchXHR(url: string, responseType: "blob"): Promise<Blob>;
-export function fetchXHR(url: string, responseType: "arraybuffer"): Promise<ArrayBuffer>;
-export function fetchXHR(url: string, responseType: "document"): Promise<Document>;
-export function fetchXHR<T>(url: string, responseType: "json"): Promise<T>;
+export function fetchXHR(url: string, responseType: "text", useLocal?: boolean): Promise<string>;
+export function fetchXHR(url: string, responseType: "blob", useLocal?: boolean): Promise<Blob>;
+export function fetchXHR(url: string, responseType: "arraybuffer", useLocal?: boolean): Promise<ArrayBuffer>;
+export function fetchXHR(url: string, responseType: "document", useLocal?: boolean): Promise<Document>;
+export function fetchXHR<T>(url: string, responseType: "json", useLocal?: boolean): Promise<T>;
 export function fetchXHR<T>(
   url: string,
-  responseType: "text" | "json" | "arraybuffer" | "blob" | "document"
+  responseType: "text" | "json" | "arraybuffer" | "blob" | "document",
+  useLocal=false
 ): Promise<T> {
   return fetch<T>((xhr)=>{
     xhr.responseType = responseType;
     xhr.open("GET", url);
     xhr.send();
-  });
+  }, useLocal);
 }
 
 export function fetchText<T>(url: string): Promise<string> {
