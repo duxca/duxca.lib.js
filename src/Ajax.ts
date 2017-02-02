@@ -35,6 +35,40 @@ export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void, useLocal=false): 
   });
 }
 
+/**
+ * get only content-length
+ */
+function fetchLength(url: string): Promise<number> {
+  return fetchRange(url, 0, 0).then(({total})=> total);
+}
+
+/**
+ * HTTP1.1 Range Request
+ */
+function fetchRange(url: string, begin: number, end: number
+): Promise<{type: string, begin: number, end: number, total: number, buffer: ArrayBuffer}> {
+	const range = `${Number(begin)}-${Number(end)}`;
+	return fetch((xhr)=>{
+    xhr.open("GET", url);
+    xhr.responseType = "arraybuffer";
+    xhr.setRequestHeader('Range', 'bytes='+range);
+    xhr.send();
+  })
+  	.then(Promise.reject)
+    .catch((xhr)=>{
+    	if(xhr.status !== 206){ return Promise.reject(xhr); }
+      const type = xhr.getResponseHeader("Content-Type") || "";
+      const range = xhr.getResponseHeader("Content-Range") || "";
+      const [_, b,e,t] = (/bytes (\d+)\-(\d+)\/(\d+|\*)/.exec(range)||["_", "*","*","*"]);
+      const begin = Number(b);
+      const end = Number(e);
+      const total = Number(t);
+      const buffer = xhr.response;
+      return {buffer, begin, end, total, type};
+    });
+}
+
+
 export function fetchXHR(url: string, responseType: "text", useLocal?: boolean): Promise<string>;
 export function fetchXHR(url: string, responseType: "blob", useLocal?: boolean): Promise<Blob>;
 export function fetchXHR(url: string, responseType: "arraybuffer", useLocal?: boolean): Promise<ArrayBuffer>;
