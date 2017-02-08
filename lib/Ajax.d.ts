@@ -17,6 +17,20 @@
  * ```
  */
 export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void, useLocal?: boolean): Promise<T>;
+/**
+ * get only content-length
+ */
+export declare function fetchSize(url: string): Promise<number>;
+/**
+ * HTTP1.1 Range Request
+ */
+export declare function fetchRange(url: string, begin: number, end: number): Promise<{
+    type: string;
+    begin: number;
+    end: number;
+    total: number;
+    buffer: ArrayBuffer;
+}>;
 export declare function fetchXHR(url: string, responseType: "text", useLocal?: boolean): Promise<string>;
 export declare function fetchXHR(url: string, responseType: "blob", useLocal?: boolean): Promise<Blob>;
 export declare function fetchXHR(url: string, responseType: "arraybuffer", useLocal?: boolean): Promise<ArrayBuffer>;

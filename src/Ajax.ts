@@ -38,14 +38,14 @@ export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void, useLocal=false): 
 /**
  * get only content-length
  */
-function fetchLength(url: string): Promise<number> {
+export function fetchSize(url: string): Promise<number> {
   return fetchRange(url, 0, 0).then(({total})=> total);
 }
 
 /**
  * HTTP1.1 Range Request
  */
-function fetchRange(url: string, begin: number, end: number
+export function fetchRange(url: string, begin: number, end: number
 ): Promise<{type: string, begin: number, end: number, total: number, buffer: ArrayBuffer}> {
 	const range = `${Number(begin)}-${Number(end)}`;
 	return fetch((xhr)=>{
