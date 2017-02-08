@@ -16,7 +16,7 @@
  * });
  * ```
  */
-export declare function fetch<T>(sender: (xhr: XMLHttpRequest) => void, useLocal?: boolean): Promise<T>;
+export declare function fetch(xhr: XMLHttpRequest, useLocal?: boolean): Promise<XMLHttpRequest>;
 /**
  * get only content-length
  */

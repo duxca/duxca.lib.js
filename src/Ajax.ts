@@ -18,20 +18,18 @@ import {fetchEvent} from "./Event";
  * });
  * ```
  */
-export function fetch<T>(sender: (xhr: XMLHttpRequest)=> void, useLocal=false): Promise<T> {
-  return new Promise<T>((resolve, reject)=>{
-    const xhr = new XMLHttpRequest();
+export function fetch(xhr: XMLHttpRequest, useLocal=false): Promise<XMLHttpRequest> {
+  return new Promise<XMLHttpRequest>((resolve, reject)=>{
     xhr.onreadystatechange = (ev)=>{
       if(xhr.readyState !== 4){ return; }
       if(useLocal && xhr.status === 0){ // 0 は file:// とか のとき
         if(xhr.response === null){ return reject(xhr); }
-        return resolve(<T>xhr.response);
+        return resolve(xhr);
       }
-      if(200 === xhr.status){ return resolve(<T>xhr.response); } // only 200
+      if(200 === xhr.status){ return resolve(xhr); } // only 200
       return reject(xhr); // 1xx - Information, 3xx - Redirection, 4xx - Client Error , 5xx - Server Error
     };
     xhr.onerror = (ev)=>{ reject(xhr); };
-    sender(xhr);
   });
 }
 
@@ -48,15 +46,14 @@ export function fetchSize(url: string): Promise<number> {
 export function fetchRange(url: string, begin: number, end: number
 ): Promise<{type: string, begin: number, end: number, total: number, buffer: ArrayBuffer}> {
 	const range = `${Number(begin)}-${Number(end)}`;
-	return fetch((xhr)=>{
-    xhr.open("GET", url);
-    xhr.responseType = "arraybuffer";
-    xhr.setRequestHeader('Range', 'bytes='+range);
-    xhr.send();
-  })
-  	.then(Promise.reject)
-    .catch((xhr)=>{
-    	if(xhr.status !== 206){ return Promise.reject(xhr); }
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", url);
+  xhr.responseType = "arraybuffer";
+  xhr.setRequestHeader('Range', 'bytes='+range);
+  xhr.send();
+	return fetch(xhr)
+  	.then((xhr)=>{
+    	if(xhr.status !== 206){ return Promise.reject<any>(xhr); }
       const type = xhr.getResponseHeader("Content-Type") || "";
       const range = xhr.getResponseHeader("Content-Range") || "";
       const [_, b,e,t] = (/bytes (\d+)\-(\d+)\/(\d+|\*)/.exec(range)||["_", "*","*","*"]);
@@ -79,11 +76,11 @@ export function fetchXHR<T>(
   responseType: "text" | "json" | "arraybuffer" | "blob" | "document",
   useLocal=false
 ): Promise<T> {
-  return fetch<T>((xhr)=>{
-    xhr.responseType = responseType;
-    xhr.open("GET", url);
-    xhr.send();
-  }, useLocal);
+  const xhr = new XMLHttpRequest();
+  xhr.responseType = responseType;
+  xhr.open("GET", url);
+  xhr.send();
+  return fetch(xhr, useLocal).then((xhr)=> xhr.response );
 }
 
 export function fetchText<T>(url: string): Promise<string> {
