@@ -71,6 +71,7 @@
         "src/Date.ts",
         "src/Encoding.ts",
         "src/Event.ts",
+        "src/EventTargetLike.ts",
         "src/Media.ts",
         "src/Promise.ts",
         "src/Semaphore.ts",

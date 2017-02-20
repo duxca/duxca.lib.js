@@ -31,7 +31,8 @@
     "events": "^1.1.1",
     "jquery": "^3.1.1",
     "xstream": "^9.0.0",
-    "duxca": "duxca/duxca.lib.js#1.x"
+    "duxca": "duxca/duxca.lib.js#1.x",
+    "carrack": "^0.5.0"
   },
   "devDependencies": {
     "@types/node": "0.0.2",
