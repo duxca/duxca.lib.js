@@ -41,6 +41,10 @@ export declare function fetchDocument<T>(url: string): Promise<Document>;
 export declare function fetchJSON<T>(url: string): Promise<T>;
 export declare function fetchArrayBuffer(url: string): Promise<ArrayBuffer>;
 export declare function fetchBlob(url: string): Promise<Blob>;
+export declare function fetchArrayBufferWithContentType(url: string): Promise<{
+    buffer: ArrayBuffer;
+    mimeType: string;
+}>;
 export declare function fetchImage(url: string): Promise<HTMLImageElement>;
 export declare function fetchScript(url: string): Promise<Event>;
 /**

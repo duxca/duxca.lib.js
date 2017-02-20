@@ -103,6 +103,20 @@ export function fetchBlob(url: string): Promise<Blob> {
   return fetchXHR(url, "blob");
 }
 
+export async function fetchArrayBufferWithContentType(url: string): Promise<{buffer: ArrayBuffer, mimeType: string}> {
+  const xhr = new XMLHttpRequest();
+  xhr.responseType = "arraybuffer";
+  xhr.open("GET", url);
+  xhr.send();
+  await fetch(xhr);
+  const mimeType = xhr.getResponseHeader("Content-Type");
+  const buffer = <ArrayBuffer|null>xhr.response;
+  if(mimeType == null){ return Promise.reject(new Error("cannot get mime type")); }
+  if(buffer == null){ return Promise.reject(new Error("cannot get buffer")); }
+  return {mimeType, buffer};
+}
+
+
 export function fetchImage(url: string): Promise<HTMLImageElement> {
   const img = new Image();
   img.src = url;
