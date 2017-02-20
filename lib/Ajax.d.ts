@@ -45,6 +45,7 @@ export declare function fetchArrayBufferWithContentType(url: string): Promise<{
     buffer: ArrayBuffer;
     mimeType: string;
 }>;
+export declare function fetchImageFromArrayBuffer(buffer: ArrayBuffer, type?: string): Promise<HTMLImageElement>;
 export declare function fetchImage(url: string): Promise<HTMLImageElement>;
 export declare function fetchScript(url: string): Promise<Event>;
 /**

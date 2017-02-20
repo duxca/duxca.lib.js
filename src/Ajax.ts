@@ -117,6 +117,15 @@ export async function fetchArrayBufferWithContentType(url: string): Promise<{buf
 }
 
 
+export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, type="image/png"): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(new Blob([buffer], {type}));
+  return fetchImage(url).then((img)=>{
+    URL.revokeObjectURL(url);
+    return img;
+  });
+}
+
+
 export function fetchImage(url: string): Promise<HTMLImageElement> {
   const img = new Image();
   img.src = url;
